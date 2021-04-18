@@ -1,19 +1,19 @@
 <script lang="ts">
   import { Notice } from 'obsidian';
 
-  import type { expenseLine } from 'src/file-interface';
+  import type { ExpenseLine } from 'src/file-interface';
 
   export let currencySymbol: string;
   export let saveFn: (
     date: string,
     payee: string,
-    lines: expenseLine[],
+    lines: ExpenseLine[],
   ) => Promise<void>;
   export let close: () => void;
 
   let date: string;
   let payee: string;
-  let lines: expenseLine[] = [
+  let lines: ExpenseLine[] = [
     { category: '', amount: 0.0 },
     { category: '', amount: 0.0 },
   ];

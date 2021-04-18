@@ -23,7 +23,7 @@ export class Parser {
     }
   };
 
-  private extractTransaction = (
+  private readonly extractTransaction = (
     lines: string[],
     i: number,
   ): Transaction | undefined => {};

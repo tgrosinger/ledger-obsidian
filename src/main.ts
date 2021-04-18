@@ -1,8 +1,8 @@
-import { addIcon, App, Modal, Plugin } from 'obsidian';
-import AddExpenseUI from './ui/AddExpenseUI.svelte';
+import { appendLedger, ExpenseLine, formatExpense } from './file-interface';
 import { billIcon } from './graphics';
 import { ISettings, settingsWithDefaults } from './settings';
-import { appendLedger, expenseLine, formatExpense } from './file-interface';
+import AddExpenseUI from './ui/AddExpenseUI.svelte';
+import { addIcon, App, Modal, Plugin } from 'obsidian';
 
 export default class LedgerPlugin extends Plugin {
   public settings: ISettings;
@@ -41,7 +41,7 @@ class AddExpenseModal extends Modal {
         saveFn: async (
           date: string,
           payee: string,
-          lines: expenseLine[],
+          lines: ExpenseLine[],
         ): Promise<void> => {
           const formatted = formatExpense(date, payee, lines, this.settings);
           await appendLedger(

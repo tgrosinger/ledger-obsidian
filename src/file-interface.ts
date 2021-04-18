@@ -1,7 +1,7 @@
-import type { MetadataCache, Vault } from 'obsidian';
 import type { ISettings } from './settings';
+import type { MetadataCache, Vault } from 'obsidian';
 
-export interface expenseLine {
+export interface ExpenseLine {
   category: string;
   amount: number;
 }
@@ -9,7 +9,7 @@ export interface expenseLine {
 export const formatExpense = (
   date: string,
   payee: string,
-  lines: expenseLine[],
+  lines: ExpenseLine[],
   settings: ISettings,
 ): string => {
   const symb = settings.currencySymbol;
@@ -24,10 +24,9 @@ export const formatExpense = (
     .map(({ category, amount }, i) => {
       if (i !== lines.length - 1 || settings.includeFinalLineAmount) {
         return `    ${category}    ${symb}${amount.toFixed(2)}`;
-      } else {
-        // The amount is optional on the final line
-        return `    ${category}`;
       }
+      // The amount is optional on the final line
+      return `    ${category}`;
     })
     .join('\n');
   return `\n${date} ${payee}\n${joinedLines}`;
