@@ -1,35 +1,37 @@
 import type { ISettings } from './settings';
 import type { MetadataCache, Vault } from 'obsidian';
+import { parse } from './parser';
+
+export interface Transaction {
+  date: string;
+  payee: string;
+  lines: ExpenseLine[];
+}
 
 export interface ExpenseLine {
   category: string;
   amount: number;
 }
 
-export const formatExpense = (
-  date: string,
-  payee: string,
-  lines: ExpenseLine[],
-  settings: ISettings,
-): string => {
+export const formatExpense = (tx: Transaction, settings: ISettings): string => {
   const symb = settings.currencySymbol;
   // The final line needs to have the amount updated so all lines total 0.
-  const total = lines
+  const total = tx.lines
     .slice(0, -1)
     .map(({ amount }) => amount)
     .reduce((prev, curr) => curr + prev, 0);
-  lines[lines.length - 1].amount = total * -1;
+  tx.lines[tx.lines.length - 1].amount = total * -1;
 
-  const joinedLines = lines
+  const joinedLines = tx.lines
     .map(({ category, amount }, i) => {
-      if (i !== lines.length - 1 || settings.includeFinalLineAmount) {
+      if (i !== tx.lines.length - 1 || settings.includeFinalLineAmount) {
         return `    ${category}    ${symb}${amount.toFixed(2)}`;
       }
       // The amount is optional on the final line
       return `    ${category}`;
     })
     .join('\n');
-  return `\n${date} ${payee}\n${joinedLines}`;
+  return `\n${tx.date} ${tx.payee}\n${joinedLines}`;
 };
 
 export const appendLedger = async (
@@ -46,4 +48,17 @@ export const appendLedger = async (
   } else {
     await vault.create(settings.ledgerFile, newExpense);
   }
+};
+
+export const getTransactionCache = async (
+  cache: MetadataCache,
+  vault: Vault,
+  settings: ISettings,
+): Promise<Transaction[]> => {
+  const file = cache.getFirstLinkpathDest(settings.ledgerFile, '');
+  if (!file) {
+    return [];
+  }
+  const fileContents = await vault.read(file);
+  return parse(fileContents, settings.currencySymbol);
 };

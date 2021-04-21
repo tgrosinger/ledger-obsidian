@@ -1,34 +1,61 @@
-import { appendLedger, ExpenseLine, formatExpense } from './file-interface';
+import {
+  appendLedger,
+  ExpenseLine,
+  formatExpense,
+  getTransactionCache,
+  Transaction,
+} from './file-interface';
 import { billIcon } from './graphics';
 import { ISettings, settingsWithDefaults } from './settings';
 import AddExpenseUI from './ui/AddExpenseUI.svelte';
-import { addIcon, App, Modal, Plugin } from 'obsidian';
+import { addIcon, App, Modal, Plugin, TAbstractFile } from 'obsidian';
 
 export default class LedgerPlugin extends Plugin {
   public settings: ISettings;
+  private txCache: Transaction[];
 
   public async onload(): Promise<void> {
     console.log('loading ledger plugin');
 
     await this.loadSettings();
+    this.updateTransactionCache();
 
     addIcon('ledger', billIcon);
     this.addRibbonIcon('ledger', 'Add to Ledger', () => {
-      new AddExpenseModal(this.app, this.settings).open();
+      new AddExpenseModal(this.app, this.txCache, this.settings).open();
     });
+
+    this.registerEvent(
+      this.app.vault.on('modify', (file: TAbstractFile) => {
+        if (file.name === this.settings.ledgerFile) {
+          this.updateTransactionCache();
+        }
+      }),
+    );
   }
 
   private async loadSettings(): Promise<void> {
     this.settings = settingsWithDefaults(await this.loadData());
     this.saveData(this.settings);
   }
+
+  private readonly updateTransactionCache = async (): Promise<void> => {
+    console.debug('ledger: Updating the transaction cache');
+    this.txCache = await getTransactionCache(
+      this.app.metadataCache,
+      this.app.vault,
+      this.settings,
+    );
+  };
 }
 
 class AddExpenseModal extends Modal {
   private readonly settings: ISettings;
+  private readonly txCache: Transaction[];
 
-  constructor(app: App, settings: ISettings) {
+  constructor(app: App, txCache: Transaction[], settings: ISettings) {
     super(app);
+    this.txCache = txCache;
     this.settings = settings;
   }
 
@@ -43,7 +70,10 @@ class AddExpenseModal extends Modal {
           payee: string,
           lines: ExpenseLine[],
         ): Promise<void> => {
-          const formatted = formatExpense(date, payee, lines, this.settings);
+          const formatted = formatExpense(
+            { date, payee, lines },
+            this.settings,
+          );
           await appendLedger(
             this.app.metadataCache,
             this.app.vault,
@@ -51,6 +81,7 @@ class AddExpenseModal extends Modal {
             formatted,
           );
         },
+        transactionCache: this.txCache,
         close: () => this.close(),
       },
     });

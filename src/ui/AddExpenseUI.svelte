@@ -1,9 +1,10 @@
 <script lang="ts">
   import { Notice } from 'obsidian';
 
-  import type { ExpenseLine } from 'src/file-interface';
+  import type { ExpenseLine, Transaction } from '../file-interface';
 
   export let currencySymbol: string;
+  export let txCache: Transaction[];
   export let saveFn: (
     date: string,
     payee: string,
@@ -39,8 +40,6 @@
   };
 
   const save = async () => {
-    console.log(`Payee: "${payee}"`);
-    console.log(`Date: "${date}"`);
     if (!payee || payee === '') {
       new Notice('Payee must not be empty');
       return;
