@@ -1,5 +1,8 @@
 <script lang="ts">
   import { Notice } from 'obsidian';
+  import { StaticSuggest } from './suggest';
+  import { onMount } from 'svelte';
+  import { flatMap, sortedUniq } from 'lodash';
 
   import type { ExpenseLine, Transaction } from '../file-interface';
 
@@ -12,12 +15,27 @@
   ) => Promise<void>;
   export let close: () => void;
 
+  interface ExpenseLineInput {
+    categoryEl: HTMLInputElement | undefined;
+    amount: number;
+  }
+
+  const categories = sortedUniq(
+    flatMap(txCache, ({ lines }) =>
+      lines.map(({ category }) => category),
+    ).sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1)),
+  );
+
   let date: string;
   let payee: string;
-  let lines: ExpenseLine[] = [
-    { category: '', amount: 0.0 },
-    { category: '', amount: 0.0 },
-  ];
+  let lines: ExpenseLineInput[] = [1, 2].map(
+    (): ExpenseLineInput => {
+      return { categoryEl: undefined, amount: 0.0 };
+    },
+  );
+
+  const payees = txCache.map(({ payee }) => payee);
+  let payeeInputEl: HTMLInputElement;
 
   $: remainder = (
     -1 *
@@ -25,7 +43,8 @@
   ).toFixed(2);
 
   const addRow = (): void => {
-    lines.splice(lines.length - 1, 0, { category: '', amount: 0.0 });
+    // TODO: Not sure how to add the StaticSuggest here
+    lines.splice(lines.length - 1, 0, { categoryEl: undefined, amount: 0.0 });
     lines = lines; // Svelte reactivity hack
   };
 
@@ -46,36 +65,57 @@
     } else if (!date || date === '') {
       new Notice('Date must not be empty');
       return;
-    } else if (lines.some(({ category }) => category === '')) {
+    } else if (lines.some(({ categoryEl }) => categoryEl.value === '')) {
       new Notice('Transaction lines must have a category');
       return;
     }
 
-    await saveFn(date, payee, lines);
+    const expenseLines = lines.map(
+      (line): ExpenseLine => {
+        return {
+          category: line.categoryEl.value,
+          amount: line.amount,
+        };
+      },
+    );
+
+    await saveFn(date, payee, expenseLines);
     close();
   };
+
+  onMount(() => {
+    new StaticSuggest(window.app, payeeInputEl, payees);
+
+    lines.forEach(({ categoryEl }) => {
+      new StaticSuggest(window.app, categoryEl, categories);
+    });
+  });
 </script>
 
 <h1>Add to Ledger</h1>
 
 <div class="ledger-add-expense-form">
   <div class="ledger-form-row">
+    <!-- TODO: Perhaps this can use nldates? -->
+    <!-- TODO: Default to today -->
     <input id="ledger-expense-date" type="date" bind:value={date} />
     <input
       id="ledger-expense-name"
       type="text"
+      bind:this={payeeInputEl}
       bind:value={payee}
       placeholder="Payee"
     />
   </div>
 
+  <!-- TODO: Add an ID to key off for the each -->
   {#each lines as line, i}
     <div class="ledger-form-row">
       <input
         id="ledger-expense-line-category-{i}"
         type="text"
         placeholder="Account"
-        bind:value={line.category}
+        bind:this={line.categoryEl}
       />
       <div class="input-icon">
         {#if i === lines.length - 1}

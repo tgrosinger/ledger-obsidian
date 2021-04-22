@@ -18,7 +18,6 @@ export default class LedgerPlugin extends Plugin {
     console.log('loading ledger plugin');
 
     await this.loadSettings();
-    this.updateTransactionCache();
 
     addIcon('ledger', billIcon);
     this.addRibbonIcon('ledger', 'Add to Ledger', () => {
@@ -32,6 +31,10 @@ export default class LedgerPlugin extends Plugin {
         }
       }),
     );
+
+    this.app.workspace.onLayoutReady(() => {
+      this.updateTransactionCache();
+    });
   }
 
   private async loadSettings(): Promise<void> {
@@ -81,7 +84,7 @@ class AddExpenseModal extends Modal {
             formatted,
           );
         },
-        transactionCache: this.txCache,
+        txCache: this.txCache,
         close: () => this.close(),
       },
     });
