@@ -21,6 +21,7 @@
     "@testing-library/svelte": "3.0.2",
     "@tsconfig/svelte": "1.0.10",
     "@types/jest": "26.0.18",
+    "@types/lodash": "4.14.168",
     "@types/node": "^14.14.2",
     "@typescript-eslint/eslint-plugin": "4.6.0",
     "@typescript-eslint/parser": "4.6.0",
@@ -42,6 +43,8 @@
     "typescript": "^4.0.3"
   },
   "dependencies": {
+    "@popperjs/core": "2.9.2",
+    "lodash": "4.17.21",
     "neverthrow": "3.0.0",
     "svelte": "3.32.3"
   }
