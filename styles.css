@@ -16,9 +16,30 @@ input[type='date'] {
   padding: 4px 14px;
 }
 
-/*
- * Display a currency icon to the left of the amount inputs
- */
+input.ledger-expense-category {
+  width: 74%;
+  display: inline-block;
+}
+
+.is-mobile input.ledger-expense-category {
+  /* important required to override mobile stylesheet */
+  width: 70% !important;
+  display: inline-block !important;
+}
+
+.is-mobile input[type='number'] {
+  padding: 8px 14px;
+  height: auto;
+  font-size: 17px;
+}
+
+.is-mobile button {
+  margin: 5px 0;
+}
+
+input.ledger-expense-amount {
+  width: 24%;
+}
 
 .input-icon {
   position: relative;
@@ -37,6 +58,7 @@ input[type='date'] {
 }
 
 .input-icon > input {
-  padding-left: 25px;
+  /* important required to override mobile stylesheet */
+  padding-left: 25px !important;
   width: 100px;
 }

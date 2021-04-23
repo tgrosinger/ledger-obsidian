@@ -112,7 +112,7 @@
   {#each lines as line, i}
     <div class="ledger-form-row">
       <input
-        id="ledger-expense-line-category-{i}"
+        class="ledger-expense-category"
         type="text"
         placeholder="Account"
         bind:this={line.categoryEl}
@@ -120,7 +120,7 @@
       <div class="input-icon">
         {#if i === lines.length - 1}
           <input
-            id="ledger-expense-line-amount-{i}"
+            class="ledger-expense-amount"
             type="number"
             placeholder="Amount"
             disabled={true}
@@ -128,7 +128,7 @@
           />
         {:else}
           <input
-            id="ledger-expense-line-amount-{i}"
+            class="ledger-expense-amount"
             type="number"
             placeholder="Amount"
             on:blur={formatAmount}
@@ -139,6 +139,7 @@
       </div>
       {#if i > 0 && i !== lines.length - 1}
         <button
+          class="ledger-expense-remove-row"
           on:click={() => {
             removeRow(i);
           }}>-</button
