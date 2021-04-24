@@ -1,6 +1,6 @@
 {
   "name": "ledger-obsidian",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Plain text accounting",
   "main": "main.js",
   "scripts": {
