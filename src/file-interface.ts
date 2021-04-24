@@ -14,8 +14,6 @@ export interface ExpenseLine {
 }
 
 export const formatExpense = (tx: Transaction, settings: ISettings): string => {
-  tx.date = tx.date.replace(/-/g, '/');
-
   const symb = settings.currencySymbol;
   // The final line needs to have the amount updated so all lines total 0.
   const total = tx.lines

@@ -32,6 +32,7 @@
     "eslint-plugin-simple-import-sort": "5.0.3",
     "jest": "26.6.3",
     "jest-mock-extended": "1.0.10",
+    "moment": "2.29.1",
     "obsidian": "https://github.com/obsidianmd/obsidian-api/archive/81ab85ade4552c9116c1e10d009127e62019c923.tar.gz",
     "rollup": "2.35.1",
     "rollup-plugin-svelte": "7.0.0",
@@ -46,6 +47,7 @@
     "@popperjs/core": "2.9.2",
     "lodash": "4.17.21",
     "neverthrow": "3.0.0",
+    "obsidian-calendar-ui": "0.3.12",
     "svelte": "3.32.3"
   }
 }

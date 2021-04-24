@@ -1,10 +1,12 @@
 <script lang="ts">
   import { Notice } from 'obsidian';
   import { StaticSuggest } from './suggest';
+  import { Calendar } from 'obsidian-calendar-ui';
   import { onMount } from 'svelte';
   import { flatMap, sortedUniq } from 'lodash';
 
   import type { ExpenseLine, Transaction } from '../file-interface';
+  import type { Moment } from 'moment';
 
   export let currencySymbol: string;
   export let txCache: Transaction[];
@@ -26,7 +28,8 @@
     ).sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1)),
   );
 
-  let date: string;
+  let today = window.moment();
+  let selectedDay: string;
   let payee: string;
   let lines: ExpenseLineInput[] = [1, 2].map(
     (): ExpenseLineInput => {
@@ -58,12 +61,24 @@
     target.value = target.valueAsNumber.toFixed(2);
   };
 
+  const selectDay = (date: Moment): void => {
+    selectedDay = `day-` + date.startOf('day').format();
+    console.log(selectedDay);
+  };
+
+  selectDay(window.moment().clone());
+
   const save = async () => {
+    const dateMatches = /[\d]{4}-[\d]{2}-[\d]{2}/.exec(selectedDay);
+    if (!dateMatches || dateMatches.length !== 1) {
+      new Notice('Unable to determine selected date');
+      console.error('Unalbe to process selected date: ' + selectedDay);
+      return;
+    }
+    const date = dateMatches[0].replace(/-/g, '/');
+
     if (!payee || payee === '') {
       new Notice('Payee must not be empty');
-      return;
-    } else if (!date || date === '') {
-      new Notice('Date must not be empty');
       return;
     } else if (lines.some(({ categoryEl }) => categoryEl.value === '')) {
       new Notice('Transaction lines must have a category');
@@ -96,9 +111,12 @@
 
 <div class="ledger-add-expense-form">
   <div class="ledger-form-row">
-    <!-- TODO: Perhaps this can use nldates? -->
-    <!-- TODO: Default to today -->
-    <input id="ledger-expense-date" type="date" bind:value={date} />
+    <Calendar
+      {today}
+      onClickDay={selectDay}
+      bind:selectedId={selectedDay}
+      showWeekNums={false}
+    />
     <input
       id="ledger-expense-name"
       type="text"

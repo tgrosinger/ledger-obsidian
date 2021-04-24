@@ -9,6 +9,13 @@ import { billIcon } from './graphics';
 import { ISettings, settingsWithDefaults } from './settings';
 import AddExpenseUI from './ui/AddExpenseUI.svelte';
 import { addIcon, App, Modal, Plugin, TAbstractFile } from 'obsidian';
+import type { default as MomentType } from 'moment';
+
+declare global {
+  interface Window {
+    moment: typeof MomentType;
+  }
+}
 
 export default class LedgerPlugin extends Plugin {
   public settings: ISettings;
