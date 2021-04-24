@@ -8,8 +8,8 @@ import {
 import { billIcon } from './graphics';
 import { ISettings, settingsWithDefaults } from './settings';
 import AddExpenseUI from './ui/AddExpenseUI.svelte';
-import { addIcon, App, Modal, Plugin, TAbstractFile } from 'obsidian';
 import type { default as MomentType } from 'moment';
+import { addIcon, App, Modal, Plugin, TAbstractFile } from 'obsidian';
 
 declare global {
   interface Window {

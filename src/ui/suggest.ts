@@ -1,9 +1,7 @@
-import { App, ISuggestOwner, Scope } from 'obsidian';
 import { createPopper, Instance as PopperInstance } from '@popperjs/core';
+import { App, ISuggestOwner, Scope } from 'obsidian';
 
-export const wrapAround = (value: number, size: number): number => {
-  return ((value % size) + size) % size;
-};
+export const wrapAround = (value: number, size: number): number => ((value % size) + size) % size;
 
 /**
  * Reproduced with permission from
@@ -11,11 +9,11 @@ export const wrapAround = (value: number, size: number): number => {
  * Author: Liam Cain
  */
 class Suggest<T> {
-  private owner: ISuggestOwner<T>;
+  private readonly owner: ISuggestOwner<T>;
   private values: T[];
   private suggestions: HTMLDivElement[];
   private selectedItem: number;
-  private containerEl: HTMLElement;
+  private readonly containerEl: HTMLElement;
 
   constructor(owner: ISuggestOwner<T>, containerEl: HTMLElement, scope: Scope) {
     this.owner = owner;
@@ -115,9 +113,9 @@ abstract class TextInputSuggest<T> implements ISuggestOwner<T> {
   protected inputEl: HTMLInputElement;
 
   private popper: PopperInstance;
-  private scope: Scope;
-  private suggestEl: HTMLElement;
-  private suggest: Suggest<T>;
+  private readonly scope: Scope;
+  private readonly suggestEl: HTMLElement;
+  private readonly suggest: Suggest<T>;
 
   constructor(app: App, inputEl: HTMLInputElement) {
     this.app = app;

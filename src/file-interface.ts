@@ -1,6 +1,6 @@
+import { parse } from './parser';
 import type { ISettings } from './settings';
 import type { MetadataCache, Vault } from 'obsidian';
-import { parse } from './parser';
 
 export interface Transaction {
   date: string;
