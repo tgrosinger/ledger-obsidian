@@ -11,6 +11,7 @@ export interface Transaction {
 export interface ExpenseLine {
   category: string;
   amount: number;
+  id: number;
 }
 
 export const formatExpense = (tx: Transaction, settings: ISettings): string => {

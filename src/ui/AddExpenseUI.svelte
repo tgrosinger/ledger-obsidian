@@ -1,8 +1,7 @@
 <script lang="ts">
   import { Notice } from 'obsidian';
-  import { StaticSuggest } from './suggest';
+  import TextSuggest from './TextSuggest.svelte';
   import { Calendar } from 'obsidian-calendar-ui';
-  import { onMount } from 'svelte';
   import { flatMap, max, sortedUniq } from 'lodash';
 
   import type { ExpenseLine, Transaction } from '../file-interface';
@@ -17,12 +16,6 @@
   ) => Promise<void>;
   export let close: () => void;
 
-  interface ExpenseLineInput {
-    categoryEl: HTMLInputElement | undefined;
-    amount: number;
-    id: number;
-  }
-
   const categories = sortedUniq(
     flatMap(txCache, ({ lines }) =>
       lines.map(({ category }) => category),
@@ -32,14 +25,12 @@
   let today = window.moment();
   let selectedDay: string;
   let payee: string;
-  let lines: ExpenseLineInput[] = [1, 2].map(
-    (id): ExpenseLineInput => {
-      return { categoryEl: undefined, amount: 0.0, id: id };
-    },
-  );
+  let lines: ExpenseLine[] = [
+    { category: '', amount: 0, id: 1 },
+    { category: '', amount: 0, id: 2 },
+  ];
 
   const payees = txCache.map(({ payee }) => payee);
-  let payeeInputEl: HTMLInputElement;
 
   $: remainder = (
     -1 *
@@ -47,13 +38,10 @@
   ).toFixed(2);
 
   const addRow = (): void => {
-    console.log('Adding new row');
-    // TODO: Not sure how to add the StaticSuggest here
-    const nextID = max(lines.map(({ id }) => id)) + 1;
     lines.splice(lines.length - 1, 0, {
-      categoryEl: undefined,
+      category: '',
       amount: 0.0,
-      id: nextID,
+      id: max(lines.map((line) => line.id)) + 1,
     });
     lines = lines; // Svelte reactivity hack
   };
@@ -69,7 +57,6 @@
 
   const selectDay = (date: Moment): void => {
     selectedDay = `day-` + date.startOf('day').format();
-    console.log(selectedDay);
   };
 
   selectDay(window.moment().clone());
@@ -78,7 +65,7 @@
     const dateMatches = /[\d]{4}-[\d]{2}-[\d]{2}/.exec(selectedDay);
     if (!dateMatches || dateMatches.length !== 1) {
       new Notice('Unable to determine selected date');
-      console.error('Unalbe to process selected date: ' + selectedDay);
+      console.error('Unable to process selected date: ' + selectedDay);
       return;
     }
     const date = dateMatches[0].replace(/-/g, '/');
@@ -86,31 +73,14 @@
     if (!payee || payee === '') {
       new Notice('Payee must not be empty');
       return;
-    } else if (lines.some(({ categoryEl }) => categoryEl.value === '')) {
+    } else if (lines.some(({ category }) => category === '')) {
       new Notice('Transaction lines must have a category');
       return;
     }
 
-    const expenseLines = lines.map(
-      (line): ExpenseLine => {
-        return {
-          category: line.categoryEl.value,
-          amount: line.amount,
-        };
-      },
-    );
-
-    await saveFn(date, payee, expenseLines);
+    await saveFn(date, payee, lines);
     close();
   };
-
-  onMount(() => {
-    new StaticSuggest(window.app, payeeInputEl, payees);
-
-    lines.forEach(({ categoryEl }) => {
-      new StaticSuggest(window.app, categoryEl, categories);
-    });
-  });
 </script>
 
 <h2>Add to Ledger</h2>
@@ -123,12 +93,11 @@
     showWeekNums={false}
   />
   <div class="ledger-form-row">
-    <input
-      id="ledger-expense-payee"
-      type="text"
-      bind:this={payeeInputEl}
+    <TextSuggest
       bind:value={payee}
       placeholder="Payee"
+      suggestions={payees}
+      classes="ledger-expense-payee"
     />
   </div>
 
@@ -150,11 +119,11 @@
           /></svg
         >
       {/if}
-      <input
-        class="ledger-expense-category"
-        type="text"
+      <TextSuggest
         placeholder="Account"
-        bind:this={line.categoryEl}
+        bind:value={line.category}
+        classes="ledger-expense-category"
+        suggestions={categories}
       />
       <div class="input-icon">
         {#if i === lines.length - 1}

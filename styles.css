@@ -4,10 +4,14 @@
 }
 
 .ledger-remove-row {
+  margin: 7px 0;
+}
+
+.is-mobile .ledger-remove-row {
   margin: 11px 0;
 }
 
-#ledger-expense-payee {
+.ledger-expense-payee {
   width: 100%;
 }
 
