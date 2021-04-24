@@ -80,6 +80,7 @@ const extractTransaction = (
       expenseLines.push({
         category: parts[0],
         amount: -1 * sum,
+        id: 0,
       });
     } else {
       if (parts.length !== 2) {
@@ -89,6 +90,7 @@ const extractTransaction = (
       expenseLines.push({
         category: parts[0],
         amount: parseFloat(parts[1].replace(currencySymbol, '')),
+        id: 0,
       });
     }
   }

@@ -15,8 +15,8 @@ describe('parsing a ledger file', () => {
       date: '2021/04/20',
       payee: 'Obsidian',
       lines: [
-        { category: 'e:Spending Money', amount: 20 },
-        { category: 'b:CreditUnion', amount: -20 },
+        { category: 'e:Spending Money', amount: 20, id: 0 },
+        { category: 'b:CreditUnion', amount: -20, id: 0 },
       ],
     };
     expect(transactions).toHaveLength(1);
@@ -31,8 +31,8 @@ describe('parsing a ledger file', () => {
       date: '2021/04/20',
       payee: 'Obsidian',
       lines: [
-        { category: 'e:Spending Money', amount: 20 },
-        { category: 'b:CreditUnion', amount: -20 },
+        { category: 'e:Spending Money', amount: 20, id: 0 },
+        { category: 'b:CreditUnion', amount: -20, id: 0 },
       ],
     };
     expect(transactions).toHaveLength(1);
@@ -56,9 +56,9 @@ describe('parsing a ledger file', () => {
       date: '2021/04/20',
       payee: 'Obsidian',
       lines: [
-        { category: 'e:Spending Money', amount: 20 },
-        { category: 'e:Household Goods', amount: 5 },
-        { category: 'b:CreditUnion', amount: -25 },
+        { category: 'e:Spending Money', amount: 20, id: 0 },
+        { category: 'e:Household Goods', amount: 5, id: 0 },
+        { category: 'b:CreditUnion', amount: -25, id: 0 },
       ],
     };
     expect(transactions).toHaveLength(1);
@@ -77,16 +77,16 @@ describe('parsing a ledger file', () => {
       date: '2021/04/20',
       payee: 'Obsidian',
       lines: [
-        { category: 'e:Spending Money', amount: 20 },
-        { category: 'b:CreditUnion', amount: -20 },
+        { category: 'e:Spending Money', amount: 20, id: 0 },
+        { category: 'b:CreditUnion', amount: -20, id: 0 },
       ],
     };
     const expected2 = {
       date: '2021/04/21',
       payee: 'Food Co-op',
       lines: [
-        { category: 'e:Food:Groceries', amount: 45 },
-        { category: 'b:CreditUnion', amount: -45 },
+        { category: 'e:Food:Groceries', amount: 45, id: 0 },
+        { category: 'b:CreditUnion', amount: -45, id: 0 },
       ],
     };
     expect(transactions).toHaveLength(2);
