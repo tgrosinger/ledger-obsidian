@@ -4,7 +4,7 @@
   "author": "Tony Grosinger",
   "authorUrl": "https://grosinger.net",
   "description": "Plain text accounting",
-  "isDesktopOnly": true,
+  "isDesktopOnly": false,
   "version": "0.0.2",
   "minAppVersion": "0.11.12",
   "js": "main.js"
