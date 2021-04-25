@@ -1,4 +1,4 @@
-import { parse } from './parser';
+import { parse, TransactionCache } from './parser';
 import type { ISettings } from './settings';
 import type { MetadataCache, Vault } from 'obsidian';
 
@@ -55,10 +55,10 @@ export const getTransactionCache = async (
   cache: MetadataCache,
   vault: Vault,
   settings: ISettings,
-): Promise<Transaction[]> => {
+): Promise<TransactionCache> => {
   const file = cache.getFirstLinkpathDest(settings.ledgerFile, '');
   if (!file) {
-    return [];
+    return;
   }
   const fileContents = await vault.read(file);
   return parse(fileContents, settings.currencySymbol);

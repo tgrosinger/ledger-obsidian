@@ -6,6 +6,7 @@ import {
   Transaction,
 } from './file-interface';
 import { billIcon } from './graphics';
+import type { TransactionCache } from './parser';
 import { ISettings, settingsWithDefaults } from './settings';
 import AddExpenseUI from './ui/AddExpenseUI.svelte';
 import type { default as MomentType } from 'moment';
@@ -19,10 +20,10 @@ declare global {
 
 export default class LedgerPlugin extends Plugin {
   public settings: ISettings;
-  private txCache: Transaction[];
+  private txCache: TransactionCache;
 
   public async onload(): Promise<void> {
-    console.log('loading ledger plugin');
+    console.log('ledger: Loading plugin v' + this.manifest.version);
 
     await this.loadSettings();
 
@@ -61,9 +62,9 @@ export default class LedgerPlugin extends Plugin {
 
 class AddExpenseModal extends Modal {
   private readonly settings: ISettings;
-  private readonly txCache: Transaction[];
+  private readonly txCache: TransactionCache;
 
-  constructor(app: App, txCache: Transaction[], settings: ISettings) {
+  constructor(app: App, txCache: TransactionCache, settings: ISettings) {
     super(app);
     this.txCache = txCache;
     this.settings = settings;

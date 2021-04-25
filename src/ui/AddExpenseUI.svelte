@@ -2,25 +2,20 @@
   import { Notice } from 'obsidian';
   import TextSuggest from './TextSuggest.svelte';
   import { Calendar } from 'obsidian-calendar-ui';
-  import { flatMap, max, sortedUniq } from 'lodash';
+  import { max } from 'lodash';
 
-  import type { ExpenseLine, Transaction } from '../file-interface';
+  import type { ExpenseLine } from '../file-interface';
+  import type { TransactionCache } from '../parser';
   import type { Moment } from 'moment';
 
   export let currencySymbol: string;
-  export let txCache: Transaction[];
+  export let txCache: TransactionCache;
   export let saveFn: (
     date: string,
     payee: string,
     lines: ExpenseLine[],
   ) => Promise<void>;
   export let close: () => void;
-
-  const categories = sortedUniq(
-    flatMap(txCache, ({ lines }) =>
-      lines.map(({ category }) => category),
-    ).sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1)),
-  );
 
   let today = window.moment();
   let selectedDay: string;
@@ -29,8 +24,6 @@
     { category: '', amount: 0, id: 1 },
     { category: '', amount: 0, id: 2 },
   ];
-
-  const payees = txCache.map(({ payee }) => payee);
 
   $: remainder = (
     -1 *
@@ -65,7 +58,7 @@
     const dateMatches = /[\d]{4}-[\d]{2}-[\d]{2}/.exec(selectedDay);
     if (!dateMatches || dateMatches.length !== 1) {
       new Notice('Unable to determine selected date');
-      console.error('Unable to process selected date: ' + selectedDay);
+      console.error('ledger: Unable to process selected date: ' + selectedDay);
       return;
     }
     const date = dateMatches[0].replace(/-/g, '/');
@@ -96,7 +89,7 @@
     <TextSuggest
       bind:value={payee}
       placeholder="Payee"
-      suggestions={payees}
+      suggestions={txCache.payees}
       classes="ledger-expense-payee"
     />
   </div>
@@ -123,7 +116,7 @@
         placeholder="Account"
         bind:value={line.category}
         classes="ledger-expense-category"
-        suggestions={categories}
+        suggestions={txCache.categories}
       />
       <div class="input-icon">
         {#if i === lines.length - 1}

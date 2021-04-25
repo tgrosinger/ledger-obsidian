@@ -1,11 +1,18 @@
 import type { ExpenseLine, Transaction } from './file-interface';
+import { flatMap, sortedUniq } from 'lodash';
 
 const dateRe = /^\d{4}\/\d{2}\/\d{2}/;
+
+export interface TransactionCache {
+  transactions: Transaction[];
+  payees: string[];
+  categories: string[];
+}
 
 export const parse = (
   fileContents: string,
   currencySymbol: string,
-): Transaction[] => {
+): TransactionCache => {
   const splitFileContents = fileContents.split('\n');
   const transactions: Transaction[] = [];
   for (let i = 0; i < splitFileContents.length; i++) {
@@ -36,7 +43,19 @@ export const parse = (
     }
   }
 
-  return transactions;
+  return {
+    transactions,
+    payees: sortedUniq(
+      transactions
+        .map((tx) => tx.payee)
+        .sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1)),
+    ),
+    categories: sortedUniq(
+      flatMap(transactions, (tx) =>
+        tx.lines.map((line) => line.category),
+      ).sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1)),
+    ),
+  };
 };
 
 const extractTransaction = (
@@ -50,15 +69,12 @@ const extractTransaction = (
   }
 
   const date = dateMatches[0];
-  const payee = lines[0].replace(date, '').trim();
+  const payee = lines[0].replace(date, '').split(';')[0].trim();
   const expenseLines: ExpenseLine[] = [];
   for (let i = 1; i < lines.length; i++) {
-    const parts = lines[i].split(/[ \t][ \t]+/);
-
-    if (parts[0] === '') {
-      // expense lines are likely indented
-      parts.shift();
-    }
+    let line = lines[i].replace(/[!*]/, '').trim(); // Remove reconciliation symbols
+    line = line.split(';')[0].trim(); // Ignore comments
+    const parts = line.split(/[ \t][ \t]+/);
 
     if (i === lines.length - 1) {
       // The last expense line is not required to have an amount
