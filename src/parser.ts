@@ -74,6 +74,12 @@ const extractTransaction = (
   for (let i = 1; i < lines.length; i++) {
     let line = lines[i].replace(/[!*]/, '').trim(); // Remove reconciliation symbols
     line = line.split(';')[0].trim(); // Ignore comments
+
+    if (line.length === 0) {
+      // Must have been just a comment
+      continue;
+    }
+
     const parts = line.split(/[ \t][ \t]+/);
 
     if (i === lines.length - 1) {
@@ -81,7 +87,7 @@ const extractTransaction = (
       // but if present it must match the sum thus far.
       const sum = expenseLines
         .map(({ amount }) => amount)
-        .reduce((prev, curr) => curr + prev, 0);
+        .reduce((prev, curr) => parseFloat((curr + prev).toFixed(2)), 0);
 
       if (
         parts.length > 1 &&

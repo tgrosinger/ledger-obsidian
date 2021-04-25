@@ -170,4 +170,29 @@ describe('parsing a ledger file', () => {
       expect(txCache.categories[2]).toEqual('e:Spending Money');
     });
   });
+
+  test('complicated example transaction', () => {
+    const contents = `2019/09/16 Costco
+    ;Needs more splits
+    e:Food:Grocery                              $236.58
+    e:Spending Money                         $30.00  ;  Coat
+  * c:Citi                  $-266.58`;
+    const txCache = parse(contents, '$');
+    const expected = {
+      date: '2019/09/16',
+      payee: 'Costco',
+      lines: [
+        { category: 'e:Food:Grocery', amount: 236.58, id: 0 },
+        { category: 'e:Spending Money', amount: 30, id: 0 },
+        { category: 'c:Citi', amount: -266.58, id: 0 },
+      ],
+    };
+    expect(txCache.transactions).toHaveLength(1);
+    expect(txCache.transactions[0]).toEqual(expected);
+    expect(txCache.payees).toEqual(['Costco']);
+    expect(txCache.categories).toHaveLength(3);
+    expect(txCache.categories[0]).toEqual('c:Citi');
+    expect(txCache.categories[1]).toEqual('e:Food:Grocery');
+    expect(txCache.categories[2]).toEqual('e:Spending Money');
+  });
 });
