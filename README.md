@@ -7,6 +7,12 @@ For more information about Ledger, see the following resources:
 - <https://www.ledger-cli.org>
 - <https://plaintextaccounting.org>
 
+## Screenshots
+
+![desktop](https://raw.githubusercontent.com/tgrosinger/ledger-obsidian/main/resources/screenshots/desktop-add-expense.png)
+
+![mobile](https://raw.githubusercontent.com/tgrosinger/ledger-obsidian/main/resources/screenshots/mobile-add-expense.png)
+
 ## Pricing
 
 This plugin is provided to everyone for free, however if you would like to
