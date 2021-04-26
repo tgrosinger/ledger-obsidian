@@ -3,14 +3,13 @@ import {
   ExpenseLine,
   formatExpense,
   getTransactionCache,
-  Transaction,
 } from './file-interface';
 import { billIcon } from './graphics';
 import type { TransactionCache } from './parser';
 import { ISettings, settingsWithDefaults } from './settings';
 import AddExpenseUI from './ui/AddExpenseUI.svelte';
 import type { default as MomentType } from 'moment';
-import { addIcon, App, Modal, Plugin, TAbstractFile } from 'obsidian';
+import { addIcon, Modal, Plugin, TAbstractFile } from 'obsidian';
 
 declare global {
   interface Window {
@@ -20,7 +19,7 @@ declare global {
 
 export default class LedgerPlugin extends Plugin {
   public settings: ISettings;
-  private txCache: TransactionCache;
+  public txCache: TransactionCache;
 
   public async onload(): Promise<void> {
     console.log('ledger: Loading plugin v' + this.manifest.version);
@@ -29,12 +28,12 @@ export default class LedgerPlugin extends Plugin {
 
     addIcon('ledger', billIcon);
     this.addRibbonIcon('ledger', 'Add to Ledger', () => {
-      new AddExpenseModal(this.app, this.txCache, this.settings).open();
+      new AddExpenseModal(this).open();
     });
 
     this.registerEvent(
       this.app.vault.on('modify', (file: TAbstractFile) => {
-        if (file.name === this.settings.ledgerFile) {
+        if (file.path === this.settings.ledgerFile) {
           this.updateTransactionCache();
         }
       }),
@@ -61,13 +60,11 @@ export default class LedgerPlugin extends Plugin {
 }
 
 class AddExpenseModal extends Modal {
-  private readonly settings: ISettings;
-  private readonly txCache: TransactionCache;
+  private readonly plugin: LedgerPlugin;
 
-  constructor(app: App, txCache: TransactionCache, settings: ISettings) {
-    super(app);
-    this.txCache = txCache;
-    this.settings = settings;
+  constructor(plugin: LedgerPlugin) {
+    super(plugin.app);
+    this.plugin = plugin;
   }
 
   public onOpen = (): void => {
@@ -75,7 +72,7 @@ class AddExpenseModal extends Modal {
     new AddExpenseUI({
       target: contentEl,
       props: {
-        currencySymbol: this.settings.currencySymbol,
+        currencySymbol: this.plugin.settings.currencySymbol,
         saveFn: async (
           date: string,
           payee: string,
@@ -83,16 +80,16 @@ class AddExpenseModal extends Modal {
         ): Promise<void> => {
           const formatted = formatExpense(
             { date, payee, lines },
-            this.settings,
+            this.plugin.settings,
           );
           await appendLedger(
             this.app.metadataCache,
             this.app.vault,
-            this.settings,
+            this.plugin.settings,
             formatted,
           );
         },
-        txCache: this.txCache,
+        txCache: this.plugin.txCache,
         close: () => this.close(),
       },
     });
