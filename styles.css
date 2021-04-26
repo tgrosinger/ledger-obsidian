@@ -61,3 +61,13 @@ input.ledger-expense-amount {
   padding-left: 25px !important;
   width: 100%;
 }
+
+.ledger-donation {
+  width: 70%;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.ledger-donate-button {
+  margin: 10px;
+}
