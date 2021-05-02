@@ -1,0 +1,44 @@
+2013-03-03 Testing
+Atesting  $300
+Htesting  $300
+
+
+
+2013-03-03 Testing
+Dtesting  $300
+Htesting  $300
+Dtesting  $300
+
+2013-03-03 Testing
+Etesting  $300
+Dtesting  $300
+
+2013-03-03 Testing
+Ftesting  $30
+Dtesting
+
+
+
+account Assets:Banking
+    note Where money sits
+    alias b
+    check commodity == "$"
+    assert commodity == "$"
+
+
+
+; Budgets
+
+
+
+= /e:Food:Grocery/
+    (Budget:Food:Grocery)                   -1.0
+= /e:Food:Restaurant/
+    (Budget:Food:Restaurant)             -1.0
+
+
+
+2019/07/27 (1094) Deb Hanson
+    ;Garage sale
+    e:Home:Household Goods        $100.00
+  * b:BECU

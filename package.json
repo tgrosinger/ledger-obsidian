@@ -9,7 +9,9 @@
     "dev": "rollup --config rollup.config.js -w",
     "build": "rollup --config rollup.config.js",
     "prettier": "prettier --write 'src/**/*.+(ts|tsx|json|html|css)'",
-    "eslint": "eslint . --ext .ts,.tsx --fix"
+    "eslint": "eslint . --ext .ts,.tsx --fix",
+    "compile-parser": "nearleyc grammar/ledger.ne -o grammar/ledger.js",
+    "nearley-test": "nearley-test"
   },
   "keywords": [],
   "author": "Tony Grosinger",
@@ -33,6 +35,8 @@
     "jest": "26.6.3",
     "jest-mock-extended": "1.0.10",
     "moment": "2.29.1",
+    "moo": "0.5.1",
+    "nearley": "2.20.1",
     "obsidian": "https://github.com/obsidianmd/obsidian-api/archive/81ab85ade4552c9116c1e10d009127e62019c923.tar.gz",
     "rollup": "2.35.1",
     "rollup-plugin-svelte": "7.0.0",
