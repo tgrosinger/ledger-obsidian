@@ -6,17 +6,21 @@ import {
 } from './file-interface';
 import { billIcon, buyMeACoffee, paypal } from './graphics';
 import type { TransactionCache } from './parser';
+import { Renderer } from './renderer';
 import { ISettings, settingsWithDefaults } from './settings';
 import AddExpenseUI from './ui/AddExpenseUI.svelte';
 import type { default as MomentType } from 'moment';
 import {
   addIcon,
+  MarkdownView,
   Modal,
+  Notice,
   Plugin,
   PluginSettingTab,
   Setting,
   TAbstractFile,
 } from 'obsidian';
+import { validate } from './ledger-cli/ledger';
 
 declare global {
   interface Window {
@@ -27,6 +31,8 @@ declare global {
 export default class LedgerPlugin extends Plugin {
   public settings: ISettings;
   public txCache: TransactionCache;
+
+  private renderer: Renderer;
 
   public async onload(): Promise<void> {
     console.log('ledger: Loading plugin v' + this.manifest.version);
@@ -43,6 +49,18 @@ export default class LedgerPlugin extends Plugin {
       this.app.vault.on('modify', (file: TAbstractFile) => {
         if (file.path === this.settings.ledgerFile) {
           this.updateTransactionCache();
+        }
+      }),
+    );
+
+    this.registerEvent(
+      this.app.workspace.on('layout-change', this.renderLedgerPreview),
+    );
+
+    this.registerEvent(
+      this.app.vault.on('modify', (file: TAbstractFile) => {
+        if (this.renderer && file.path === this.settings.ledgerFile) {
+          this.renderer.markFileChanged();
         }
       }),
     );
@@ -64,6 +82,27 @@ export default class LedgerPlugin extends Plugin {
       this.app.vault,
       this.settings,
     );
+  };
+
+  private readonly renderLedgerPreview = (): void => {
+    const activeLeaf = this.app.workspace.getMostRecentLeaf();
+    const viewState = activeLeaf.getViewState().state;
+    if (
+      !this.settings.enableLedgerVis ||
+      !viewState ||
+      viewState.file !== this.settings.ledgerFile ||
+      viewState.mode !== 'preview'
+    ) {
+      // Only render when previewing the Ledger file
+      return;
+    }
+
+    if (activeLeaf.view instanceof MarkdownView) {
+      if (!this.renderer) {
+        this.renderer = new Renderer(this);
+      }
+      this.renderer.render(activeLeaf.view.previewMode.containerEl);
+    }
   };
 }
 
@@ -159,6 +198,44 @@ class SettingsTab extends PluginSettingTab {
             this.plugin.settings.includeFinalLineAmount = value;
             this.plugin.saveData(this.plugin.settings);
           });
+      });
+
+    new Setting(containerEl)
+      .setName('Use external ledger-cli')
+      .setDesc(
+        'Must be installed from https://www.ledger-cli.org. See this plugins Readme for more info.',
+      )
+      .addToggle((toggle) => {
+        toggle
+          .setValue(this.plugin.settings.useExternalLedger)
+          .onChange((value) => {
+            this.plugin.settings.useExternalLedger = value;
+            this.plugin.saveData(this.plugin.settings);
+            this.display();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName('External ledger-cli path')
+      .setDesc('Location on this sytem of the installed ledger-cli program')
+      .setDisabled(!this.plugin.settings.useExternalLedger)
+      .addText((text) => {
+        text
+          .setPlaceholder('/path/to/ledger-cli.app')
+          .setValue(this.plugin.settings.ledgerPath);
+        text.inputEl.onblur = async (e: FocusEvent) => {
+          const target = e.target as HTMLInputElement;
+          const path = target.value;
+          const valid = await validate(path);
+          if (!valid) {
+            new Notice('Unable to run configured ledger-cli program');
+            target.addClass('ledger-input-error');
+          } else {
+            target.removeClass('ledger-input-error');
+            this.plugin.settings.ledgerPath = path;
+            this.plugin.saveData(this.plugin.settings);
+          }
+        };
       });
 
     const div = containerEl.createEl('div', {
