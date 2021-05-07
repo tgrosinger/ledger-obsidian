@@ -85,20 +85,20 @@
     bind:selectedId={selectedDay}
     showWeekNums={false}
   />
-  <div class="ledger-form-row">
+  <div class="form-row">
     <TextSuggest
       bind:value={payee}
       placeholder="Payee"
       suggestions={txCache.payees}
-      classes="ledger-expense-payee"
+      classes="expense-payee"
     />
   </div>
 
   {#each lines as line, i (line.id)}
-    <div class="ledger-form-row">
+    <div class="form-row">
       {#if i > 0 && i !== lines.length - 1}
         <svg
-          class="ledger-remove-row"
+          class="remove-row"
           on:click={() => {
             removeRow(line.id);
           }}
@@ -115,13 +115,13 @@
       <TextSuggest
         placeholder="Account"
         bind:value={line.category}
-        classes="ledger-expense-category"
+        classes="expense-category"
         suggestions={txCache.categories}
       />
       <div class="input-icon">
         {#if i === lines.length - 1}
           <input
-            class="ledger-expense-amount"
+            class="expense-amount"
             type="number"
             placeholder="Amount"
             disabled={true}
@@ -129,7 +129,7 @@
           />
         {:else}
           <input
-            class="ledger-expense-amount"
+            class="expense-amount"
             type="number"
             placeholder="Amount"
             on:blur={formatAmount}
@@ -141,6 +141,50 @@
     </div>
   {/each}
 
-  <button id="ledger-add-row" on:click={addRow}> Add Row </button>
-  <button id="ledger-save-expense" on:click={save}> Save </button>
+  <button on:click={addRow}> Add Row </button>
+  <button on:click={save}> Save </button>
 </div>
+
+<style>
+  .form-row {
+    padding: 5px 0;
+    display: flex;
+  }
+
+  .remove-row {
+    margin: 7px 4px 7px 0;
+  }
+
+  .form-row > * {
+    margin-left: 5px;
+  }
+  .form-row > *:first-child {
+    margin-left: 0;
+  }
+
+  input.expense-amount {
+    width: 24%;
+  }
+
+  .input-icon {
+    width: 100px;
+    position: relative;
+  }
+
+  .input-icon > i {
+    position: absolute;
+    display: block;
+    transform: translate(0, -50%);
+    top: 50%;
+    pointer-events: none;
+    width: 25px;
+    text-align: center;
+    font-style: normal;
+  }
+
+  .input-icon > input {
+    /* important required to override mobile stylesheet */
+    padding-left: 25px !important;
+    width: 100%;
+  }
+</style>

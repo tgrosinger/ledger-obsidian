@@ -21,3 +21,13 @@
   bind:this={inputEl}
   bind:value
 />
+
+<style>
+  .expense-payee {
+    width: 100%;
+  }
+
+  .expense-category {
+    flex: 1;
+  }
+</style>

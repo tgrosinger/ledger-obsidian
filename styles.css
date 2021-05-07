@@ -2,32 +2,8 @@
 Transaction Entry Modal
 */
 
-.ledger-form-row {
-  padding: 5px 0;
-  display: flex;
-}
-
-.ledger-remove-row {
-  margin: 7px 0;
-}
-
-.is-mobile .ledger-remove-row {
-  margin: 11px 0;
-}
-
-.ledger-expense-payee {
-  width: 100%;
-}
-
-input.ledger-expense-category {
-  flex: 1;
-}
-
-.ledger-form-row > * {
-  margin-left: 5px;
-}
-.ledger-form-row > *:first-child {
-  margin-left: 0;
+.is-mobile .remove-row {
+  margin: 11px 4px 11px 0 !important;
 }
 
 .is-mobile input[type='number'] {
@@ -38,32 +14,6 @@ input.ledger-expense-category {
 
 .is-mobile button {
   margin: 5px 0;
-}
-
-input.ledger-expense-amount {
-  width: 24%;
-}
-
-.input-icon {
-  width: 100px;
-  position: relative;
-}
-
-.input-icon > i {
-  position: absolute;
-  display: block;
-  transform: translate(0, -50%);
-  top: 50%;
-  pointer-events: none;
-  width: 25px;
-  text-align: center;
-  font-style: normal;
-}
-
-.input-icon > input {
-  /* important required to override mobile stylesheet */
-  padding-left: 25px !important;
-  width: 100%;
 }
 
 /*
