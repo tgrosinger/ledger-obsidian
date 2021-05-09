@@ -4,13 +4,13 @@
   "description": "Plain text accounting",
   "main": "main.js",
   "scripts": {
-    "test": "jest",
+    "test": "yarn run compile-parser && jest",
     "test-watch": "jest --watchAll",
     "dev": "rollup --config rollup.config.js -w",
     "build": "rollup --config rollup.config.js",
     "prettier": "prettier --write 'src/**/*.+(ts|tsx|json|html|css)'",
     "eslint": "eslint . --ext .ts,.tsx --fix",
-    "compile-parser": "nearleyc grammar/ledger.ne -o grammar/ledger.js",
+    "compile-parser": "nearleyc grammar/ledger.ne -o grammar/ledger.ts",
     "nearley-test": "nearley-test"
   },
   "keywords": [],
@@ -22,8 +22,10 @@
     "@rollup/plugin-typescript": "8.1.0",
     "@testing-library/svelte": "3.0.2",
     "@tsconfig/svelte": "1.0.10",
+    "@types/d3": "6.3.0",
     "@types/jest": "26.0.18",
     "@types/lodash": "4.14.168",
+    "@types/nearley": "2.11.1",
     "@types/node": "^14.14.2",
     "@typescript-eslint/eslint-plugin": "4.6.0",
     "@typescript-eslint/parser": "4.6.0",
@@ -48,7 +50,9 @@
     "typescript": "^4.0.3"
   },
   "dependencies": {
+    "@observablehq/plot": "0.1.0",
     "@popperjs/core": "2.9.2",
+    "d3": "6.7.0",
     "lodash": "4.17.21",
     "neverthrow": "3.0.0",
     "obsidian-calendar-ui": "0.3.12",
