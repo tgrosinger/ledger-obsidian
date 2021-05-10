@@ -5,8 +5,8 @@ import {
   getTransactionCache,
 } from './file-interface';
 import { billIcon, buyMeACoffee, paypal } from './graphics';
+import { LedgerView, LedgerViewType } from './ledgerview';
 import type { TransactionCache } from './parser';
-import { Renderer } from './renderer';
 import { ISettings, settingsWithDefaults } from './settings';
 import AddExpenseUI from './ui/AddExpenseUI.svelte';
 import type { default as MomentType } from 'moment';
@@ -29,7 +29,7 @@ export default class LedgerPlugin extends Plugin {
   public settings: ISettings;
   public txCache: TransactionCache;
 
-  private renderer: Renderer;
+  private readonly renderer: LedgerView;
 
   public async onload(): Promise<void> {
     console.log('ledger: Loading plugin v' + this.manifest.version);
@@ -50,16 +50,10 @@ export default class LedgerPlugin extends Plugin {
       }),
     );
 
-    this.registerEvent(
-      this.app.workspace.on('layout-change', this.renderLedgerPreview),
-    );
+    this.registerView(LedgerViewType, (leaf) => new LedgerView(leaf, this));
 
     this.registerEvent(
-      this.app.vault.on('modify', (file: TAbstractFile) => {
-        if (this.renderer && file.path === this.settings.ledgerFile) {
-          this.renderer.markFileChanged();
-        }
-      }),
+      this.app.workspace.on('layout-change', this.switchToLedgerView),
     );
 
     this.app.workspace.onLayoutReady(() => {
@@ -81,7 +75,7 @@ export default class LedgerPlugin extends Plugin {
     );
   };
 
-  private readonly renderLedgerPreview = (): void => {
+  private readonly switchToLedgerView = (): void => {
     const activeLeaf = this.app.workspace.getMostRecentLeaf();
     const viewState = activeLeaf.getViewState().state;
     if (
@@ -94,12 +88,9 @@ export default class LedgerPlugin extends Plugin {
       return;
     }
 
-    if (activeLeaf.view instanceof MarkdownView) {
-      if (!this.renderer) {
-        this.renderer = new Renderer(this);
-      }
-      this.renderer.render(activeLeaf.view.previewMode.containerEl);
-    }
+    const vs = activeLeaf.getViewState();
+    vs.type = 'ledger';
+    activeLeaf.setViewState(vs);
   };
 }
 
