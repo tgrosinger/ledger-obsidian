@@ -961,6 +961,11 @@
   resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.168.tgz#fe24632e79b7ade3f132891afff86caa5e5ce008"
   integrity sha512-oVfRvqHV/V6D1yifJbVRU3TMp8OT6o6BG+U9MkwuJ3U8/CsDHvalRpsxBqivn71ztOFZBTfJMvETbqHiaNSj7Q==
 
+"@types/moo@0.5.4":
+  version "0.5.4"
+  resolved "https://registry.yarnpkg.com/@types/moo/-/moo-0.5.4.tgz#a7d792c8c70af6f26d1717ccd20fe4a1fa926d43"
+  integrity sha512-1cJMV+3lvSvb21J4SqQlwxSwhCvrj8bmGnsHeODIokTAwGEn1fI9sGJWeAPCjArZicrtLF7Dg7frA1V7DT8Lrw==
+
 "@types/nearley@2.11.1":
   version "2.11.1"
   resolved "https://registry.yarnpkg.com/@types/nearley/-/nearley-2.11.1.tgz#6ac3f57c00ca28071a1774ec72d2e45750f21420"

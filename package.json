@@ -25,6 +25,7 @@
     "@types/d3": "6.3.0",
     "@types/jest": "26.0.18",
     "@types/lodash": "4.14.168",
+    "@types/moo": "0.5.4",
     "@types/nearley": "2.11.1",
     "@types/node": "^14.14.2",
     "@typescript-eslint/eslint-plugin": "4.6.0",
@@ -37,7 +38,6 @@
     "jest": "26.6.3",
     "jest-mock-extended": "1.0.10",
     "moment": "2.29.1",
-    "moo": "0.5.1",
     "nearley": "2.20.1",
     "obsidian": "https://github.com/obsidianmd/obsidian-api/archive/81ab85ade4552c9116c1e10d009127e62019c923.tar.gz",
     "rollup": "2.35.1",
@@ -53,6 +53,7 @@
     "@popperjs/core": "2.9.2",
     "d3": "6.7.0",
     "lodash": "4.17.21",
+    "moo": "0.5.1",
     "neverthrow": "3.0.0",
     "obsidian-calendar-ui": "0.3.12",
     "svelte": "3.32.3"

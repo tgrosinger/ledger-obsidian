@@ -16,7 +16,8 @@
 
 @{%
     // https://github.com/no-context/moo
-    const moo = require("moo")
+    import moo from 'moo';
+
     const lexer = moo.states({
       main: {
         date: { match: /[0-9]{4}[-\/][0-9]{2}[-\/][0-9]{2}/, next: 'txStart' },
@@ -24,7 +25,7 @@
         comment: { match: /[;#|][^\n]+/, value: (s:string) => s.slice(1).trim() },
       },
       txStart: {
-        check: { match: /\([0-9]+\)[ \t]+/, value: (s:string) => parseFloat(s.trim().slice(1, -1)) },
+        check: { match: /\([0-9]+\)[ \t]+/, value: (s:string) => s.trim().slice(1, -1) },
         ws:     /[ \t]+/,
         payee: { match: /[a-zA-Z0-9 ]+/, value: (s:string) => s.trim() },
         reconciled: /[!*]/,
@@ -33,7 +34,7 @@
       expenseLine: {
         newline: { match: '\n', lineBreaks: true },
         ws:     /[ \t]+/,
-        number: { match: /-?[0-9.]+/, value: (s:string) => parseFloat(s) },
+        number: /-?[0-9.]+/,
         category: { match: /[a-zA-Z0-9: ]+/, value: (s:string) => s.trim() },
         currency: /[$£₤€₿₹¥₩]/,
         comment: { match: /[;#|][^\n]+/, value: (s:string) => s.slice(1).trim() },
@@ -53,12 +54,12 @@ main ->
   | %comment     {% ([c]) => { return { type: 'comment', value: c.value } } %}
   | alias        {% ([a]) => { return { type: 'alias', value: a } } %}
 
-transaction -> %date %ws %check:? %payee %newline expenselines
+transaction -> %date %ws check:? %payee %newline expenselines
                                                   {%
                                                     function(d) {
                                                       return {
                                                         date: d[0].value,
-                                                        check: d[2]?.value,
+                                                        check: d[2] || undefined,
                                                         payee: d[3].value,
                                                         expenselines: d[5]
                                                       }
@@ -86,4 +87,5 @@ expenseline ->
 
 reconciled -> %reconciled %ws:+                   {% ([r,]) => r.value %}
 alias -> "alias" %category %equal %category       {% ([,l,,r]) => { return { left: l.value, right: r.value } } %}
-amount -> %currency %number                       {% ([c,a]) => { return {currency: c.value, amount: a.value} } %}
+amount -> %currency %number                       {% ([c,a]) => { return {currency: c.value, amount: parseFloat(a.value)} } %}
+check -> %check                                   {% ([c]) => parseFloat(c.value) %}
