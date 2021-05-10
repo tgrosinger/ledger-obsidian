@@ -1,5 +1,19 @@
 @preprocessor typescript
 
+### Not supported ###
+#
+# Transactions:
+# - Metadata (https://www.ledger-cli.org/3.0/doc/ledger3.html#Metadata)
+# - Virtual postings (https://www.ledger-cli.org/3.0/doc/ledger3.html#Virtual-postings)
+# - Expression amounts (https://www.ledger-cli.org/3.0/doc/ledger3.html#Expression-amounts)
+# - Balance assertions (https://www.ledger-cli.org/3.0/doc/ledger3.html#Balance-assertions)
+# - Balance assignments (https://www.ledger-cli.org/3.0/doc/ledger3.html#Balance-assignments)
+# - Commodities (https://www.ledger-cli.org/3.0/doc/ledger3.html#Commodity-prices)
+#
+# Command Directives: (https://www.ledger-cli.org/3.0/doc/ledger3.html#Command-Directives)
+# - All except the `alias` command
+
+
 @{%
     // https://github.com/no-context/moo
     const moo = require("moo")
@@ -35,9 +49,8 @@
 @lexer lexer
 
 main ->
-    transaction  {% ([tx]) => { return { type: 'tx', value: tx } } %}
+    transaction  {% ([t]) => { return { type: 'tx', value: t } } %}
   | %comment     {% ([c]) => { return { type: 'comment', value: c.value } } %}
-  | account      {% ([a]) => { return { type: 'account', value: a } } %}
   | alias        {% ([a]) => { return { type: 'alias', value: a } } %}
 
 transaction -> %date %ws %check:? %payee %newline expenselines
@@ -45,7 +58,7 @@ transaction -> %date %ws %check:? %payee %newline expenselines
                                                     function(d) {
                                                       return {
                                                         date: d[0].value,
-                                                        check: d[2] ? d[2].value : undefined,
+                                                        check: d[2]?.value,
                                                         payee: d[3].value,
                                                         expenselines: d[5]
                                                       }
@@ -61,17 +74,16 @@ expenseline ->
                                                   {%
                                                     function(d) {
                                                       return {
+                                                        reconcile: d[1] || '',
                                                         category: d[2].value,
-                                                        currency: d[3] ? d[3].currency : undefined,
-                                                        amount: d[3] ? d[3].amount : undefined,
-                                                        comment: d[5] ? d[5].value : '',
-                                                        reconcile: d[1] ? d[1] : '',
+                                                        currency: d[3]?.currency,
+                                                        amount: d[3]?.amount,
+                                                        comment: d[5]?.value || '',
                                                       }
                                                     }
                                                   %}
-  | %ws:+ %comment                                 {% ([,c]) => { return {comment: c.value} } %}
+  | %ws:+ %comment                                {% ([,c]) => { return {comment: c.value} } %}
 
-account -> "account"
 reconciled -> %reconciled %ws:+                   {% ([r,]) => r.value %}
 alias -> "alias" %category %equal %category       {% ([,l,,r]) => { return { left: l.value, right: r.value } } %}
 amount -> %currency %number                       {% ([c,a]) => { return {currency: c.value, amount: a.value} } %}

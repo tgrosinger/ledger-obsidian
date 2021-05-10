@@ -7,21 +7,16 @@ beforeEach(() => {
   parser = new Parser(Grammar.fromCompiled(grammar));
 });
 
-describe('parsing an account', () => {
-  test('when it is a simple account', () => {
-    /*
-        account Assets:Banking
-            note Where money sits
-            alias b
-            check commodity == "$"
-            assert commodity == "$"
-      */
-  });
-});
-
 describe('parsing a comment', () => {
   test('when it is a simple comment', () => {
     parser.feed('; This is a comment');
+
+    expect(parser.results).toEqual([
+      { type: 'comment', value: 'This is a comment' },
+    ]);
+  });
+  test('when there is no space', () => {
+    parser.feed(';This is a comment');
 
     expect(parser.results).toEqual([
       { type: 'comment', value: 'This is a comment' },
