@@ -15,7 +15,7 @@ export const accounts = async (settings: ISettings): Promise<string[]> =>
  */
 export const validate = async (ledgerPath: string): Promise<boolean> =>
   (
-    await run(settingsWithDefaults({ ledgerPath: ledgerPath }), '--version')
+    await run(settingsWithDefaults({ ledgerPath }), '--version')
   ).match(
     (_) => true,
     (e) => {
