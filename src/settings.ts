@@ -3,9 +3,6 @@ const defaultSettings: ISettings = {
   ledgerFile: 'Ledger.md',
   includeFinalLineAmount: false,
   enableLedgerVis: false,
-
-  useExternalLedger: false,
-  ledgerPath: '', // TODO
 };
 
 export interface ISettings {
@@ -13,9 +10,6 @@ export interface ISettings {
   ledgerFile: string;
   includeFinalLineAmount: boolean;
   enableLedgerVis: boolean;
-
-  useExternalLedger: boolean;
-  ledgerPath: string;
 }
 
 export const settingsWithDefaults = (

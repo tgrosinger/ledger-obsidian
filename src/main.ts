@@ -12,15 +12,12 @@ import AddExpenseUI from './ui/AddExpenseUI.svelte';
 import type { default as MomentType } from 'moment';
 import {
   addIcon,
-  MarkdownView,
   Modal,
-  Notice,
   Plugin,
   PluginSettingTab,
   Setting,
   TAbstractFile,
 } from 'obsidian';
-import { validate } from './ledger-cli/ledger';
 
 declare global {
   interface Window {
@@ -198,44 +195,6 @@ class SettingsTab extends PluginSettingTab {
             this.plugin.settings.includeFinalLineAmount = value;
             this.plugin.saveData(this.plugin.settings);
           });
-      });
-
-    new Setting(containerEl)
-      .setName('Use external ledger-cli')
-      .setDesc(
-        'Must be installed from https://www.ledger-cli.org. See this plugins Readme for more info.',
-      )
-      .addToggle((toggle) => {
-        toggle
-          .setValue(this.plugin.settings.useExternalLedger)
-          .onChange((value) => {
-            this.plugin.settings.useExternalLedger = value;
-            this.plugin.saveData(this.plugin.settings);
-            this.display();
-          });
-      });
-
-    new Setting(containerEl)
-      .setName('External ledger-cli path')
-      .setDesc('Location on this sytem of the installed ledger-cli program')
-      .setDisabled(!this.plugin.settings.useExternalLedger)
-      .addText((text) => {
-        text
-          .setPlaceholder('/path/to/ledger-cli.app')
-          .setValue(this.plugin.settings.ledgerPath);
-        text.inputEl.onblur = async (e: FocusEvent) => {
-          const target = e.target as HTMLInputElement;
-          const path = target.value;
-          const valid = await validate(path);
-          if (!valid) {
-            new Notice('Unable to run configured ledger-cli program');
-            target.addClass('ledger-input-error');
-          } else {
-            target.removeClass('ledger-input-error');
-            this.plugin.settings.ledgerPath = path;
-            this.plugin.saveData(this.plugin.settings);
-          }
-        };
       });
 
     const div = containerEl.createEl('div', {
