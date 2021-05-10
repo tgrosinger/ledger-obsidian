@@ -145,6 +145,70 @@ describe('parsing a transaction', () => {
       },
     ]);
   });
+  test('when there are commas in numbers', () => {
+    parser.feed(`2018-04-03 (1234) Half & Price-Books\n`);
+    parser.feed('    Expenses:Books   $3,454,500\n');
+    parser.feed('    Assets:Checking  $5,321.45');
+
+    expect(parser.results).toEqual([
+      {
+        type: 'tx',
+        value: {
+          check: 1234,
+          date: '2018-04-03',
+          payee: 'Half & Price-Books',
+          expenselines: [
+            {
+              amount: 3454500,
+              currency: '$',
+              category: 'Expenses:Books',
+              reconcile: '',
+              comment: '',
+            },
+            {
+              amount: 5321.45,
+              currency: '$',
+              category: 'Assets:Checking',
+              comment: '',
+              reconcile: '',
+            },
+          ],
+        },
+      },
+    ]);
+  });
+  test('when there are special characters in the payee', () => {
+    parser.feed(`2018-04-03 (1234) Half & Price-Books\n`);
+    parser.feed('    Expenses:Books   $300\n');
+    parser.feed('    Assets:Checking  $300');
+
+    expect(parser.results).toEqual([
+      {
+        type: 'tx',
+        value: {
+          check: 1234,
+          date: '2018-04-03',
+          payee: 'Half & Price-Books',
+          expenselines: [
+            {
+              amount: 300,
+              currency: '$',
+              category: 'Expenses:Books',
+              reconcile: '',
+              comment: '',
+            },
+            {
+              amount: 300,
+              currency: '$',
+              category: 'Assets:Checking',
+              comment: '',
+              reconcile: '',
+            },
+          ],
+        },
+      },
+    ]);
+  });
   test('when there is a full-line comment', () => {
     parser.feed(`2018-04-03 (1234) Half Price Books\n`);
     parser.feed('    ; This is a comment\n');

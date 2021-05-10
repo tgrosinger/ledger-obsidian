@@ -27,14 +27,14 @@
       txStart: {
         check: { match: /\([0-9]+\)[ \t]+/, value: (s:string) => s.trim().slice(1, -1) },
         ws:     /[ \t]+/,
-        payee: { match: /[a-zA-Z0-9 ]+/, value: (s:string) => s.trim() },
         reconciled: /[!*]/,
+        payee: { match: /[^!*\n]+/, value: (s:string) => s.trim() },
         newline: { match: '\n', lineBreaks: true, next: 'expenseLine'},
       },
       expenseLine: {
         newline: { match: '\n', lineBreaks: true },
         ws:     /[ \t]+/,
-        number: /-?[0-9.]+/,
+        number: { match: /-?[0-9.,]+/, value: (s:string) => s.replace(/,/g, '') },
         category: { match: /[a-zA-Z0-9: ]+/, value: (s:string) => s.trim() },
         currency: /[$£₤€₿₹¥₩]/,
         comment: { match: /[;#|][^\n]+/, value: (s:string) => s.slice(1).trim() },
