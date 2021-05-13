@@ -61,5 +61,6 @@ export const getTransactionCache = async (
     return;
   }
   const fileContents = await vault.read(file);
-  return parse(fileContents, settings.currencySymbol);
+
+  return parse(fileContents);
 };

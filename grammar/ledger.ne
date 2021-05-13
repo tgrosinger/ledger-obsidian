@@ -13,6 +13,7 @@
 # Command Directives: (https://www.ledger-cli.org/3.0/doc/ledger3.html#Command-Directives)
 # - All except the `alias` command
 
+# TODO: Currently a blank line is required between transaction entries.
 
 @{%
     // https://github.com/no-context/moo
@@ -23,6 +24,7 @@
         date: { match: /[0-9]{4}[-\/][0-9]{2}[-\/][0-9]{2}/, next: 'txStart' },
         alias: { match: 'alias', next: 'alias' },
         comment: { match: /[;#|][^\n]+/, value: (s:string) => s.slice(1).trim() },
+        newline: { match: '\n', lineBreaks: true },
       },
       txStart: {
         check: { match: /\([0-9]+\)[ \t]+/, value: (s:string) => s.trim().slice(1, -1) },
@@ -43,6 +45,7 @@
       alias: {
         category: { match: /[a-zA-Z0-9: ]+/, value: (s:string) => s.trim() },
         equal: '=',
+        newline: { match: '\n', lineBreaks: true, next: 'main' },
       },
     });
 %}
@@ -50,6 +53,10 @@
 @lexer lexer
 
 main ->
+    element
+  | main %newline element                     {% ([rest,,l]) => { return [rest,l].flat(1) } %}
+
+element ->
     transaction  {% ([t]) => { return { type: 'tx', value: t } } %}
   | %comment     {% ([c]) => { return { type: 'comment', value: c.value } } %}
   | alias        {% ([a]) => { return { type: 'alias', value: a } } %}
