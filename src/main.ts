@@ -1,12 +1,11 @@
 import {
   appendLedger,
-  ExpenseLine,
   formatExpense,
   getTransactionCache,
 } from './file-interface';
 import { billIcon, buyMeACoffee, paypal } from './graphics';
 import { LedgerView, LedgerViewType } from './ledgerview';
-import type { TransactionCache } from './parser';
+import type { Expenseline, Transaction,TransactionCache } from './parser';
 import { ISettings, settingsWithDefaults } from './settings';
 import AddExpenseUI from './ui/AddExpenseUI.svelte';
 import type { default as MomentType } from 'moment';
@@ -51,6 +50,8 @@ export default class LedgerPlugin extends Plugin {
     );
 
     this.registerView(LedgerViewType, (leaf) => new LedgerView(leaf, this));
+
+    this.registerExtensions(['ledger'], LedgerViewType);
 
     this.registerEvent(
       this.app.workspace.on('layout-change', this.switchToLedgerView),
@@ -108,15 +109,8 @@ class AddExpenseModal extends Modal {
       target: contentEl,
       props: {
         currencySymbol: this.plugin.settings.currencySymbol,
-        saveFn: async (
-          date: string,
-          payee: string,
-          lines: ExpenseLine[],
-        ): Promise<void> => {
-          const formatted = formatExpense(
-            { date, payee, lines },
-            this.plugin.settings,
-          );
+        saveFn: async (tx: Transaction): Promise<void> => {
+          const formatted = formatExpense(tx, this.plugin.settings);
           await appendLedger(
             this.app.metadataCache,
             this.app.vault,
@@ -156,7 +150,9 @@ class SettingsTab extends PluginSettingTab {
       .addText((text) => {
         text.setPlaceholder('$').setValue(this.plugin.settings.currencySymbol);
         text.inputEl.onblur = (e: FocusEvent) => {
-          this.plugin.settings.currencySymbol = (e.target as HTMLInputElement).value;
+          this.plugin.settings.currencySymbol = (
+            e.target as HTMLInputElement
+          ).value;
           this.plugin.saveData(this.plugin.settings);
         };
       });
@@ -169,7 +165,9 @@ class SettingsTab extends PluginSettingTab {
           .setValue(this.plugin.settings.ledgerFile)
           .setPlaceholder('Ledger.md');
         text.inputEl.onblur = (e: FocusEvent) => {
-          this.plugin.settings.ledgerFile = (e.target as HTMLInputElement).value;
+          this.plugin.settings.ledgerFile = (
+            e.target as HTMLInputElement
+          ).value;
           this.plugin.saveData(this.plugin.settings);
         };
       });

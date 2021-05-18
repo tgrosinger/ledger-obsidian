@@ -1,6 +1,5 @@
-import { Grammar, Parser } from 'nearley';
-
 import grammar from '../grammar/ledger';
+import { Grammar, Parser } from 'nearley';
 
 let parser: Parser;
 beforeEach(() => {
@@ -9,9 +8,9 @@ beforeEach(() => {
 
 describe('parsing multiple blocks', () => {
   test('when there are not newlines separating blocks', () => {
-    parser.feed(`; This is a comment\n`);
+    parser.feed('; This is a comment\n');
     parser.feed('alias Dining=Expenses:Entertainment:Dining\n');
-    parser.feed(`2018-04-03 (1234) Half & Price-Books\n`);
+    parser.feed('2018-04-03 (1234) Half & Price-Books\n');
     parser.feed('    Expenses:Books   $3,454,500\n');
     parser.feed('    Assets:Checking  $5,321.45');
 
@@ -91,7 +90,7 @@ describe('parsing an alias', () => {
 
 describe('parsing a transaction', () => {
   test('when there are more than two expense lines', () => {
-    parser.feed(`2018-04-03 Half Price Books\n`);
+    parser.feed('2018-04-03 Half Price Books\n');
     parser.feed('    Expenses:Books   $300\n');
     parser.feed('    Expenses:Food:Grocery  $25\n');
     parser.feed('    Assets:Checking  $-300');
@@ -133,7 +132,7 @@ describe('parsing a transaction', () => {
     ]);
   });
   test('when there is a pending expense line', () => {
-    parser.feed(`2018-04-03 Half Price Books\n`);
+    parser.feed('2018-04-03 Half Price Books\n');
     parser.feed('    Expenses:Books   $300\n');
     parser.feed(' !  Assets:Checking  $300');
 
@@ -167,7 +166,7 @@ describe('parsing a transaction', () => {
     ]);
   });
   test('when there is a a check number', () => {
-    parser.feed(`2018-04-03 (1234) Half Price Books\n`);
+    parser.feed('2018-04-03 (1234) Half Price Books\n');
     parser.feed('    Expenses:Books   $300\n');
     parser.feed('    Assets:Checking  $300');
 
@@ -201,7 +200,7 @@ describe('parsing a transaction', () => {
     ]);
   });
   test('when there are commas in numbers', () => {
-    parser.feed(`2018-04-03 (1234) Half & Price-Books\n`);
+    parser.feed('2018-04-03 (1234) Half & Price-Books\n');
     parser.feed('    Expenses:Books   $3,454,500\n');
     parser.feed('    Assets:Checking  $5,321.45');
 
@@ -235,7 +234,7 @@ describe('parsing a transaction', () => {
     ]);
   });
   test('when there are special characters in the payee', () => {
-    parser.feed(`2018-04-03 (1234) Half & Price-Books\n`);
+    parser.feed('2018-04-03 (1234) Half & Price-Books\n');
     parser.feed('    Expenses:Books   $300\n');
     parser.feed('    Assets:Checking  $300');
 
@@ -269,7 +268,7 @@ describe('parsing a transaction', () => {
     ]);
   });
   test('when there is a full-line comment', () => {
-    parser.feed(`2018-04-03 (1234) Half Price Books\n`);
+    parser.feed('2018-04-03 (1234) Half Price Books\n');
     parser.feed('    ; This is a comment\n');
     parser.feed('    Expenses:Books   $300\n');
     parser.feed('    Assets:Checking  $300');

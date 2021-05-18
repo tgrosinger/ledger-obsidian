@@ -4,25 +4,34 @@
   import { Calendar } from 'obsidian-calendar-ui';
   import { max } from 'lodash';
 
-  import type { ExpenseLine } from '../file-interface';
-  import type { TransactionCache } from '../parser';
+  import type { TransactionCache, Expenseline, Transaction } from '../parser';
   import type { Moment } from 'moment';
 
   export let currencySymbol: string;
   export let txCache: TransactionCache;
-  export let saveFn: (
-    date: string,
-    payee: string,
-    lines: ExpenseLine[],
-  ) => Promise<void>;
+  export let saveFn: (tx: Transaction) => Promise<void>;
   export let close: () => void;
 
   let today = window.moment();
   let selectedDay: string;
   let payee: string;
-  let lines: ExpenseLine[] = [
-    { category: '', amount: 0, id: 1 },
-    { category: '', amount: 0, id: 2 },
+  let lines: Expenseline[] = [
+    {
+      category: '',
+      amount: 0,
+      id: 1,
+      currency: currencySymbol,
+      reconcile: '',
+      comment: undefined,
+    },
+    {
+      category: '',
+      amount: 0,
+      id: 2,
+      currency: currencySymbol,
+      reconcile: '',
+      comment: undefined,
+    },
   ];
 
   $: remainder = (
@@ -35,6 +44,9 @@
       category: '',
       amount: 0.0,
       id: max(lines.map((line) => line.id)) + 1,
+      currency: currencySymbol,
+      reconcile: '',
+      comment: undefined,
     });
     lines = lines; // Svelte reactivity hack
   };
@@ -71,7 +83,17 @@
       return;
     }
 
-    await saveFn(date, payee, lines);
+    const tx: Transaction = {
+      type: 'tx',
+      value: {
+        check: undefined,
+        date,
+        payee,
+        expenselines: lines,
+      },
+    };
+
+    await saveFn(tx);
     close();
   };
 </script>

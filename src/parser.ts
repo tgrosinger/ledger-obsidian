@@ -1,9 +1,6 @@
+import grammar from '../grammar/ledger';
 import { flatMap, sortedUniq } from 'lodash';
 import { Grammar, Parser } from 'nearley';
-import grammar from '../grammar/ledger';
-
-// TODO: Replace manual parsing with the Nearley grammar
-// Be sure to create a unit test for parsing a file with multiple transactions
 
 export interface TransactionCache {
   transactions: Transaction[];
@@ -11,15 +8,16 @@ export interface TransactionCache {
   categories: string[];
 }
 
-interface Expenseline {
+export interface Expenseline {
   amount: number;
   currency: string;
   category: string;
   reconcile: '' | '*' | '!';
   comment: string;
+  id: number | undefined;
 }
 
-interface Transaction {
+export interface Transaction {
   type: 'tx';
   value: {
     check: number;
@@ -29,7 +27,7 @@ interface Transaction {
   };
 }
 
-interface Alias {
+export interface Alias {
   type: 'alias';
   value: {
     left: string;
@@ -37,30 +35,30 @@ interface Alias {
   };
 }
 
-interface Comment {
+export interface Comment {
   type: 'comment';
   value: string;
 }
 
-type element = Transaction | Alias | Comment;
+type Element = Transaction | Alias | Comment;
 
 export const parse = (fileContents: string): TransactionCache => {
   const splitFileContents = fileContents.split(/\n[\W]*\n/); // Split on blank lines
   const results = splitFileContents
     .filter((lines) => lines.trim() !== '')
-    .map((lines): element[] => {
+    .map((lines): Element[] => {
       const parser = new Parser(Grammar.fromCompiled(grammar));
 
       try {
-        const results = parser.feed(lines).finish();
-        if (results.length !== 1) {
+        const innerresults = parser.feed(lines).finish();
+        if (innerresults.length !== 1) {
           console.error(
-            `Failed to parse (${results.length} results): "${lines}"`,
+            `Failed to parse (${innerresults.length} results): "${lines}"`,
           );
           return undefined;
         }
 
-        return results[0];
+        return innerresults[0];
       } catch (error) {
         console.error(`Failed to parse: "${lines}"`);
         return undefined;
@@ -89,7 +87,7 @@ export const parse = (fileContents: string): TransactionCache => {
 
   return {
     transactions: txs,
-    payees: payees,
-    categories: categories,
+    payees,
+    categories,
   };
 };
