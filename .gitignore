@@ -17,3 +17,7 @@ yarn-cache
 # Obsidian
 
 data.json
+
+# Generated Files
+
+grammar/ledger.ts
