@@ -1,24 +1,37 @@
-import { parse } from '../src/parser';
+import { parse, Transaction } from '../src/parser';
 
 describe('parsing a ledger file', () => {
   describe('transactions are populated correctly', () => {
     test('when the file is empty', () => {
       const contents = '';
-      const txCache = parse(contents, '$');
+      const txCache = parse(contents);
       expect(txCache.transactions).toHaveLength(0);
     });
     test('when the final expense line has no amount', () => {
       const contents = `2021/04/20 Obsidian
       e:Spending Money    $20.00
       b:CreditUnion`;
-      const txCache = parse(contents, '$');
+      const txCache = parse(contents);
       const expected = {
-        date: '2021/04/20',
-        payee: 'Obsidian',
-        lines: [
-          { category: 'e:Spending Money', amount: 20, id: 0 },
-          { category: 'b:CreditUnion', amount: -20, id: 0 },
-        ],
+        type: 'tx',
+        value: {
+          date: '2021/04/20',
+          payee: 'Obsidian',
+          expenselines: [
+            {
+              category: 'e:Spending Money',
+              amount: 20,
+              comment: '',
+              currency: '$',
+              reconcile: '',
+            },
+            {
+              category: 'b:CreditUnion',
+              comment: '',
+              reconcile: '',
+            },
+          ],
+        },
       };
       expect(txCache.transactions).toHaveLength(1);
       expect(txCache.transactions[0]).toEqual(expected);
@@ -27,40 +40,68 @@ describe('parsing a ledger file', () => {
       const contents = `2021/04/20 Obsidian
       e:Spending Money    $20.00
       b:CreditUnion       $-20.00`;
-      const txCache = parse(contents, '$');
+      const txCache = parse(contents);
       const expected = {
-        date: '2021/04/20',
-        payee: 'Obsidian',
-        lines: [
-          { category: 'e:Spending Money', amount: 20, id: 0 },
-          { category: 'b:CreditUnion', amount: -20, id: 0 },
-        ],
+        type: 'tx',
+        value: {
+          date: '2021/04/20',
+          payee: 'Obsidian',
+          expenselines: [
+            {
+              category: 'e:Spending Money',
+              amount: 20,
+              comment: '',
+              currency: '$',
+              reconcile: '',
+            },
+            {
+              category: 'b:CreditUnion',
+              amount: -20,
+              comment: '',
+              currency: '$',
+              reconcile: '',
+            },
+          ],
+        },
       };
       expect(txCache.transactions).toHaveLength(1);
       expect(txCache.transactions[0]).toEqual(expected);
-    });
-    test('when the final expense is incorrect', () => {
-      const contents = `2021/04/20 Obsidian
-      e:Spending Money    $20.00
-      e:Household Goods   $5.00
-      b:CreditUnion       $-21.00`;
-      const txCache = parse(contents, '$');
-      expect(txCache.transactions).toHaveLength(0);
     });
     test('when there are multiple expense lines', () => {
       const contents = `2021/04/20 Obsidian
       e:Spending Money    $20.00
       e:Household Goods   $5.00
       b:CreditUnion       $-25.00`;
-      const txCache = parse(contents, '$');
+      const txCache = parse(contents);
       const expected = {
-        date: '2021/04/20',
-        payee: 'Obsidian',
-        lines: [
-          { category: 'e:Spending Money', amount: 20, id: 0 },
-          { category: 'e:Household Goods', amount: 5, id: 0 },
-          { category: 'b:CreditUnion', amount: -25, id: 0 },
-        ],
+        type: 'tx',
+        value: {
+          date: '2021/04/20',
+          payee: 'Obsidian',
+          expenselines: [
+            {
+              category: 'e:Spending Money',
+              amount: 20,
+              comment: '',
+              currency: '$',
+              reconcile: '',
+            },
+            {
+              category: 'e:Household Goods',
+              amount: 5,
+              comment: '',
+              currency: '$',
+              reconcile: '',
+            },
+            {
+              category: 'b:CreditUnion',
+              amount: -25,
+              comment: '',
+              currency: '$',
+              reconcile: '',
+            },
+          ],
+        },
       };
       expect(txCache.transactions).toHaveLength(1);
       expect(txCache.transactions[0]).toEqual(expected);
@@ -73,22 +114,52 @@ describe('parsing a ledger file', () => {
 2021/04/21   Food Co-op
       e:Food:Groceries    $45.00
       b:CreditUnion       $-45.00`;
-      const txCache = parse(contents, '$');
+      const txCache = parse(contents);
       const expected1 = {
-        date: '2021/04/20',
-        payee: 'Obsidian',
-        lines: [
-          { category: 'e:Spending Money', amount: 20, id: 0 },
-          { category: 'b:CreditUnion', amount: -20, id: 0 },
-        ],
+        type: 'tx',
+        value: {
+          date: '2021/04/20',
+          payee: 'Obsidian',
+          expenselines: [
+            {
+              category: 'e:Spending Money',
+              amount: 20,
+              currency: '$',
+              comment: '',
+              reconcile: '',
+            },
+            {
+              category: 'b:CreditUnion',
+              amount: -20,
+              currency: '$',
+              comment: '',
+              reconcile: '',
+            },
+          ],
+        },
       };
       const expected2 = {
-        date: '2021/04/21',
-        payee: 'Food Co-op',
-        lines: [
-          { category: 'e:Food:Groceries', amount: 45, id: 0 },
-          { category: 'b:CreditUnion', amount: -45, id: 0 },
-        ],
+        type: 'tx',
+        value: {
+          date: '2021/04/21',
+          payee: 'Food Co-op',
+          expenselines: [
+            {
+              category: 'e:Food:Groceries',
+              amount: 45,
+              currency: '$',
+              comment: '',
+              reconcile: '',
+            },
+            {
+              category: 'b:CreditUnion',
+              amount: -45,
+              currency: '$',
+              comment: '',
+              reconcile: '',
+            },
+          ],
+        },
       };
       expect(txCache.transactions).toHaveLength(2);
       expect(txCache.transactions[0]).toEqual(expected1);
@@ -99,33 +170,76 @@ describe('parsing a ledger file', () => {
     !  e:Spending Money    $20.00
     * e:Household Goods   $5.00
       b:CreditUnion       $-25.00`;
-      const txCache = parse(contents, '$');
+      const txCache = parse(contents);
       const expected = {
-        date: '2021/04/20',
-        payee: 'Obsidian',
-        lines: [
-          { category: 'e:Spending Money', amount: 20, id: 0 },
-          { category: 'e:Household Goods', amount: 5, id: 0 },
-          { category: 'b:CreditUnion', amount: -25, id: 0 },
-        ],
+        type: 'tx',
+        value: {
+          date: '2021/04/20',
+          payee: 'Obsidian',
+          expenselines: [
+            {
+              category: 'e:Spending Money',
+              amount: 20,
+              currency: '$',
+              comment: '',
+              reconcile: '!',
+            },
+            {
+              category: 'e:Household Goods',
+              amount: 5,
+              currency: '$',
+              comment: '',
+              reconcile: '*',
+            },
+            {
+              category: 'b:CreditUnion',
+              amount: -25,
+              currency: '$',
+              comment: '',
+              reconcile: '',
+            },
+          ],
+        },
       };
       expect(txCache.transactions).toHaveLength(1);
       expect(txCache.transactions[0]).toEqual(expected);
     });
     test('Comments are ignored', () => {
       const contents = `2021/04/20 Obsidian ; testing
-       e:Spending Money    $20.00 ; a comment
+      e:Spending Money    $20.00 ; a comment
       e:Household Goods   $5.00
       b:CreditUnion       $-25.00`;
-      const txCache = parse(contents, '$');
+      const txCache = parse(contents);
       const expected = {
-        date: '2021/04/20',
-        payee: 'Obsidian',
-        lines: [
-          { category: 'e:Spending Money', amount: 20, id: 0 },
-          { category: 'e:Household Goods', amount: 5, id: 0 },
-          { category: 'b:CreditUnion', amount: -25, id: 0 },
-        ],
+        type: 'tx',
+        value: {
+          date: '2021/04/20',
+          payee: 'Obsidian',
+          comment: 'testing',
+          expenselines: [
+            {
+              category: 'e:Spending Money',
+              amount: 20,
+              currency: '$',
+              comment: 'a comment',
+              reconcile: '',
+            },
+            {
+              category: 'e:Household Goods',
+              amount: 5,
+              currency: '$',
+              comment: '',
+              reconcile: '',
+            },
+            {
+              category: 'b:CreditUnion',
+              amount: -25,
+              currency: '$',
+              comment: '',
+              reconcile: '',
+            },
+          ],
+        },
       };
       expect(txCache.transactions).toHaveLength(1);
       expect(txCache.transactions[0]).toEqual(expected);
@@ -144,7 +258,7 @@ describe('parsing a ledger file', () => {
 2021/04/21   Food Co-op
       e:Food:Groceries    $25.00
       b:CreditUnion       $-25.00`;
-      const txCache = parse(contents, '$');
+      const txCache = parse(contents);
       expect(txCache.payees).toHaveLength(2);
       expect(txCache.payees[0]).toEqual('Food Co-op');
       expect(txCache.payees[1]).toEqual('Obsidian');
@@ -163,7 +277,7 @@ describe('parsing a ledger file', () => {
 2021/04/21   Food Co-op
       e:Food:Groceries    $25.00
       b:CreditUnion       $-25.00`;
-      const txCache = parse(contents, '$');
+      const txCache = parse(contents);
       expect(txCache.categories).toHaveLength(3);
       expect(txCache.categories[0]).toEqual('b:CreditUnion');
       expect(txCache.categories[1]).toEqual('e:Food:Groceries');
@@ -177,15 +291,39 @@ describe('parsing a ledger file', () => {
     e:Food:Grocery                              $236.58
     e:Spending Money                         $30.00  ;  Coat
   * c:Citi                  $-266.58`;
-    const txCache = parse(contents, '$');
+    const txCache = parse(contents);
     const expected = {
-      date: '2019/09/16',
-      payee: 'Costco',
-      lines: [
-        { category: 'e:Food:Grocery', amount: 236.58, id: 0 },
-        { category: 'e:Spending Money', amount: 30, id: 0 },
-        { category: 'c:Citi', amount: -266.58, id: 0 },
-      ],
+      type: 'tx',
+      value: {
+        date: '2019/09/16',
+        payee: 'Costco',
+        expenselines: [
+          {
+            comment: 'Needs more splits',
+          },
+          {
+            category: 'e:Food:Grocery',
+            amount: 236.58,
+            reconcile: '',
+            currency: '$',
+            comment: '',
+          },
+          {
+            category: 'e:Spending Money',
+            amount: 30,
+            reconcile: '',
+            currency: '$',
+            comment: 'Coat',
+          },
+          {
+            category: 'c:Citi',
+            amount: -266.58,
+            reconcile: '*',
+            currency: '$',
+            comment: '',
+          },
+        ],
+      },
     };
     expect(txCache.transactions).toHaveLength(1);
     expect(txCache.transactions[0]).toEqual(expected);
