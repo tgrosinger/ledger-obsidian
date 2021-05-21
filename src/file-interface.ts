@@ -47,10 +47,9 @@ export const getTransactionCache = async (
   vault: Vault,
   settings: ISettings,
 ): Promise<TransactionCache> => {
-  const file = cache.getFirstLinkpathDest(settings.ledgerFile, '');
-  if (!file) {
-    return;
-  }
+  const file =
+    cache.getFirstLinkpathDest(settings.ledgerFile, '') ||
+    (await vault.create(settings.ledgerFile, ''));
   const fileContents = await vault.read(file);
 
   return parse(fileContents);
