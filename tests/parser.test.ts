@@ -244,6 +244,35 @@ describe('parsing a ledger file', () => {
       expect(txCache.transactions).toHaveLength(1);
       expect(txCache.transactions[0]).toEqual(expected);
     });
+    test('Non-Ascii characters are supported', () => {
+      const contents = `2021/01/01 халтура
+      счет:наличка:черныйКошель  Р2000.00
+      приработок:урлапов`;
+      const txCache = parse(contents);
+      const expected = {
+        type: 'tx',
+        value: {
+          date: '2021/01/01',
+          payee: 'халтура',
+          expenselines: [
+            {
+              category: 'счет:наличка:черныйКошель',
+              amount: 2000,
+              currency: 'Р',
+              reconcile: '',
+              comment: '',
+            },
+            {
+              category: 'приработок:урлапов',
+              comment: '',
+              reconcile: '',
+            },
+          ],
+        },
+      };
+      expect(txCache.transactions).toHaveLength(1);
+      expect(txCache.transactions[0]).toEqual(expected);
+    });
   });
   describe('payees are populated correctly', () => {
     test('duplicates are removed', () => {

@@ -38,10 +38,10 @@
         newline: { match: '\n', lineBreaks: true },
         ws:     /[ \t]+/,
         number: { match: /-?[0-9.,]+/, value: (s:string) => s.replace(/,/g, '') },
-        category: { match: /[a-zA-Z0-9: ]+/, value: (s:string) => s.trim() },
         currency: /[$£₤€₿₹¥₩Р]/, // Note: Р != P
-        comment: { match: /[;#|][^\n]+/, value: (s:string) => s.slice(1).trim() },
         reconciled: /[!*]/,
+        comment: { match: /[;#|][^\n]+/, value: (s:string) => s.slice(1).trim() },
+        category: { match: /[^$£₤€₿₹¥₩Р;#|\n]+/, value: (s:string) => s.trim() },
       },
       alias: {
         category: { match: /[a-zA-Z0-9: ]+/, value: (s:string) => s.trim() },
