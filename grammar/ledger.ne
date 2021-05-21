@@ -88,7 +88,7 @@ expenseline ->
                                                         category: d[2].value,
                                                         currency: d[3]?.currency,
                                                         amount: d[3]?.amount,
-                                                        comment: d[5]?.value || '',
+                                                        comment: d[5]?.value,
                                                       }
                                                     }
                                                   %}
