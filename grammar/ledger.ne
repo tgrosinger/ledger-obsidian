@@ -30,7 +30,8 @@
         check: { match: /\([0-9]+\)[ \t]+/, value: (s:string) => s.trim().slice(1, -1) },
         ws:     /[ \t]+/,
         reconciled: /[!*]/,
-        payee: { match: /[^!*\n]+/, value: (s:string) => s.trim() },
+        payee: { match: /[^!*;#|\n]+/, value: (s:string) => s.trim() },
+        comment: { match: /[;#|][^\n]+/, value: (s:string) => s.slice(1).trim() },
         newline: { match: '\n', lineBreaks: true, next: 'expenseLine'},
       },
       expenseLine: {
@@ -61,14 +62,15 @@ element ->
   | %comment     {% ([c]) => { return { type: 'comment', value: c.value } } %}
   | alias        {% ([a]) => { return { type: 'alias', value: a } } %}
 
-transaction -> %date %ws check:? %payee %newline expenselines
+transaction -> %date %ws check:? %payee %comment:? %newline expenselines
                                                   {%
                                                     function(d) {
                                                       return {
                                                         date: d[0].value,
                                                         check: d[2] || undefined,
                                                         payee: d[3].value,
-                                                        expenselines: d[5]
+                                                        comment: d[4]?.value || undefined,
+                                                        expenselines: d[6]
                                                       }
                                                     }
                                                   %}
