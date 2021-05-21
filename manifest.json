@@ -5,7 +5,7 @@
   "authorUrl": "https://grosinger.net",
   "description": "Plain text accounting",
   "isDesktopOnly": false,
-  "version": "0.0.6",
+  "version": "0.0.7",
   "minAppVersion": "0.11.12",
   "js": "main.js"
 }
