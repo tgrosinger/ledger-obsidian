@@ -38,7 +38,7 @@
         ws:     /[ \t]+/,
         number: { match: /-?[0-9.,]+/, value: (s:string) => s.replace(/,/g, '') },
         category: { match: /[a-zA-Z0-9: ]+/, value: (s:string) => s.trim() },
-        currency: /[$£₤€₿₹¥₩]/,
+        currency: /[$£₤€₿₹¥₩Р]/, // Note: Р != P
         comment: { match: /[;#|][^\n]+/, value: (s:string) => s.slice(1).trim() },
         reconciled: /[!*]/,
       },
