@@ -43,7 +43,7 @@ export interface Comment {
 type Element = Transaction | Alias | Comment;
 
 export const parse = (fileContents: string): TransactionCache => {
-  const splitFileContents = fileContents.split(/\n[\W]*\n/); // Split on blank lines
+  const splitFileContents = fileContents.split(/\n[ \t]*\n/); // Split on blank lines
   const results = splitFileContents
     .filter((lines) => lines.trim() !== '')
     .map((lines): Element[] => {
