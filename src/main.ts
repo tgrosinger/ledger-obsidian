@@ -5,9 +5,9 @@ import {
 } from './file-interface';
 import { billIcon, buyMeACoffee, paypal } from './graphics';
 import { LedgerView, LedgerViewType } from './ledgerview';
-import type { Expenseline, Transaction,TransactionCache } from './parser';
+import type { Expenseline, Transaction, TransactionCache } from './parser';
 import { ISettings, settingsWithDefaults } from './settings';
-import AddExpenseUI from './ui/AddExpenseUI.svelte';
+import { CreateLedgerEntry } from './ui/CreateLedgerEntry';
 import type { default as MomentType } from 'moment';
 import {
   addIcon,
@@ -17,6 +17,8 @@ import {
   Setting,
   TAbstractFile,
 } from 'obsidian';
+import React from 'react';
+import ReactDOM from 'react-dom';
 
 declare global {
   interface Window {
@@ -104,10 +106,9 @@ class AddExpenseModal extends Modal {
   }
 
   public onOpen = (): void => {
-    const { contentEl } = this;
-    new AddExpenseUI({
-      target: contentEl,
-      props: {
+    ReactDOM.render(
+      React.createElement(CreateLedgerEntry, {
+        app: this.app,
         currencySymbol: this.plugin.settings.currencySymbol,
         saveFn: async (tx: Transaction): Promise<void> => {
           const formatted = formatExpense(tx, this.plugin.settings);
@@ -120,8 +121,9 @@ class AddExpenseModal extends Modal {
         },
         txCache: this.plugin.txCache,
         close: () => this.close(),
-      },
-    });
+      }),
+      this.contentEl,
+    );
   };
 
   public onClose = (): void => {

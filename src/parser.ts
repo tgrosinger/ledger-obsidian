@@ -9,18 +9,18 @@ export interface TransactionCache {
 }
 
 export interface Expenseline {
-  amount: number;
-  currency: string;
+  amount?: number;
+  currency?: string;
   category: string;
-  reconcile: '' | '*' | '!';
-  comment: string;
-  id: number | undefined;
+  reconcile?: '' | '*' | '!';
+  comment?: string;
+  id?: number;
 }
 
 export interface Transaction {
   type: 'tx';
   value: {
-    check: number;
+    check?: number;
     date: string;
     payee: string;
     expenselines: Expenseline[];

@@ -1,25 +1,19 @@
 {
-  "extends": "@tsconfig/svelte/tsconfig.json",
   "include": [ "src/**/*", "tests/**/*" ],
-  "exclude": [ "node_modules/*" ],
   "compilerOptions": {
     "baseUrl": ".",
+    "allowSyntheticDefaultImports": true,
     "inlineSources": true,
     "sourceMap": true,
+    "jsx": "react",
     "module": "ESNext",
-    "target": "es6",
+    "target": "esnext",
     "noImplicitAny": true,
+    "moduleResolution": "node",
     "importHelpers": true,
-    "types": [
-      "node",
-      "svelte",
-      "jest"
-    ],
     "lib": [
       "dom",
-      "es6",
-      "scripthost",
-      "es2019"
+      "esnext"
     ],
     "paths": {
       "src": ["src/*", "tests/*"]

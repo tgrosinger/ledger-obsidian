@@ -1,5 +1,9 @@
 import { parse, Transaction } from '../src/parser';
 
+// For some reaosn it may be necessary to change the moo import
+// in the generated file for the tests to pass.
+// const moo = require('moo')
+
 describe('parsing a ledger file', () => {
   describe('transactions are populated correctly', () => {
     test('when the file is empty', () => {
