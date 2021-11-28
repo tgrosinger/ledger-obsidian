@@ -9,14 +9,12 @@
     "module": "ESNext",
     "target": "esnext",
     "noImplicitAny": true,
+    "allowJs": true,
     "moduleResolution": "node",
     "importHelpers": true,
     "lib": [
       "dom",
       "esnext"
-    ],
-    "paths": {
-      "src": ["src/*", "tests/*"]
-    }
-  },
+    ]
+  }
 }
