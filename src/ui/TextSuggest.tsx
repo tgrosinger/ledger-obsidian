@@ -1,6 +1,7 @@
 import { WideInput } from './SharedStyles';
 import React from 'react';
 import { usePopper } from 'react-popper';
+import Fuse from 'fuse.js';
 
 export const TextSuggest: React.FC<{
   placeholder: string;
@@ -10,6 +11,7 @@ export const TextSuggest: React.FC<{
 }> = ({ placeholder, suggestions, value, setValue }): JSX.Element => {
   const [currentSuggestions, setCurrentSuggestions] =
     React.useState(suggestions);
+  const [fuse, _] = React.useState(new Fuse(suggestions, { threshold: 0.5 }));
 
   const [selectedIndex, setSelectedIndex] = React.useState(0);
 
@@ -22,10 +24,7 @@ export const TextSuggest: React.FC<{
 
   const updateValue = (newValue: string): void => {
     setValue(newValue);
-    const newValueLower = newValue.toLowerCase();
-    const newSuggestions = suggestions.filter((s) =>
-      s.toLowerCase().startsWith(newValueLower),
-    );
+    const newSuggestions = fuse.search(newValue).map((result) => result.item);
     setCurrentSuggestions(newSuggestions);
     setSelectedIndex(Math.max(selectedIndex, newSuggestions.length - 1));
   };
