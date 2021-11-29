@@ -44,6 +44,15 @@ export default class LedgerPlugin extends Plugin {
       new AddExpenseModal(this).open();
     });
 
+    this.addCommand({
+      id: 'ledger-add-transaction',
+      name: 'Add to Ledger',
+      icon: 'ledger',
+      callback: () => {
+        new AddExpenseModal(this).open();
+      },
+    });
+
     this.registerEvent(
       this.app.vault.on('modify', (file: TAbstractFile) => {
         if (file.path === this.settings.ledgerFile) {
