@@ -1,7 +1,7 @@
 import { Transaction, TransactionCache } from '../parser';
 import { WideInput } from './SharedStyles';
 import { TextSuggest } from './TextSuggest';
-import { App, Notice } from 'obsidian';
+import { Notice, Platform } from 'obsidian';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -46,12 +46,11 @@ const InputIcon = styled.i`
 `;
 
 export const CreateLedgerEntry: React.FC<{
-  app: App;
   currencySymbol: string;
   saveFn: (tx: Transaction) => Promise<void>;
   txCache: TransactionCache;
   close: () => void;
-}> = ({ app, currencySymbol, saveFn, txCache, close }): JSX.Element => {
+}> = ({ currencySymbol, saveFn, txCache, close }): JSX.Element => {
   const [payee, setPayee] = React.useState('');
   const [total, setTotal] = React.useState(0);
   const [date, setDate] = React.useState('');
@@ -105,7 +104,7 @@ export const CreateLedgerEntry: React.FC<{
       <h2>Add to Ledger</h2>
 
       <Margin>
-        {(app as any).isMobile ? (
+        {Platform.isMobile ? (
           <DatePickerMobile
             type="date"
             value={date}
