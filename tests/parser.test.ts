@@ -1,21 +1,24 @@
-import { parse, Transaction } from '../src/parser';
+import { settingsWithDefaults } from '../src/settings';
+import { parse } from '../src/parser';
 
 // For some reaosn it may be necessary to change the moo import
 // in the generated file for the tests to pass.
 // const moo = require('moo')
 
+const settings = settingsWithDefaults({});
+
 describe('parsing a ledger file', () => {
   describe('transactions are populated correctly', () => {
     test('when the file is empty', () => {
       const contents = '';
-      const txCache = parse(contents);
+      const txCache = parse(contents, settings);
       expect(txCache.transactions).toHaveLength(0);
     });
     test('when the final expense line has no amount', () => {
       const contents = `2021/04/20 Obsidian
       e:Spending Money    $20.00
       b:CreditUnion`;
-      const txCache = parse(contents);
+      const txCache = parse(contents, settings);
       const expected = {
         type: 'tx',
         value: {
@@ -42,7 +45,7 @@ describe('parsing a ledger file', () => {
       const contents = `2021/04/20 Obsidian
       e:Spending Money    $20.00
       b:CreditUnion       $-20.00`;
-      const txCache = parse(contents);
+      const txCache = parse(contents, settings);
       const expected = {
         type: 'tx',
         value: {
@@ -72,7 +75,7 @@ describe('parsing a ledger file', () => {
       e:Spending Money    $20.00
       e:Household Goods   $5.00
       b:CreditUnion       $-25.00`;
-      const txCache = parse(contents);
+      const txCache = parse(contents, settings);
       const expected = {
         type: 'tx',
         value: {
@@ -111,7 +114,7 @@ describe('parsing a ledger file', () => {
 2021/04/21   Food Co-op
       e:Food:Groceries    $45.00
       b:CreditUnion       $-45.00`;
-      const txCache = parse(contents);
+      const txCache = parse(contents, settings);
       const expected1 = {
         type: 'tx',
         value: {
@@ -163,7 +166,7 @@ describe('parsing a ledger file', () => {
     !  e:Spending Money    $20.00
     * e:Household Goods   $5.00
       b:CreditUnion       $-25.00`;
-      const txCache = parse(contents);
+      const txCache = parse(contents, settings);
       const expected = {
         type: 'tx',
         value: {
@@ -199,7 +202,7 @@ describe('parsing a ledger file', () => {
       e:Spending Money    $20.00 ; a comment
       e:Household Goods   $5.00
       b:CreditUnion       $-25.00`;
-      const txCache = parse(contents);
+      const txCache = parse(contents, settings);
       const expected = {
         type: 'tx',
         value: {
@@ -236,7 +239,7 @@ describe('parsing a ledger file', () => {
       const contents = `2021/01/01 халтура
       счет:наличка:черныйКошель  Р2000.00
       приработок:урлапов`;
-      const txCache = parse(contents);
+      const txCache = parse(contents, settings);
       const expected = {
         type: 'tx',
         value: {
@@ -273,7 +276,7 @@ describe('parsing a ledger file', () => {
 2021/04/21   Food Co-op
       e:Food:Groceries    $25.00
       b:CreditUnion       $-25.00`;
-      const txCache = parse(contents);
+      const txCache = parse(contents, settings);
       expect(txCache.payees).toHaveLength(2);
       expect(txCache.payees[0]).toEqual('Food Co-op');
       expect(txCache.payees[1]).toEqual('Obsidian');
@@ -292,11 +295,48 @@ describe('parsing a ledger file', () => {
 2021/04/21   Food Co-op
       e:Food:Groceries    $25.00
       b:CreditUnion       $-25.00`;
-      const txCache = parse(contents);
+      const txCache = parse(contents, settings);
       expect(txCache.categories).toHaveLength(3);
       expect(txCache.categories[0]).toEqual('b:CreditUnion');
       expect(txCache.categories[1]).toEqual('e:Food:Groceries');
       expect(txCache.categories[2]).toEqual('e:Spending Money');
+    });
+  });
+  describe('aliases are parsed and used correctly', () => {
+    // TODO: This is testing both aliases and categories. Split into multiple tests.
+    test('categories are expanded using aliases', () => {
+      const contents = `alias e=Expenses
+alias c=Liabilities:Credit
+alias b=Assets:Banking
+
+2021/04/20 Obsidian
+      e:Spending Money    $20.00
+      b:CreditUnion       $-20.00
+      
+2021/04/21   Food Co-op
+      e:Food:Groceries    $45.00
+      c:Chase             $-45.00
+
+2021/04/21   Food Co-op
+      e:Food:Groceries    $25.00
+      b:CreditUnion       $-25.00`;
+
+      const customSettings = settingsWithDefaults({
+        assetAccountsPrefix: 'Assets',
+        expenseAccountsPrefix: 'Expenses',
+        incomeAccountsPrefix: 'Income',
+        liabilityAccountsPrefix: 'Liabilities',
+      });
+
+      const txCache = parse(contents, customSettings);
+      expect(txCache.categories).toHaveLength(4);
+      expect(txCache.assetCategories).toEqual(['Assets:Banking:CreditUnion']);
+      expect(txCache.expenseCategories).toEqual([
+        'Expenses:Food:Groceries',
+        'Expenses:Spending Money',
+      ]);
+      expect(txCache.liabilityCategories).toEqual(['Liabilities:Credit:Chase']);
+      expect(txCache.incomeCategories).toEqual([]);
     });
   });
 
@@ -306,7 +346,7 @@ describe('parsing a ledger file', () => {
     e:Food:Grocery                              $236.58
     e:Spending Money                         $30.00  ;  Coat
   * c:Citi                  $-266.58`;
-    const txCache = parse(contents);
+    const txCache = parse(contents, settings);
     const expected = {
       type: 'tx',
       value: {

@@ -3,6 +3,11 @@ const defaultSettings: ISettings = {
   ledgerFile: 'Ledger.md',
   includeFinalLineAmount: false,
   enableLedgerVis: false,
+
+  assetAccountsPrefix: 'a',
+  expenseAccountsPrefix: 'e',
+  incomeAccountsPrefix: 'i',
+  liabilityAccountsPrefix: 'l',
 };
 
 export interface ISettings {
@@ -10,6 +15,11 @@ export interface ISettings {
   ledgerFile: string;
   includeFinalLineAmount: boolean;
   enableLedgerVis: boolean;
+
+  assetAccountsPrefix: string;
+  expenseAccountsPrefix: string;
+  incomeAccountsPrefix: string;
+  liabilityAccountsPrefix: string;
 }
 
 export const settingsWithDefaults = (

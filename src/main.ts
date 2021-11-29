@@ -5,7 +5,7 @@ import {
 } from './file-interface';
 import { billIcon, buyMeACoffee, paypal } from './graphics';
 import { LedgerView, LedgerViewType } from './ledgerview';
-import type { Expenseline, Transaction, TransactionCache } from './parser';
+import type { Transaction, TransactionCache } from './parser';
 import { ISettings, settingsWithDefaults } from './settings';
 import { CreateLedgerEntry } from './ui/CreateLedgerEntry';
 import type { default as MomentType } from 'moment';
@@ -186,6 +186,72 @@ class SettingsTab extends PluginSettingTab {
             this.plugin.settings.includeFinalLineAmount = value;
             this.plugin.saveData(this.plugin.settings);
           });
+      });
+
+    containerEl.createEl('h3', 'Transaction Category Prefixes');
+
+    containerEl.createEl('p', {
+      text: "Ledger uses categories to group exense types. Categories are grouped into a hierarchy by separating with a colon. For example 'expenses:food:grocery' and 'expenses:food:restaurants",
+    });
+
+    new Setting(containerEl)
+      .setName('Asset Category Prefix')
+      .setDesc('The category prefix used for grouping asset accounts.')
+      .addText((text) => {
+        text.setValue(this.plugin.settings.assetAccountsPrefix);
+        text.inputEl.onblur = (e: FocusEvent) => {
+          const target = e.target as HTMLInputElement;
+          const value = target.value;
+
+          if (value.contains(':')) {
+            target.setCustomValidity(
+              'Alias must not contain a colon character',
+            );
+          } else {
+            target.setCustomValidity('');
+            this.plugin.settings.assetAccountsPrefix = value;
+            this.plugin.saveData(this.plugin.settings);
+          }
+        };
+      });
+
+    new Setting(containerEl)
+      .setName('Expense Category Prefix')
+      .setDesc('The category prefix used for grouping expense accounts.')
+      .addText((text) => {
+        text.setValue(this.plugin.settings.expenseAccountsPrefix);
+        text.inputEl.onblur = (e: FocusEvent) => {
+          this.plugin.settings.expenseAccountsPrefix = (
+            e.target as HTMLInputElement
+          ).value;
+          this.plugin.saveData(this.plugin.settings);
+        };
+      });
+
+    new Setting(containerEl)
+      .setName('Income Category Prefix')
+      .setDesc('The category prefix used for grouping income accounts.')
+      .addText((text) => {
+        text.setValue(this.plugin.settings.incomeAccountsPrefix);
+        text.inputEl.onblur = (e: FocusEvent) => {
+          this.plugin.settings.incomeAccountsPrefix = (
+            e.target as HTMLInputElement
+          ).value;
+          this.plugin.saveData(this.plugin.settings);
+        };
+      });
+
+    new Setting(containerEl)
+      .setName('Liability Category Prefix')
+      .setDesc('The category prefix used for grouping liability accounts.')
+      .addText((text) => {
+        text.setValue(this.plugin.settings.liabilityAccountsPrefix);
+        text.inputEl.onblur = (e: FocusEvent) => {
+          this.plugin.settings.liabilityAccountsPrefix = (
+            e.target as HTMLInputElement
+          ).value;
+          this.plugin.saveData(this.plugin.settings);
+        };
       });
 
     const div = containerEl.createEl('div', {

@@ -52,5 +52,5 @@ export const getTransactionCache = async (
     (await vault.create(settings.ledgerFile, ''));
   const fileContents = await vault.read(file);
 
-  return parse(fileContents);
+  return parse(fileContents, settings);
 };
