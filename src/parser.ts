@@ -4,7 +4,6 @@ import { Grammar, Parser } from 'nearley';
 import { ISettings } from './settings';
 
 export interface TransactionCache {
-  //aliases: Record<string, string>;
   transactions: Transaction[];
   payees: string[];
   aliases: Map<string, string>;
@@ -16,22 +15,22 @@ export interface TransactionCache {
   categories: string[];
 
   /**
-   * expenseCategories is dealiased and only contains expense categories
+   * expenseCategories is not dealiased and only contains expense categories.
    */
   expenseCategories: string[];
 
   /**
-   * assetCategories is dealiased and only contains asset categories
+   * assetCategories is not dealiased and only contains asset categories.
    */
   assetCategories: string[];
 
   /**
-   * incomeCategories is dealiased and only contains income categories
+   * incomeCategories is not dealiased and only contains income categories.
    */
   incomeCategories: string[];
 
   /**
-   * liabilityCategories is dealiased and only contains liability categories
+   * liabilityCategories is not dealiased and only contains liability categories.
    */
   liabilityCategories: string[];
 }
@@ -131,14 +130,15 @@ export const parse = (
   const expenseCategories: string[] = [];
   const incomeCategories: string[] = [];
   const liabilityCategories: string[] = [];
-  dealiasCategories(categories, aliasMap).forEach((c) => {
-    if (c.startsWith(settings.assetAccountsPrefix)) {
+  categories.forEach((c) => {
+    const dealiasedC = dealiasCategory(c, aliasMap);
+    if (dealiasedC.startsWith(settings.assetAccountsPrefix)) {
       assetCategories.push(c);
-    } else if (c.startsWith(settings.expenseAccountsPrefix)) {
+    } else if (dealiasedC.startsWith(settings.expenseAccountsPrefix)) {
       expenseCategories.push(c);
-    } else if (c.startsWith(settings.incomeAccountsPrefix)) {
+    } else if (dealiasedC.startsWith(settings.incomeAccountsPrefix)) {
       incomeCategories.push(c);
-    } else if (c.startsWith(settings.liabilityAccountsPrefix)) {
+    } else if (dealiasedC.startsWith(settings.liabilityAccountsPrefix)) {
       liabilityCategories.push(c);
     }
   });
@@ -156,22 +156,27 @@ export const parse = (
   };
 };
 
+const dealiasCategory = (
+  category: string,
+  aliases: Map<string, string>,
+): string => {
+  const firstDelimeter = category.indexOf(':');
+  if (firstDelimeter > 0) {
+    const prefix = category.substring(0, firstDelimeter);
+    if (aliases.has(prefix)) {
+      return aliases.get(prefix) + category.substring(firstDelimeter);
+    }
+  }
+  return category;
+};
+
 const dealiasCategories = (
   categories: string[],
   aliases: Map<string, string>,
 ): string[] =>
   sortedUniq(
     categories
-      .map((cat) => {
-        const firstDelimeter = cat.indexOf(':');
-        if (firstDelimeter > 0) {
-          const prefix = cat.substring(0, firstDelimeter);
-          if (aliases.has(prefix)) {
-            return aliases.get(prefix) + cat.substring(firstDelimeter);
-          }
-        }
-        return cat;
-      })
+      .map((cat) => dealiasCategory(cat, aliases))
       .sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1)),
   );
 
