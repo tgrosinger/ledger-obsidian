@@ -330,12 +330,12 @@ alias b=Assets:Banking
 
       const txCache = parse(contents, customSettings);
       expect(txCache.categories).toHaveLength(4);
-      expect(txCache.assetCategories).toEqual(['Assets:Banking:CreditUnion']);
+      expect(txCache.assetCategories).toEqual(['b:CreditUnion']);
       expect(txCache.expenseCategories).toEqual([
-        'Expenses:Food:Groceries',
-        'Expenses:Spending Money',
+        'e:Food:Groceries',
+        'e:Spending Money',
       ]);
-      expect(txCache.liabilityCategories).toEqual(['Liabilities:Credit:Chase']);
+      expect(txCache.liabilityCategories).toEqual(['c:Chase']);
       expect(txCache.incomeCategories).toEqual([]);
     });
   });
