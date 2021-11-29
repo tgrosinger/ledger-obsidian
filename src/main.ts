@@ -12,6 +12,7 @@ import type { default as MomentType } from 'moment';
 import {
   addIcon,
   Modal,
+  Platform,
   Plugin,
   PluginSettingTab,
   Setting,
@@ -108,7 +109,6 @@ class AddExpenseModal extends Modal {
   public onOpen = (): void => {
     ReactDOM.render(
       React.createElement(CreateLedgerEntry, {
-        app: this.app,
         currencySymbol: this.plugin.settings.currencySymbol,
         saveFn: async (tx: Transaction): Promise<void> => {
           const formatted = formatExpense(tx, this.plugin.settings);
@@ -127,8 +127,8 @@ class AddExpenseModal extends Modal {
   };
 
   public onClose = (): void => {
-    const { contentEl } = this;
-    contentEl.empty();
+    ReactDOM.unmountComponentAtNode(this.contentEl);
+    this.contentEl.empty();
   };
 }
 
