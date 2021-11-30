@@ -32,21 +32,15 @@ export const TextSuggest: React.FC<{
   });
 
   const updateValue = (newValue: string): void => {
+    setVisibility(true);
     setValue(newValue);
     const newSuggestions = take(
       fuse.search(newValue).map((result) => result.item),
       displayCount,
     );
     setCurrentSuggestions(newSuggestions);
-    setSelectedIndex(Math.max(selectedIndex, newSuggestions.length - 1));
+    setSelectedIndex(Math.min(selectedIndex, newSuggestions.length - 1));
   };
-
-  const makeSelectSuggestion =
-    (s: string): (() => void) =>
-    () => {
-      setValue(s);
-      setVisibility(false);
-    };
 
   return (
     <div>
@@ -64,16 +58,20 @@ export const TextSuggest: React.FC<{
         onKeyDown={(e) => {
           switch (e.key) {
             case 'ArrowUp':
-              setSelectedIndex(selectedIndex - 1);
+              setSelectedIndex(
+                Math.clamp(selectedIndex - 1, 0, currentSuggestions.length - 1),
+              );
               e.preventDefault();
               return;
             case 'ArrowDown':
-              setSelectedIndex(selectedIndex + 1);
+              setSelectedIndex(
+                Math.clamp(selectedIndex + 1, 0, currentSuggestions.length - 1),
+              );
               e.preventDefault();
               return;
             case 'Enter':
+              setValue(currentSuggestions[selectedIndex]);
               setVisibility(false);
-              updateValue(currentSuggestions[selectedIndex]);
               e.preventDefault();
               return;
           }
@@ -92,7 +90,10 @@ export const TextSuggest: React.FC<{
               value={s}
               key={s}
               selected={i === selectedIndex}
-              onClick={makeSelectSuggestion(s)}
+              onClick={() => {
+                setValue(s);
+                setVisibility(false);
+              }}
               onHover={() => {
                 setSelectedIndex(i);
               }}
