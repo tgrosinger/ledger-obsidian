@@ -1,16 +1,25 @@
 import { WideInput } from './SharedStyles';
+import Fuse from 'fuse.js';
+import { take } from 'lodash';
 import React from 'react';
 import { usePopper } from 'react-popper';
-import Fuse from 'fuse.js';
 
 export const TextSuggest: React.FC<{
   placeholder: string;
+  displayCount: number;
   suggestions: string[];
   value: string;
   setValue: React.Dispatch<React.SetStateAction<string>>;
-}> = ({ placeholder, suggestions, value, setValue }): JSX.Element => {
-  const [currentSuggestions, setCurrentSuggestions] =
-    React.useState(suggestions);
+}> = ({
+  placeholder,
+  displayCount,
+  suggestions,
+  value,
+  setValue,
+}): JSX.Element => {
+  const [currentSuggestions, setCurrentSuggestions] = React.useState(
+    take(suggestions, displayCount),
+  );
   const [fuse, _] = React.useState(new Fuse(suggestions, { threshold: 0.5 }));
 
   const [selectedIndex, setSelectedIndex] = React.useState(0);
@@ -24,7 +33,10 @@ export const TextSuggest: React.FC<{
 
   const updateValue = (newValue: string): void => {
     setValue(newValue);
-    const newSuggestions = fuse.search(newValue).map((result) => result.item);
+    const newSuggestions = take(
+      fuse.search(newValue).map((result) => result.item),
+      displayCount,
+    );
     setCurrentSuggestions(newSuggestions);
     setSelectedIndex(Math.max(selectedIndex, newSuggestions.length - 1));
   };
