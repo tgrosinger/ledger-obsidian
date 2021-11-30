@@ -1,7 +1,7 @@
 import grammar from '../grammar/ledger';
+import { ISettings } from './settings';
 import { flatMap, sortedUniq } from 'lodash';
 import { Grammar, Parser } from 'nearley';
-import { ISettings } from './settings';
 
 export interface TransactionCache {
   transactions: Transaction[];

@@ -1,5 +1,5 @@
-import { settingsWithDefaults } from '../src/settings';
 import { parse } from '../src/parser';
+import { settingsWithDefaults } from '../src/settings';
 
 // For some reaosn it may be necessary to change the moo import
 // in the generated file for the tests to pass.
