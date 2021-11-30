@@ -52,7 +52,7 @@ export const CreateLedgerEntry: React.FC<{
   close: () => void;
 }> = ({ currencySymbol, saveFn, txCache, close }): JSX.Element => {
   const [payee, setPayee] = React.useState('');
-  const [total, setTotal] = React.useState(0);
+  const [total, setTotal] = React.useState<string>('');
   const [date, setDate] = React.useState('');
   const [expenseCategory, setExpenseCategory] = React.useState('');
   const [assetAccount, setAssetAccount] = React.useState('');
@@ -84,7 +84,7 @@ export const CreateLedgerEntry: React.FC<{
         expenselines: [
           {
             category: expenseCategory,
-            amount: total,
+            amount: parseFloat(total),
             currency: currencySymbol,
           },
           {
@@ -127,7 +127,8 @@ export const CreateLedgerEntry: React.FC<{
             placeholder="Amount"
             type="number"
             value={total}
-            onChange={(e) => setTotal(parseFloat(e.target.value))}
+            onChange={(e) => setTotal(e.target.value)}
+            onBlur={() => setTotal(parseFloat(total).toFixed(2))}
           />
           <InputIcon>{currencySymbol}</InputIcon>
         </InputWithIconWrapper>
