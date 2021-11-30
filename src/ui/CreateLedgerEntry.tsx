@@ -1,4 +1,5 @@
 import { Transaction, TransactionCache } from '../parser';
+import { CurrencyInput } from './CurrencyInput';
 import { WideInput } from './SharedStyles';
 import { TextSuggest } from './TextSuggest';
 import { Notice, Platform } from 'obsidian';
@@ -23,26 +24,6 @@ const DatePickerMobile = styled(DatePicker)`
   padding: 8px 14px;
   height: auto;
   font-size: 17px;
-`;
-
-const InputWithIconWrapper = styled.div`
-  position: relative;
-`;
-
-const InputWithIcon = styled(WideInput)`
-  /* important required to override mobile stylesheet */
-  padding-left: 25px !important;
-`;
-
-const InputIcon = styled.i`
-  position: absolute;
-  display: block;
-  transform: translate(0, -50%);
-  top: 50%;
-  pointer-events: none;
-  width: 25px;
-  text-align: center;
-  font-style: normal;
 `;
 
 export const CreateLedgerEntry: React.FC<{
@@ -122,21 +103,16 @@ export const CreateLedgerEntry: React.FC<{
       </Margin>
 
       <Margin>
-        <InputWithIconWrapper>
-          <InputWithIcon
-            placeholder="Amount"
-            type="number"
-            value={total}
-            onChange={(e) => setTotal(e.target.value)}
-            onBlur={() => setTotal(parseFloat(total).toFixed(2))}
-          />
-          <InputIcon>{currencySymbol}</InputIcon>
-        </InputWithIconWrapper>
+        <CurrencyInput
+          currencySymbol={currencySymbol}
+          amount={total}
+          setAmount={setTotal}
+        />
       </Margin>
 
       <Margin>
         <TextSuggest
-          placeholder="Payee"
+          placeholder="Payee (e.g. Obsidian.md)"
           displayCount={suggestionCount}
           suggestions={txCache.payees}
           value={payee}
