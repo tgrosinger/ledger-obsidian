@@ -57,6 +57,8 @@ export const CreateLedgerEntry: React.FC<{
   const [expenseCategory, setExpenseCategory] = React.useState('');
   const [assetAccount, setAssetAccount] = React.useState('');
 
+  const suggestionCount = Platform.isMobile ? 5 : 15;
+
   const save = async (): Promise<void> => {
     if (payee === '') {
       new Notice('Payee must not be empty');
@@ -134,6 +136,7 @@ export const CreateLedgerEntry: React.FC<{
       <Margin>
         <TextSuggest
           placeholder="Payee"
+          displayCount={suggestionCount}
           suggestions={txCache.payees}
           value={payee}
           setValue={setPayee}
@@ -143,6 +146,7 @@ export const CreateLedgerEntry: React.FC<{
       <Margin>
         <TextSuggest
           placeholder="Expense Category"
+          displayCount={suggestionCount}
           suggestions={txCache.categories}
           value={expenseCategory}
           setValue={setExpenseCategory}
@@ -151,6 +155,7 @@ export const CreateLedgerEntry: React.FC<{
       <Margin>
         <TextSuggest
           placeholder="Asset Account"
+          displayCount={suggestionCount}
           suggestions={txCache.categories}
           value={assetAccount}
           setValue={setAssetAccount}
