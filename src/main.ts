@@ -205,28 +205,24 @@ class SettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Asset Category Prefix')
-      .setDesc('The category prefix used for grouping asset accounts.')
+      .setDesc(
+        'The category prefix used for grouping asset accounts. If you use aliases in your Ledger file, this must be the **unaliased** category prefix. e.g. "Assets" instead of "a"',
+      )
       .addText((text) => {
         text.setValue(this.plugin.settings.assetAccountsPrefix);
         text.inputEl.onblur = (e: FocusEvent) => {
-          const target = e.target as HTMLInputElement;
-          const value = target.value;
-
-          if (value.contains(':')) {
-            target.setCustomValidity(
-              'Alias must not contain a colon character',
-            );
-          } else {
-            target.setCustomValidity('');
-            this.plugin.settings.assetAccountsPrefix = value;
-            this.plugin.saveData(this.plugin.settings);
-          }
+          this.plugin.settings.assetAccountsPrefix = (
+            e.target as HTMLInputElement
+          ).value;
+          this.plugin.saveData(this.plugin.settings);
         };
       });
 
     new Setting(containerEl)
       .setName('Expense Category Prefix')
-      .setDesc('The category prefix used for grouping expense accounts.')
+      .setDesc(
+        'The category prefix used for grouping expense accounts. If you use aliases in your Ledger file, this must be the **unaliased** category prefix. e.g. "Expenses" instead of "e"',
+      )
       .addText((text) => {
         text.setValue(this.plugin.settings.expenseAccountsPrefix);
         text.inputEl.onblur = (e: FocusEvent) => {
@@ -239,7 +235,9 @@ class SettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Income Category Prefix')
-      .setDesc('The category prefix used for grouping income accounts.')
+      .setDesc(
+        'The category prefix used for grouping income accounts. If you use aliases in your Ledger file, this must be the **unaliased** category prefix. e.g. "Income" instead of "i"',
+      )
       .addText((text) => {
         text.setValue(this.plugin.settings.incomeAccountsPrefix);
         text.inputEl.onblur = (e: FocusEvent) => {
@@ -252,7 +250,9 @@ class SettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Liability Category Prefix')
-      .setDesc('The category prefix used for grouping liability accounts.')
+      .setDesc(
+        'The category prefix used for grouping liability accounts. If you use aliases in your Ledger file, this must be the **unaliased** category prefix. e.g. "Liabilities" instead of "l"',
+      )
       .addText((text) => {
         text.setValue(this.plugin.settings.liabilityAccountsPrefix);
         text.inputEl.onblur = (e: FocusEvent) => {

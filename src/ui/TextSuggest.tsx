@@ -20,7 +20,9 @@ export const TextSuggest: React.FC<{
   const [currentSuggestions, setCurrentSuggestions] = React.useState(
     take(suggestions, displayCount),
   );
-  const [fuse, _] = React.useState(new Fuse(suggestions, { threshold: 0.5 }));
+  const [fuse, setFuse] = React.useState(
+    new Fuse(suggestions, { threshold: 0.5 }),
+  );
 
   const [selectedIndex, setSelectedIndex] = React.useState(0);
 
@@ -31,16 +33,30 @@ export const TextSuggest: React.FC<{
     placement: 'bottom-start',
   });
 
-  const updateValue = (newValue: string): void => {
-    setVisibility(true);
-    setValue(newValue);
-    const newSuggestions = take(
-      fuse.search(newValue).map((result) => result.item),
-      displayCount,
-    );
+  const updateCurrentSuggestions = (newValue: string): void => {
+    const newSuggestions =
+      newValue === ''
+        ? take(suggestions, displayCount)
+        : take(
+            fuse.search(newValue).map((result) => result.item),
+            displayCount,
+          );
     setCurrentSuggestions(newSuggestions);
     setSelectedIndex(Math.min(selectedIndex, newSuggestions.length - 1));
   };
+
+  const updateValue = (newValue: string): void => {
+    setVisibility(true);
+    setValue(newValue);
+    updateCurrentSuggestions(newValue);
+  };
+
+  // The Fuse object will not be automatically replaced when the suggestions are
+  // changed so we need to detect and update manually.
+  React.useEffect(() => {
+    setFuse(new Fuse(suggestions, { threshold: 0.5 }));
+    updateCurrentSuggestions(value);
+  }, [suggestions]);
 
   return (
     <div>
