@@ -3,6 +3,7 @@ import { CurrencyInput } from './CurrencyInput';
 import { WideInput, WideSelect } from './SharedStyles';
 import { TextSuggest } from './TextSuggest';
 import { union } from 'lodash';
+import moment from 'moment';
 import { Notice, Platform } from 'obsidian';
 import React from 'react';
 import styled from 'styled-components';
@@ -36,7 +37,7 @@ export const CreateLedgerEntry: React.FC<{
   const [payee, setPayee] = React.useState('');
   const [txType, setTxType] = React.useState('expense');
   const [total, setTotal] = React.useState<string>('');
-  const [date, setDate] = React.useState('');
+  const [date, setDate] = React.useState(moment().format('YYYY-MM-DD'));
 
   const assetsAndLiabilities = union(
     txCache.assetCategories,
