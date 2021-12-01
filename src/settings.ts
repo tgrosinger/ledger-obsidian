@@ -8,10 +8,10 @@ const defaultSettings: ISettings = {
   includeFinalLineAmount: false,
   enableLedgerVis: false,
 
-  assetAccountsPrefix: 'a',
-  expenseAccountsPrefix: 'e',
-  incomeAccountsPrefix: 'i',
-  liabilityAccountsPrefix: 'l',
+  assetAccountsPrefix: 'Assets',
+  expenseAccountsPrefix: 'Expenses',
+  incomeAccountsPrefix: 'Income',
+  liabilityAccountsPrefix: 'Liabilities',
 };
 
 export interface ISettings {
