@@ -1,27 +1,25 @@
 import type LedgerPlugin from './main';
+import { LedgerDashboard } from './ui/LedgerDashboard';
 import * as d3 from 'd3';
 import { range, scaleLinear } from 'd3';
-import { ItemView, TAbstractFile, WorkspaceLeaf } from 'obsidian';
+import { TextFileView, TFile, WorkspaceLeaf } from 'obsidian';
+import React from 'react';
+import ReactDOM from 'react-dom';
 
 export const LedgerViewType = 'ledger';
 
-export class LedgerView extends ItemView {
+export class LedgerView extends TextFileView {
   private readonly plugin: LedgerPlugin;
 
   constructor(leaf: WorkspaceLeaf, plugin: LedgerPlugin) {
     super(leaf);
     this.plugin = plugin;
 
-    this.registerEvent(
-      this.app.vault.on('modify', (file: TAbstractFile) => {
-        if (file.path === this.plugin.settings.ledgerFile) {
-          this.reloadData();
-        }
-      }),
-    );
-
-    this.reloadData();
     this.redraw();
+  }
+
+  public canAcceptExtension(extension: string): boolean {
+    return extension === 'ledger' || extension === 'md';
   }
 
   public getViewType(): string {
@@ -36,17 +34,60 @@ export class LedgerView extends ItemView {
     return 'ledger';
   }
 
+  public getViewData(): string {
+    console.debug('Ledger: returning view data');
+    return this.data;
+  }
+
+  public setViewData(data: string, clear: boolean): void {
+    console.debug('Ledger: setting view data');
+
+    // TODO: Update the txCache and call redraw()
+
+    // TODO: This might not tell me about all file modify events
+  }
+
+  public clear(): void {
+    console.debug('Ledger: clearing view');
+  }
+
+  public onload(): void {
+    console.debug('Ledger: loading dashboard');
+  }
+
+  public onunload(): void {
+    console.debug('Ledger: unloading dashboard');
+  }
+
+  public async onLoadFile(file: TFile): Promise<void> {
+    console.debug('Ledger: File being loaded: ' + file.path);
+
+    // TODO: Update the txCache and call redraw();
+    // (unless this call is redundant with setViewData)
+  }
+
+  public async onUnloadFile(file: TFile): Promise<void> {
+    console.debug('Ledger: File being unloaded: ' + file.path);
+
+    // TODO: Use this to persist any changes that need to be saved.
+  }
+
   public readonly redraw = (): void => {
+    console.debug('Ledger: Creating dashboard view');
+
     const contentEl = this.containerEl.children[1];
-
-    console.debug('ledger: Rendering preview for ledger file');
-    contentEl.empty();
-    const p = contentEl.createEl('p');
-    p.setText('Hello world 2');
-
-    const div = contentEl.createDiv();
-    div.appendChild(this.makeSimpleBarD3());
+    ReactDOM.render(
+      React.createElement(LedgerDashboard, {
+        currencySymbol: this.plugin.settings.currencySymbol,
+        txCache: this.plugin.txCache,
+      }),
+      this.contentEl,
+    );
   };
+
+  // TODO: Create a save function that can be passed into the React app to save
+  // data back to the file.  Look into what the existing save function on this
+  // class does and whether that can be leveraged (maybe it calls getViewData).
 
   private readonly makeSimpleBarD3 = (): SVGSVGElement => {
     // https://www.essycode.com/posts/create-sparkline-charts-d3/
@@ -71,9 +112,5 @@ export class LedgerView extends ItemView {
       .attr('height', (d) => y(d))
       .attr('fill', 'MediumSeaGreen');
     return svg.node();
-  };
-
-  private readonly reloadData = (): void => {
-    throw new Error('Not Implemented');
   };
 }

@@ -9,7 +9,16 @@ import type { Transaction, TransactionCache } from './parser';
 import { ISettings, SettingsTab, settingsWithDefaults } from './settings';
 import { CreateLedgerEntry } from './ui/CreateLedgerEntry';
 import type { default as MomentType } from 'moment';
-import { addIcon, Modal, Plugin, TAbstractFile } from 'obsidian';
+import {
+  addIcon,
+  Menu,
+  MenuItem,
+  Modal,
+  Plugin,
+  TAbstractFile,
+  ViewState,
+  WorkspaceLeaf,
+} from 'obsidian';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
@@ -55,11 +64,76 @@ export default class LedgerPlugin extends Plugin {
 
     this.registerView(LedgerViewType, (leaf) => new LedgerView(leaf, this));
 
-    this.registerExtensions(['ledger'], LedgerViewType);
+    // TODO: Consider switch to using a custom file type
+    // This does however add an extra step to making sure it works with sync.
+    // this.registerExtensions(['ledger'], LedgerViewType);
+
+    // TODO: Look into moving this menu button into the header row.
+    // Maybe using onLayoutChange, detect any Leafs with the Ledger file,
+    // then use leaf.OnHeaderMenu.
 
     this.registerEvent(
-      this.app.workspace.on('layout-change', this.switchToLedgerView),
+      this.app.workspace.on(
+        'file-menu',
+        (
+          menu: Menu,
+          file: TAbstractFile,
+          source: string,
+          leaf: WorkspaceLeaf,
+        ) => {
+          if (
+            this.settings.enableLedgerVis &&
+            file.path === this.settings.ledgerFile
+          ) {
+            menu.addItem((item: MenuItem) => {
+              item.setTitle('Switch to Ledger View');
+              item.setIcon('ledger');
+              item.setActive(true);
+              item.onClick(() => {
+                this.switchToLedgerView(leaf);
+              });
+            });
+          }
+        },
+      ),
     );
+
+    this.addCommand({
+      id: 'open-ledger-view',
+      name: 'Switch to Ledger View',
+      checkCallback: (checking: boolean): boolean | void => {
+        const activeLeaf = this.app.workspace.getMostRecentLeaf();
+        if (checking) {
+          const state = activeLeaf.view.getState();
+          return (
+            this.settings.enableLedgerVis &&
+            state.file === this.settings.ledgerFile
+          );
+        }
+
+        this.switchToLedgerView(activeLeaf);
+      },
+    });
+
+    this.addCommand({
+      id: 'open-markdown-view',
+      name: 'Switch to Markdown View',
+      checkCallback: (checking: boolean): boolean | void => {
+        const activeLeaf = this.app.workspace.getMostRecentLeaf();
+        if (checking) {
+          const state = activeLeaf.view.getState();
+          console.log(state);
+          // TODO: This should check if we are currently in LedgerView, however
+          // for some reason the type is not available on the view state here.
+          return (
+            this.settings.enableLedgerVis &&
+            state.file === this.settings.ledgerFile
+          );
+        }
+
+        this.switchToMarkdownView(activeLeaf);
+      },
+    });
 
     this.app.workspace.onLayoutReady(() => {
       this.updateTransactionCache();
@@ -80,22 +154,29 @@ export default class LedgerPlugin extends Plugin {
     );
   };
 
-  private readonly switchToLedgerView = (): void => {
-    const activeLeaf = this.app.workspace.getMostRecentLeaf();
-    const viewState = activeLeaf.getViewState().state;
-    if (
-      !this.settings.enableLedgerVis ||
-      !viewState ||
-      viewState.file !== this.settings.ledgerFile ||
-      viewState.mode !== 'preview'
-    ) {
-      // Only render when previewing the Ledger file
-      return;
-    }
+  private readonly switchToMarkdownView = async (
+    leaf: WorkspaceLeaf,
+  ): Promise<void> => {
+    const state = leaf.view.getState();
+    await leaf.setViewState(
+      {
+        type: 'markdown',
+        state,
+        popstate: true,
+      } as ViewState,
+      { focus: true },
+    );
+  };
 
-    const vs = activeLeaf.getViewState();
-    vs.type = 'ledger';
-    activeLeaf.setViewState(vs);
+  private readonly switchToLedgerView = async (
+    leaf: WorkspaceLeaf,
+  ): Promise<void> => {
+    const state = leaf.view.getState();
+    await leaf.setViewState({
+      type: LedgerViewType,
+      state: { file: state.file },
+      popstate: true,
+    } as ViewState);
   };
 }
 
