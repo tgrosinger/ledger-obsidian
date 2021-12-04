@@ -14,6 +14,7 @@ import {
   Menu,
   MenuItem,
   Modal,
+  ObsidianProtocolData,
   Plugin,
   TAbstractFile,
   ViewState,
@@ -53,6 +54,8 @@ export default class LedgerPlugin extends Plugin {
         new AddExpenseModal(this).open();
       },
     });
+
+    this.registerObsidianProtocolHandler('ledger', this.handleProtocolAction);
 
     this.registerEvent(
       this.app.vault.on('modify', (file: TAbstractFile) => {
@@ -152,6 +155,14 @@ export default class LedgerPlugin extends Plugin {
       this.app.vault,
       this.settings,
     );
+  };
+
+  private readonly handleProtocolAction = (
+    params: ObsidianProtocolData,
+  ): void => {
+    // TODO: Support pre-populating fields, or even completely skipping the form
+    // by passing the correct data here.
+    new AddExpenseModal(this).open();
   };
 
   private readonly switchToMarkdownView = async (
