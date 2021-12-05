@@ -31,12 +31,16 @@ declare global {
 
 export default class LedgerPlugin extends Plugin {
   public settings: ISettings;
+
   public txCache: TransactionCache;
+  private txCacheSubscriptions: ((txCache: TransactionCache) => void)[];
 
   private readonly renderer: LedgerView;
 
   public async onload(): Promise<void> {
     console.log('ledger: Loading plugin v' + this.manifest.version);
+
+    this.txCacheSubscriptions = [];
 
     await this.loadSettings();
     this.addSettingTab(new SettingsTab(this));
@@ -46,24 +50,7 @@ export default class LedgerPlugin extends Plugin {
       new AddExpenseModal(this).open();
     });
 
-    this.addCommand({
-      id: 'ledger-add-transaction',
-      name: 'Add to Ledger',
-      icon: 'ledger',
-      callback: () => {
-        new AddExpenseModal(this).open();
-      },
-    });
-
     this.registerObsidianProtocolHandler('ledger', this.handleProtocolAction);
-
-    this.registerEvent(
-      this.app.vault.on('modify', (file: TAbstractFile) => {
-        if (file.path === this.settings.ledgerFile) {
-          this.updateTransactionCache();
-        }
-      }),
-    );
 
     this.registerView(LedgerViewType, (leaf) => new LedgerView(leaf, this));
 
@@ -74,6 +61,14 @@ export default class LedgerPlugin extends Plugin {
     // TODO: Look into moving this menu button into the header row.
     // Maybe using onLayoutChange, detect any Leafs with the Ledger file,
     // then use leaf.OnHeaderMenu.
+
+    this.registerEvent(
+      this.app.vault.on('modify', (file: TAbstractFile) => {
+        if (file.path === this.settings.ledgerFile) {
+          this.updateTransactionCache();
+        }
+      }),
+    );
 
     this.registerEvent(
       this.app.workspace.on(
@@ -100,6 +95,15 @@ export default class LedgerPlugin extends Plugin {
         },
       ),
     );
+
+    this.addCommand({
+      id: 'ledger-add-transaction',
+      name: 'Add to Ledger',
+      icon: 'ledger',
+      callback: () => {
+        new AddExpenseModal(this).open();
+      },
+    });
 
     this.addCommand({
       id: 'open-ledger-view',
@@ -143,11 +147,37 @@ export default class LedgerPlugin extends Plugin {
     });
   }
 
+  /**
+   * registerTxCacheSubscriptions takes a function which will be called any time
+   * the transaction cache is updated. The cache will automatically be updated
+   * whenever the ledger file is modified.
+   */
+  public registerTxCacheSubscription = (
+    fn: (txCache: TransactionCache) => void,
+  ): void => {
+    this.txCacheSubscriptions.push(fn);
+  };
+
+  /**
+   * deregisterTxCacheSubscription removes a function which was added using
+   * registerTxCacheSubscription.
+   */
+  public deregisterTxCacheSubscription = (
+    fn: (txCache: TransactionCache) => void,
+  ): void => {
+    this.txCacheSubscriptions.remove(fn);
+  };
+
   private async loadSettings(): Promise<void> {
     this.settings = settingsWithDefaults(await this.loadData());
     this.saveData(this.settings);
   }
 
+  /**
+   * updateTransactionCache is called whenever a modification to the ledger file
+   * is detected. The file will be reparsed and the txCache on this object will
+   * be replaced. Subscriptions will be notified with the new txCache.
+   */
   private readonly updateTransactionCache = async (): Promise<void> => {
     console.debug('ledger: Updating the transaction cache');
     this.txCache = await getTransactionCache(
@@ -155,6 +185,8 @@ export default class LedgerPlugin extends Plugin {
       this.app.vault,
       this.settings,
     );
+
+    this.txCacheSubscriptions.forEach((fn) => fn(this.txCache));
   };
 
   private readonly handleProtocolAction = (

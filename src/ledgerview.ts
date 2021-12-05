@@ -1,4 +1,5 @@
 import type LedgerPlugin from './main';
+import { TransactionCache } from './parser';
 import { LedgerDashboard } from './ui/LedgerDashboard';
 import * as d3 from 'd3';
 import { range, scaleLinear } from 'd3';
@@ -53,10 +54,12 @@ export class LedgerView extends TextFileView {
 
   public onload(): void {
     console.debug('Ledger: loading dashboard');
+    this.plugin.registerTxCacheSubscription(this.handleTxCacheUpdate);
   }
 
   public onunload(): void {
     console.debug('Ledger: unloading dashboard');
+    this.plugin.deregisterTxCacheSubscription(this.handleTxCacheUpdate);
   }
 
   public async onLoadFile(file: TFile): Promise<void> {
@@ -83,6 +86,11 @@ export class LedgerView extends TextFileView {
       }),
       this.contentEl,
     );
+  };
+
+  private readonly handleTxCacheUpdate = (txCache: TransactionCache): void => {
+    console.debug('Ledger: received an updated txCache for dashboard');
+    this.redraw();
   };
 
   // TODO: Create a save function that can be passed into the React app to save
