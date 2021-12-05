@@ -1,5 +1,7 @@
 import type { TransactionCache } from '../parser';
-import { TransactionPage } from './TransactionPage';
+import { AccountPage } from './AccountPage';
+import { MobileTransactionPage, TransactionPage } from './TransactionPage';
+import { Platform } from 'obsidian';
 import React from 'react';
 
 export const LedgerDashboard: React.FC<{
@@ -11,6 +13,12 @@ export const LedgerDashboard: React.FC<{
 
   // TODO: Change the default to the overview once implemented.
   const [selectedTab, setSelectedTab] = React.useState('transactions');
+  const [selectedAccount, setSelectedAccount] = React.useState('');
+
+  const goToAccountPage = (accountName: string): void => {
+    setSelectedTab('accounts');
+    setSelectedAccount(accountName);
+  };
 
   if (!props.txCache) {
     return <p>Loading...</p>;
@@ -23,13 +31,23 @@ export const LedgerDashboard: React.FC<{
       {selectedTab === 'overview' ? <OverviewPage /> : null}
 
       {selectedTab === 'transactions' ? (
-        <TransactionPage
-          currencySymbol={props.currencySymbol}
-          txCache={props.txCache}
-        />
-      ) : (
-        <p>Invalid Option Selected</p>
-      )}
+        Platform.isMobile ? (
+          <MobileTransactionPage
+            currencySymbol={props.currencySymbol}
+            txCache={props.txCache}
+          />
+        ) : (
+          <TransactionPage
+            currencySymbol={props.currencySymbol}
+            txCache={props.txCache}
+            goToAccountPage={goToAccountPage}
+          />
+        )
+      ) : null}
+
+      {selectedTab === 'accounts' ? (
+        <AccountPage accountName={selectedAccount} txCache={props.txCache} />
+      ) : null}
     </>
   );
 };
@@ -38,13 +56,18 @@ const Header: React.FC<{
   selectedTab: string;
   setSelectedTab: React.Dispatch<React.SetStateAction<string>>;
 }> = (props): JSX.Element => (
-    <div>
-      <h2>Ledger</h2>
-      <Button selected={props.selectedTab === 'transactions'}>
-        Transactions
-      </Button>
-    </div>
-  );
+  <div>
+    <h2>Ledger</h2>
+    <Button
+      selected={props.selectedTab === 'transactions'}
+      action={() => {
+        props.setSelectedTab('transactions');
+      }}
+    >
+      Transactions
+    </Button>
+  </div>
+);
 
 const Button: React.FC<{
   selected: boolean;
@@ -55,4 +78,6 @@ const Button: React.FC<{
   </button>
 );
 
-const OverviewPage: React.FC<{}> = (props): JSX.Element => <p>Not yet implemented</p>;
+const OverviewPage: React.FC<{}> = (props): JSX.Element => (
+  <p>Not yet implemented</p>
+);

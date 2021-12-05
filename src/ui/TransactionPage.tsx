@@ -1,11 +1,50 @@
 import { Transaction, TransactionCache } from '../parser';
 import { getTotal } from '../transaction-utils';
-import { _,Grid } from 'gridjs-react';
+import { _, Grid } from 'gridjs-react';
 import React from 'react';
+
+export const MobileTransactionPage: React.FC<{
+  currencySymbol: string;
+  txCache: TransactionCache;
+}> = (props): JSX.Element => 
+  // TODO: Add pagination to see more than just the most recent 10 transactions
+  // TODO: Key should be based on transaction itself, not list index
+   (
+    <div>
+      {props.txCache.transactions
+        .reverse()
+        .slice(0, 10)
+        .map(
+          (tx: Transaction, i: number): JSX.Element => (
+            <MobileTransactionEntry
+              key={i}
+              tx={tx}
+              currencySymbol={props.currencySymbol}
+            />
+          ),
+        )}
+    </div>
+  )
+;
+
+export const MobileTransactionEntry: React.FC<{
+  tx: Transaction;
+  currencySymbol: string;
+}> = (props): JSX.Element => {
+  return (
+    <div>
+      <h3>{props.tx.value.payee}</h3>
+      <div>From: {props.tx.value.expenselines.last().category}</div>
+      <div>Amount: {getTotal(props.tx, props.currencySymbol)}</div>
+    </div>
+  );
+  return null;
+};
 
 export const TransactionPage: React.FC<{
   currencySymbol: string;
   txCache: TransactionCache;
+  goToAccountPage: (accountName: string) => void;
 }> = (props): JSX.Element => {
   // TODO: Add date range selector and make date in table a hyperlink to select that date.
 
@@ -19,8 +58,18 @@ export const TransactionPage: React.FC<{
         tx.value.date,
         tx.value.payee,
         getTotal(tx, props.currencySymbol),
-        _(<CategoryCell>{tx.value.expenselines[1].category}</CategoryCell>),
-        _(<CategoryCell>{tx.value.expenselines[0].category}</CategoryCell>),
+        _(
+          <AccountCell
+            name={tx.value.expenselines[1].category}
+            goToAccountPage={props.goToAccountPage}
+          />,
+        ),
+        _(
+          <AccountCell
+            name={tx.value.expenselines[0].category}
+            goToAccountPage={props.goToAccountPage}
+          />,
+        ),
       ];
     }
     // Otherwise, there are multiple 'to' lines to consider
@@ -46,12 +95,15 @@ export const TransactionPage: React.FC<{
   );
 };
 
-const CategoryCell: React.FC<{}> = (props): JSX.Element => (
-    <a
-      onClick={() => {
-        console.log('Clicked: ' + props.children);
-      }}
-    >
-      {props.children}
-    </a>
-  );
+const AccountCell: React.FC<{
+  name: string;
+  goToAccountPage: (accountName: string) => void;
+}> = (props): JSX.Element => (
+  <a
+    onClick={() => {
+      props.goToAccountPage(props.name);
+    }}
+  >
+    {props.name}
+  </a>
+);
