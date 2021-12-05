@@ -40,22 +40,22 @@ export const CreateLedgerEntry: React.FC<{
   const [date, setDate] = React.useState(moment().format('YYYY-MM-DD'));
 
   const assetsAndLiabilities = union(
-    txCache.assetCategories,
-    txCache.liabilityCategories,
+    txCache.assetAccounts,
+    txCache.liabilityAccounts,
   );
 
   // TODO: Combine some related state into objects
-  const [category1, setCategory1] = React.useState('');
-  const [category1Suggestions, setCategory1Suggestions] = React.useState(
-    txCache.expenseCategories,
+  const [account1, setAccount1] = React.useState('');
+  const [account1Suggestions, setAccount1Suggestions] = React.useState(
+    txCache.expenseAccounts,
   );
-  const [category2, setCategory2] = React.useState('');
-  const [category2Suggestions, setCategory2Suggestions] =
+  const [account2, setAccount2] = React.useState('');
+  const [account2Suggestions, setAccount2Suggestions] =
     React.useState(assetsAndLiabilities);
 
   const suggestionCount = Platform.isMobile ? 5 : 15;
 
-  const getCategoryName = (c: 1 | 2): string => {
+  const getAccountName = (c: 1 | 2): string => {
     switch (txType) {
       case 'expense':
         return c === 1 ? 'Expense' : 'Asset';
@@ -69,16 +69,16 @@ export const CreateLedgerEntry: React.FC<{
   const changeTxType = (newTxType: string): void => {
     switch (newTxType) {
       case 'expense':
-        setCategory1Suggestions(txCache.expenseCategories);
-        setCategory2Suggestions(assetsAndLiabilities);
+        setAccount1Suggestions(txCache.expenseAccounts);
+        setAccount2Suggestions(assetsAndLiabilities);
         break;
       case 'income':
-        setCategory1Suggestions(assetsAndLiabilities);
-        setCategory2Suggestions(txCache.incomeCategories);
+        setAccount1Suggestions(assetsAndLiabilities);
+        setAccount2Suggestions(txCache.incomeAccounts);
         break;
       case 'transfer':
-        setCategory1Suggestions(assetsAndLiabilities);
-        setCategory2Suggestions(assetsAndLiabilities);
+        setAccount1Suggestions(assetsAndLiabilities);
+        setAccount2Suggestions(assetsAndLiabilities);
         break;
     }
 
@@ -88,8 +88,8 @@ export const CreateLedgerEntry: React.FC<{
   const save = async (): Promise<void> => {
     let localPayee = payee;
     if (txType === 'transfer') {
-      const from = category1.split(':').last();
-      const to = category2.split(':').last();
+      const from = account1.split(':').last();
+      const to = account2.split(':').last();
       localPayee = `${from} to ${to}`;
     }
 
@@ -100,11 +100,11 @@ export const CreateLedgerEntry: React.FC<{
       // TODO: Default to today
       new Notice('Must select a date');
       return;
-    } else if (category1 === '') {
-      new Notice(`${getCategoryName(1)} account must not be empty`);
+    } else if (account1 === '') {
+      new Notice(`${getAccountName(1)} account must not be empty`);
       return;
-    } else if (category2 === '') {
-      new Notice(`${getCategoryName(2)} account must not be empty`);
+    } else if (account2 === '') {
+      new Notice(`${getAccountName(2)} account must not be empty`);
       return;
     }
 
@@ -116,12 +116,12 @@ export const CreateLedgerEntry: React.FC<{
         payee: localPayee,
         expenselines: [
           {
-            category: category1,
+            account: account1,
             amount: parseFloat(total),
             currency: currencySymbol,
           },
           {
-            category: category2,
+            account: account2,
           },
         ],
       },
@@ -133,7 +133,7 @@ export const CreateLedgerEntry: React.FC<{
 
   // TODO: Replace txType Select with nice buttons
   // TODO: Make this support income or transfers as well
-  // TODO: Filter categories based on whether entering an expense, income, or transfer
+  // TODO: Filter accounts based on whether entering an expense, income, or transfer
   // TODO: Support splitting transactions
   return (
     <>
@@ -190,20 +190,20 @@ export const CreateLedgerEntry: React.FC<{
 
       <Margin>
         <TextSuggest
-          placeholder={`${getCategoryName(1)} Account`}
+          placeholder={`${getAccountName(1)} Account`}
           displayCount={suggestionCount}
-          suggestions={category1Suggestions}
-          value={category1}
-          setValue={setCategory1}
+          suggestions={account1Suggestions}
+          value={account1}
+          setValue={setAccount1}
         />
       </Margin>
       <Margin>
         <TextSuggest
-          placeholder={`${getCategoryName(2)} Account`}
+          placeholder={`${getAccountName(2)} Account`}
           displayCount={suggestionCount}
-          suggestions={category2Suggestions}
-          value={category2}
-          setValue={setCategory2}
+          suggestions={account2Suggestions}
+          value={account2}
+          setValue={setAccount2}
         />
       </Margin>
 

@@ -6,26 +6,24 @@ import React from 'react';
 export const MobileTransactionPage: React.FC<{
   currencySymbol: string;
   txCache: TransactionCache;
-}> = (props): JSX.Element => 
+}> = (props): JSX.Element => (
   // TODO: Add pagination to see more than just the most recent 10 transactions
   // TODO: Key should be based on transaction itself, not list index
-   (
-    <div>
-      {props.txCache.transactions
-        .reverse()
-        .slice(0, 10)
-        .map(
-          (tx: Transaction, i: number): JSX.Element => (
-            <MobileTransactionEntry
-              key={i}
-              tx={tx}
-              currencySymbol={props.currencySymbol}
-            />
-          ),
-        )}
-    </div>
-  )
-;
+  <div>
+    {props.txCache.transactions
+      .reverse()
+      .slice(0, 10)
+      .map(
+        (tx: Transaction, i: number): JSX.Element => (
+          <MobileTransactionEntry
+            key={i}
+            tx={tx}
+            currencySymbol={props.currencySymbol}
+          />
+        ),
+      )}
+  </div>
+);
 
 export const MobileTransactionEntry: React.FC<{
   tx: Transaction;
@@ -34,7 +32,7 @@ export const MobileTransactionEntry: React.FC<{
   return (
     <div>
       <h3>{props.tx.value.payee}</h3>
-      <div>From: {props.tx.value.expenselines.last().category}</div>
+      <div>From: {props.tx.value.expenselines.last().account}</div>
       <div>Amount: {getTotal(props.tx, props.currencySymbol)}</div>
     </div>
   );
@@ -60,13 +58,13 @@ export const TransactionPage: React.FC<{
         getTotal(tx, props.currencySymbol),
         _(
           <AccountCell
-            name={tx.value.expenselines[1].category}
+            name={tx.value.expenselines[1].account}
             goToAccountPage={props.goToAccountPage}
           />,
         ),
         _(
           <AccountCell
-            name={tx.value.expenselines[0].category}
+            name={tx.value.expenselines[0].account}
             goToAccountPage={props.goToAccountPage}
           />,
         ),

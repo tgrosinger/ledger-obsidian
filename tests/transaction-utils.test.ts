@@ -1,5 +1,5 @@
 import { Transaction } from '../src/parser';
-import { getCurrency,getTotal } from '../src/transaction-utils';
+import { getCurrency, getTotal } from '../src/transaction-utils';
 
 describe('getTotal()', () => {
   test('When the last line has an amount', () => {
@@ -12,15 +12,15 @@ describe('getTotal()', () => {
           {
             amount: 40,
             currency: '$',
-            category: 'category1',
+            account: 'account1',
           },
           {
-            category: 'category2',
+            account: 'account2',
           },
           {
             amount: -60,
             currency: '$',
-            category: 'category3',
+            account: 'account3',
           },
         ],
       },
@@ -38,15 +38,15 @@ describe('getTotal()', () => {
           {
             amount: 40,
             currency: '$',
-            category: 'category1',
+            account: 'account1',
           },
           {
             amount: 20,
             currency: '$',
-            category: 'category2',
+            account: 'account2',
           },
           {
-            category: 'category3',
+            account: 'account3',
           },
         ],
       },
@@ -64,13 +64,13 @@ describe('getTotal()', () => {
           {
             amount: 40,
             currency: '$',
-            category: 'category1',
+            account: 'account1',
           },
           {
-            category: 'category2',
+            account: 'account2',
           },
           {
-            category: 'category3',
+            account: 'account3',
           },
         ],
       },
@@ -87,10 +87,10 @@ describe('getTotal()', () => {
         expenselines: [
           {
             amount: 40,
-            category: 'category1',
+            account: 'account1',
           },
           {
-            category: 'category3',
+            account: 'account3',
           },
         ],
       },
@@ -106,11 +106,11 @@ describe('getTotal()', () => {
         payee: 'Testing',
         expenselines: [
           {
-            category: 'category1',
+            account: 'account1',
           },
           {
             amount: 40,
-            category: 'category3',
+            account: 'account3',
           },
         ],
       },
@@ -131,10 +131,10 @@ describe('getCurrency()', () => {
           {
             amount: 40,
             currency: 'L',
-            category: 'category1',
+            account: 'account1',
           },
           {
-            category: 'category3',
+            account: 'account3',
           },
         ],
       },
@@ -150,12 +150,12 @@ describe('getCurrency()', () => {
         payee: 'Testing',
         expenselines: [
           {
-            category: 'category1',
+            account: 'account1',
           },
           {
             amount: 40,
             currency: 'L',
-            category: 'category3',
+            account: 'account3',
           },
         ],
       },
@@ -172,10 +172,10 @@ describe('getCurrency()', () => {
         expenselines: [
           {
             amount: 40,
-            category: 'category1',
+            account: 'account1',
           },
           {
-            category: 'category3',
+            account: 'account3',
           },
         ],
       },

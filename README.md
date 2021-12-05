@@ -10,7 +10,7 @@ safely in your Obsidian Vault instead.
 
 - [x] Widget to quickly input expenses.
   - Use it with Obsidian Mobile to track expenses as they occur on the go!
-- [x] Auto suggest previous categories and expenses to speed entry.
+- [x] Auto suggest previous accounts and expenses to speed entry.
 - [x] Obsidian Protocol handling to quickly launch Obsidian and immediately record a transaction
   - Create a Shortcut on mobile to `obsidian://ledger`
 - [ ] Reporting (planned soon!)

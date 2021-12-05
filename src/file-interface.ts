@@ -12,15 +12,15 @@ export const formatExpense = (tx: Transaction, settings: ISettings): string => {
   tx.value.expenselines[tx.value.expenselines.length - 1].amount = total * -1;
 
   const joinedLines = tx.value.expenselines
-    .map(({ category, amount }, i) => {
+    .map(({ account, amount }, i) => {
       if (
         i !== tx.value.expenselines.length - 1 ||
         settings.includeFinalLineAmount
       ) {
-        return `    ${category}    ${symb}${amount.toFixed(2)}`;
+        return `    ${account}    ${symb}${amount.toFixed(2)}`;
       }
       // The amount is optional on the final line
-      return `    ${category}`;
+      return `    ${account}`;
     })
     .join('\n');
   return `\n${tx.value.date} ${tx.value.payee}\n${joinedLines}`;

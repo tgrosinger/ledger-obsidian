@@ -11,12 +11,12 @@ describe('formatting a transaction into ledger', () => {
         payee: 'test-payee',
         expenselines: [
           {
-            category: 'test-category-1',
+            account: 'test-account-1',
             amount: 10.0,
             currency: '$',
           },
           {
-            category: 'test-category-2',
+            account: 'test-account-2',
           },
         ],
       },
@@ -25,8 +25,8 @@ describe('formatting a transaction into ledger', () => {
     const expected = [
       '',
       '2021/12/31 test-payee',
-      '    test-category-1    $10.00',
-      '    test-category-2',
+      '    test-account-1    $10.00',
+      '    test-account-2',
     ].join('\n');
 
     const result = formatExpense(tx, settingsWithDefaults({}));

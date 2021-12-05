@@ -6,7 +6,8 @@ import {
 import { billIcon } from './graphics';
 import { LedgerView, LedgerViewType } from './ledgerview';
 import type { Transaction, TransactionCache } from './parser';
-import { ISettings, SettingsTab, settingsWithDefaults } from './settings';
+import { ISettings, settingsWithDefaults } from './settings';
+import { SettingsTab } from './settings-tab';
 import { CreateLedgerEntry } from './ui/CreateLedgerEntry';
 import type { default as MomentType } from 'moment';
 import {

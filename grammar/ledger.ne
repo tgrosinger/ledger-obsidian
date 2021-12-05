@@ -41,10 +41,10 @@
         currency: /[$£₤€₿₹¥₩Р]/, // Note: Р != P
         reconciled: /[!*]/,
         comment: { match: /[;#|][^\n]+/, value: (s:string) => s.slice(1).trim() },
-        category: { match: /[^$£₤€₿₹¥₩Р;#|\n]+/, value: (s:string) => s.trim() },
+        account: { match: /[^$£₤€₿₹¥₩Р;#|\n]+/, value: (s:string) => s.trim() },
       },
       alias: {
-        category: { match: /[a-zA-Z0-9: ]+/, value: (s:string) => s.trim() },
+        account: { match: /[a-zA-Z0-9: ]+/, value: (s:string) => s.trim() },
         equal: '=',
         newline: { match: '\n', lineBreaks: true, next: 'main' },
       },
@@ -80,12 +80,12 @@ expenselines ->
   | expenselines %newline expenseline             {% ([rest,,l]) => { return [rest,l].flat(1) } %}
 
 expenseline ->
-    %ws:+ reconciled:? %category amount:? %ws:* %comment:?
+    %ws:+ reconciled:? %account amount:? %ws:* %comment:?
                                                   {%
                                                     function(d) {
                                                       return {
                                                         reconcile: d[1] || '',
-                                                        category: d[2].value,
+                                                        account: d[2].value,
                                                         currency: d[3]?.currency,
                                                         amount: d[3]?.amount,
                                                         comment: d[5]?.value,
@@ -95,6 +95,6 @@ expenseline ->
   | %ws:+ %comment                                {% ([,c]) => { return {comment: c.value} } %}
 
 reconciled -> %reconciled %ws:+                   {% ([r,]) => r.value %}
-alias -> "alias" %category %equal %category       {% ([,l,,r]) => { return { left: l.value, right: r.value } } %}
+alias -> "alias" %account %equal %account         {% ([,l,,r]) => { return { left: l.value, right: r.value } } %}
 amount -> %currency %number                       {% ([c,a]) => { return {currency: c.value, amount: parseFloat(a.value)} } %}
 check -> %check                                   {% ([c]) => parseFloat(c.value) %}

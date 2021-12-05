@@ -9,36 +9,36 @@ export interface TransactionCache {
   aliases: Map<string, string>;
 
   /**
-   * categories contains a list of all categories from the file, unmodified.
+   * Accounts contains a list of all accounts from the file, unmodified.
    * Being unmodified, aliases may or may not be in use.
    */
-  categories: string[];
+  accounts: string[];
 
   /**
-   * expenseCategories is not dealiased and only contains expense categories.
+   * expenseAccounts is not dealiased and only contains expense accounts.
    */
-  expenseCategories: string[];
+  expenseAccounts: string[];
 
   /**
-   * assetCategories is not dealiased and only contains asset categories.
+   * assetAccounts is not dealiased and only contains asset accounts.
    */
-  assetCategories: string[];
+  assetAccounts: string[];
 
   /**
-   * incomeCategories is not dealiased and only contains income categories.
+   * incomeAccounts is not dealiased and only contains income accounts.
    */
-  incomeCategories: string[];
+  incomeAccounts: string[];
 
   /**
-   * liabilityCategories is not dealiased and only contains liability categories.
+   * liabilityAccounts is not dealiased and only contains liability accounts.
    */
-  liabilityCategories: string[];
+  liabilityAccounts: string[];
 }
 
 export interface Expenseline {
   amount?: number;
   currency?: string;
-  category: string;
+  account: string;
   reconcile?: '' | '*' | '!';
   comment?: string;
   id?: number;
@@ -116,30 +116,28 @@ export const parse = (
       .map(({ value }) => value.payee)
       .sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1)),
   );
-  const categories = sortedUniq(
+  const accounts = sortedUniq(
     flatMap(txs, ({ value }) =>
-      value.expenselines.flatMap((line) =>
-        line.category ? line.category : [],
-      ),
+      value.expenselines.flatMap((line) => (line.account ? line.account : [])),
     ).sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1)),
   );
 
   const aliasMap = parseAliases(aliases);
 
-  const assetCategories: string[] = [];
-  const expenseCategories: string[] = [];
-  const incomeCategories: string[] = [];
-  const liabilityCategories: string[] = [];
-  categories.forEach((c) => {
-    const dealiasedC = dealiasCategory(c, aliasMap);
-    if (dealiasedC.startsWith(settings.assetAccountsPrefix)) {
-      assetCategories.push(c);
-    } else if (dealiasedC.startsWith(settings.expenseAccountsPrefix)) {
-      expenseCategories.push(c);
-    } else if (dealiasedC.startsWith(settings.incomeAccountsPrefix)) {
-      incomeCategories.push(c);
-    } else if (dealiasedC.startsWith(settings.liabilityAccountsPrefix)) {
-      liabilityCategories.push(c);
+  const assetAccounts: string[] = [];
+  const expenseAccounts: string[] = [];
+  const incomeAccounts: string[] = [];
+  const liabilityAccounts: string[] = [];
+  accounts.forEach((c) => {
+    const dealiasedA = dealiasAccount(c, aliasMap);
+    if (dealiasedA.startsWith(settings.assetAccountsPrefix)) {
+      assetAccounts.push(c);
+    } else if (dealiasedA.startsWith(settings.expenseAccountsPrefix)) {
+      expenseAccounts.push(c);
+    } else if (dealiasedA.startsWith(settings.incomeAccountsPrefix)) {
+      incomeAccounts.push(c);
+    } else if (dealiasedA.startsWith(settings.liabilityAccountsPrefix)) {
+      liabilityAccounts.push(c);
     }
   });
 
@@ -147,36 +145,36 @@ export const parse = (
     aliases: aliasMap,
     transactions: txs,
     payees,
-    categories,
+    accounts,
 
-    assetCategories,
-    expenseCategories,
-    incomeCategories,
-    liabilityCategories,
+    assetAccounts,
+    expenseAccounts,
+    incomeAccounts,
+    liabilityAccounts,
   };
 };
 
-const dealiasCategory = (
-  category: string,
+const dealiasAccount = (
+  account: string,
   aliases: Map<string, string>,
 ): string => {
-  const firstDelimeter = category.indexOf(':');
+  const firstDelimeter = account.indexOf(':');
   if (firstDelimeter > 0) {
-    const prefix = category.substring(0, firstDelimeter);
+    const prefix = account.substring(0, firstDelimeter);
     if (aliases.has(prefix)) {
-      return aliases.get(prefix) + category.substring(firstDelimeter);
+      return aliases.get(prefix) + account.substring(firstDelimeter);
     }
   }
-  return category;
+  return account;
 };
 
-const dealiasCategories = (
-  categories: string[],
+const dealiasAccounts = (
+  accounts: string[],
   aliases: Map<string, string>,
 ): string[] =>
   sortedUniq(
-    categories
-      .map((cat) => dealiasCategory(cat, aliases))
+    accounts
+      .map((cat) => dealiasAccount(cat, aliases))
       .sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1)),
   );
 
