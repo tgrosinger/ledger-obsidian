@@ -16,9 +16,10 @@ describe('parsing multiple blocks', () => {
 
     expect(parser.results).toEqual([
       [
-        { type: 'comment', value: 'This is a comment' },
+        { type: 'comment', blockLine: 1, value: 'This is a comment' },
         {
           type: 'alias',
+          blockLine: 2,
           value: {
             left: 'Dining',
             right: 'Expenses:Entertainment:Dining',
@@ -26,6 +27,7 @@ describe('parsing multiple blocks', () => {
         },
         {
           type: 'tx',
+          blockLine: 3,
           value: {
             check: 1234,
             date: '2018-04-03',
@@ -56,14 +58,14 @@ describe('parsing a comment', () => {
     parser.feed('; This is a comment');
 
     expect(parser.results).toEqual([
-      [{ type: 'comment', value: 'This is a comment' }],
+      [{ type: 'comment', blockLine: 1, value: 'This is a comment' }],
     ]);
   });
   test('when there is no space', () => {
     parser.feed(';This is a comment');
 
     expect(parser.results).toEqual([
-      [{ type: 'comment', value: 'This is a comment' }],
+      [{ type: 'comment', blockLine: 1, value: 'This is a comment' }],
     ]);
   });
 });
@@ -76,6 +78,7 @@ describe('parsing an alias', () => {
       [
         {
           type: 'alias',
+          blockLine: 1,
           value: {
             left: 'Dining',
             right: 'Expenses:Entertainment:Dining',
@@ -97,6 +100,7 @@ describe('parsing a transaction', () => {
       [
         {
           type: 'tx',
+          blockLine: 1,
           value: {
             check: undefined,
             date: '2018-04-03',
@@ -135,6 +139,7 @@ describe('parsing a transaction', () => {
       [
         {
           type: 'tx',
+          blockLine: 1,
           value: {
             check: undefined,
             date: '2018-04-03',
@@ -167,6 +172,7 @@ describe('parsing a transaction', () => {
       [
         {
           type: 'tx',
+          blockLine: 1,
           value: {
             check: 1234,
             date: '2018-04-03',
@@ -199,6 +205,7 @@ describe('parsing a transaction', () => {
       [
         {
           type: 'tx',
+          blockLine: 1,
           value: {
             check: 1234,
             date: '2018-04-03',
@@ -231,6 +238,7 @@ describe('parsing a transaction', () => {
       [
         {
           type: 'tx',
+          blockLine: 1,
           value: {
             check: 1234,
             date: '2018-04-03',
@@ -264,6 +272,7 @@ describe('parsing a transaction', () => {
       [
         {
           type: 'tx',
+          blockLine: 1,
           value: {
             check: 1234,
             date: '2018-04-03',

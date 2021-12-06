@@ -1,4 +1,4 @@
-import { parse } from '../src/parser';
+import { parse, splitIntoBlocks } from '../src/parser';
 import { settingsWithDefaults } from '../src/settings';
 
 // For some reaosn it may be necessary to change the moo import
@@ -6,6 +6,75 @@ import { settingsWithDefaults } from '../src/settings';
 // const moo = require('moo')
 
 const settings = settingsWithDefaults({});
+
+describe('splitIntoBlocks()', () => {
+  test('simple example', () => {
+    const input = ['line1', 'line2', 'line3'].join('\n');
+    const result = splitIntoBlocks(input);
+    expect(result).toHaveLength(1);
+    expect(result[0].firstLine).toEqual(0);
+    expect(result[0].lastLine).toEqual(2);
+    expect(result[0].block).toEqual('line1\nline2\nline3');
+  });
+  test('when there is a trailing new line', () => {
+    const input = ['line1', 'line2', 'line3', ''].join('\n');
+    const result = splitIntoBlocks(input);
+    expect(result).toHaveLength(1);
+    expect(result[0].firstLine).toEqual(0);
+    expect(result[0].lastLine).toEqual(2);
+    expect(result[0].block).toEqual('line1\nline2\nline3');
+  });
+  test('when there are multiple blocks', () => {
+    const input = ['line1', 'line2', 'line3', '', 'line4', 'line5'].join('\n');
+    const result = splitIntoBlocks(input);
+    expect(result).toHaveLength(2);
+    expect(result[0].firstLine).toEqual(0);
+    expect(result[0].lastLine).toEqual(2);
+    expect(result[0].block).toEqual('line1\nline2\nline3');
+    expect(result[1].firstLine).toEqual(4);
+    expect(result[1].lastLine).toEqual(5);
+    expect(result[1].block).toEqual('line4\nline5');
+  });
+  test('when there are multiple blank lines between blocks', () => {
+    const input = ['line1', 'line2', 'line3', '', '', 'line4', 'line5'].join(
+      '\n',
+    );
+    const result = splitIntoBlocks(input);
+    expect(result).toHaveLength(2);
+    expect(result[0].firstLine).toEqual(0);
+    expect(result[0].lastLine).toEqual(2);
+    expect(result[0].block).toEqual('line1\nline2\nline3');
+    expect(result[1].firstLine).toEqual(5);
+    expect(result[1].lastLine).toEqual(6);
+    expect(result[1].block).toEqual('line4\nline5');
+  });
+  test('when there is whitespace on the blank line - 1', () => {
+    const input = ['line1', 'line2', 'line3', '\t', 'line4', 'line5'].join(
+      '\n',
+    );
+    const result = splitIntoBlocks(input);
+    expect(result).toHaveLength(2);
+    expect(result[0].firstLine).toEqual(0);
+    expect(result[0].lastLine).toEqual(2);
+    expect(result[0].block).toEqual('line1\nline2\nline3');
+    expect(result[1].firstLine).toEqual(4);
+    expect(result[1].lastLine).toEqual(5);
+    expect(result[1].block).toEqual('line4\nline5');
+  });
+  test('when there is whitespace on the blank line - 2', () => {
+    const input = ['line1', 'line2', 'line3', '    ', 'line4', 'line5'].join(
+      '\n',
+    );
+    const result = splitIntoBlocks(input);
+    expect(result).toHaveLength(2);
+    expect(result[0].firstLine).toEqual(0);
+    expect(result[0].lastLine).toEqual(2);
+    expect(result[0].block).toEqual('line1\nline2\nline3');
+    expect(result[1].firstLine).toEqual(4);
+    expect(result[1].lastLine).toEqual(5);
+    expect(result[1].block).toEqual('line4\nline5');
+  });
+});
 
 describe('parsing a ledger file', () => {
   describe('transactions are populated correctly', () => {
@@ -21,6 +90,9 @@ describe('parsing a ledger file', () => {
       const txCache = parse(contents, settings);
       const expected = {
         type: 'tx',
+        blockLine: 1,
+        firstLine: 0,
+        lastLine: 2,
         value: {
           date: '2021/04/20',
           payee: 'Obsidian',
@@ -48,6 +120,9 @@ describe('parsing a ledger file', () => {
       const txCache = parse(contents, settings);
       const expected = {
         type: 'tx',
+        blockLine: 1,
+        firstLine: 0,
+        lastLine: 2,
         value: {
           date: '2021/04/20',
           payee: 'Obsidian',
@@ -78,6 +153,9 @@ describe('parsing a ledger file', () => {
       const txCache = parse(contents, settings);
       const expected = {
         type: 'tx',
+        blockLine: 1,
+        firstLine: 0,
+        lastLine: 3,
         value: {
           date: '2021/04/20',
           payee: 'Obsidian',
@@ -117,6 +195,9 @@ describe('parsing a ledger file', () => {
       const txCache = parse(contents, settings);
       const expected1 = {
         type: 'tx',
+        blockLine: 1,
+        firstLine: 0,
+        lastLine: 2,
         value: {
           date: '2021/04/20',
           payee: 'Obsidian',
@@ -138,6 +219,9 @@ describe('parsing a ledger file', () => {
       };
       const expected2 = {
         type: 'tx',
+        blockLine: 1,
+        firstLine: 4,
+        lastLine: 6,
         value: {
           date: '2021/04/21',
           payee: 'Food Co-op',
@@ -157,6 +241,7 @@ describe('parsing a ledger file', () => {
           ],
         },
       };
+      expect(txCache.hadParsingError).toBeFalsy();
       expect(txCache.transactions).toHaveLength(2);
       expect(txCache.transactions[0]).toEqual(expected1);
       expect(txCache.transactions[1]).toEqual(expected2);
@@ -169,6 +254,9 @@ describe('parsing a ledger file', () => {
       const txCache = parse(contents, settings);
       const expected = {
         type: 'tx',
+        blockLine: 1,
+        firstLine: 0,
+        lastLine: 3,
         value: {
           date: '2021/04/20',
           payee: 'Obsidian',
@@ -197,7 +285,7 @@ describe('parsing a ledger file', () => {
       expect(txCache.transactions).toHaveLength(1);
       expect(txCache.transactions[0]).toEqual(expected);
     });
-    test('Comments are ignored', () => {
+    test('Comments are preserved', () => {
       const contents = `2021/04/20 Obsidian ; testing
       e:Spending Money    $20.00 ; a comment
       e:Household Goods   $5.00
@@ -205,6 +293,9 @@ describe('parsing a ledger file', () => {
       const txCache = parse(contents, settings);
       const expected = {
         type: 'tx',
+        blockLine: 1,
+        firstLine: 0,
+        lastLine: 3,
         value: {
           date: '2021/04/20',
           payee: 'Obsidian',
@@ -242,6 +333,9 @@ describe('parsing a ledger file', () => {
       const txCache = parse(contents, settings);
       const expected = {
         type: 'tx',
+        blockLine: 1,
+        firstLine: 0,
+        lastLine: 2,
         value: {
           date: '2021/01/01',
           payee: 'халтура',
@@ -259,8 +353,73 @@ describe('parsing a ledger file', () => {
           ],
         },
       };
+      expect(txCache.hadParsingError).toBeFalsy();
       expect(txCache.transactions).toHaveLength(1);
       expect(txCache.transactions[0]).toEqual(expected);
+    });
+    test('A parsing error tags the result accordingly', () => {
+      const contents = `2021/04/20 Obsidian
+      e:Spending Money    $20.00
+      b:CreditUnion       $-20.00
+
+      An unexpected line
+      
+2021/04/21   Food Co-op
+      e:Food:Groceries    $45.00
+      b:CreditUnion       $-45.00`;
+      const txCache = parse(contents, settings);
+      const expected1 = {
+        type: 'tx',
+        blockLine: 1,
+        firstLine: 0,
+        lastLine: 2,
+        value: {
+          date: '2021/04/20',
+          payee: 'Obsidian',
+          expenselines: [
+            {
+              account: 'e:Spending Money',
+              amount: 20,
+              currency: '$',
+              reconcile: '',
+            },
+            {
+              account: 'b:CreditUnion',
+              amount: -20,
+              currency: '$',
+              reconcile: '',
+            },
+          ],
+        },
+      };
+      const expected2 = {
+        type: 'tx',
+        blockLine: 1,
+        firstLine: 6,
+        lastLine: 8,
+        value: {
+          date: '2021/04/21',
+          payee: 'Food Co-op',
+          expenselines: [
+            {
+              account: 'e:Food:Groceries',
+              amount: 45,
+              currency: '$',
+              reconcile: '',
+            },
+            {
+              account: 'b:CreditUnion',
+              amount: -45,
+              currency: '$',
+              reconcile: '',
+            },
+          ],
+        },
+      };
+      expect(txCache.hadParsingError).toBeTruthy();
+      expect(txCache.transactions).toHaveLength(2);
+      expect(txCache.transactions[0]).toEqual(expected1);
+      expect(txCache.transactions[1]).toEqual(expected2);
     });
   });
   describe('payees are populated correctly', () => {
@@ -339,6 +498,42 @@ alias b=Assets:Banking
       expect(txCache.incomeAccounts).toEqual([]);
     });
   });
+  describe('multiple elements in a block are parsed correctly', () => {
+    // TODO: When there is better preservation of aliases and comments in the tx
+    // cache, write more tests to make sure their line numbers are preserved.
+    test('when there is an alias and a transaction', () => {
+      const contents = `alias e=Expenses
+2021/04/20 Obsidian
+      e:Spending Money    $20.00
+      b:CreditUnion`;
+      const txCache = parse(contents, settings);
+      const expected = {
+        type: 'tx',
+        blockLine: 2,
+        firstLine: 1,
+        lastLine: 3,
+        value: {
+          date: '2021/04/20',
+          payee: 'Obsidian',
+          expenselines: [
+            {
+              account: 'e:Spending Money',
+              amount: 20,
+              currency: '$',
+              reconcile: '',
+            },
+            {
+              account: 'b:CreditUnion',
+              reconcile: '',
+            },
+          ],
+        },
+      };
+      expect(txCache.transactions).toHaveLength(1);
+      expect(txCache.transactions[0]).toEqual(expected);
+      // TODO: Check for the alias and its line number
+    });
+  });
 
   test('complicated example transaction', () => {
     const contents = `2019/09/16 Costco
@@ -349,6 +544,9 @@ alias b=Assets:Banking
     const txCache = parse(contents, settings);
     const expected = {
       type: 'tx',
+      blockLine: 1,
+      firstLine: 0,
+      lastLine: 4,
       value: {
         date: '2019/09/16',
         payee: 'Costco',

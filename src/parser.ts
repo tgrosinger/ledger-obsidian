@@ -8,6 +8,16 @@ export interface TransactionCache {
   payees: string[];
   aliases: Map<string, string>;
 
+  // TODO: We need to store the actual Aliases and Comments in here in order to
+  // be able to rebuild the file
+
+  /**
+   * If there was an error during parsing then our internal state does not 100%
+   * represent the state of the ledger file. We should not attempt to overwrite
+   * the file, for example to sort transactions.
+   */
+  hadParsingError: boolean;
+
   /**
    * Accounts contains a list of all accounts from the file, unmodified.
    * Being unmodified, aliases may or may not be in use.
@@ -46,6 +56,9 @@ export interface Expenseline {
 
 export interface Transaction {
   type: 'tx';
+  blockLine?: number;
+  firstLine?: number;
+  lastLine?: number;
   value: {
     check?: number;
     date: string;
@@ -56,6 +69,9 @@ export interface Transaction {
 
 export interface Alias {
   type: 'alias';
+  blockLine?: number;
+  firstLine?: number;
+  lastLine?: number;
   value: {
     left: string;
     right: string;
@@ -64,7 +80,16 @@ export interface Alias {
 
 export interface Comment {
   type: 'comment';
+  blockLine?: number;
+  firstLine?: number;
+  lastLine?: number;
   value: string;
+}
+
+interface FileBlock {
+  block: string;
+  firstLine: number;
+  lastLine: number;
 }
 
 type Element = Transaction | Alias | Comment;
@@ -73,25 +98,38 @@ export const parse = (
   fileContents: string,
   settings: ISettings,
 ): TransactionCache => {
-  const splitFileContents = fileContents.split(/\n[ \t]*\n/); // Split on blank lines
-  const results = splitFileContents
-    .filter((lines) => lines.trim() !== '')
-    .map((lines): Element[] => {
+  const blocks = splitIntoBlocks(fileContents);
+  let hadError: boolean = false;
+  const results = blocks
+    .map((block): Element[] => {
       const parser = new Parser(Grammar.fromCompiled(grammar));
 
+      // TODO: Elements need to store the line numbers from the block.
+      // Unfortunately, a single block may result in multiple elements, but I
+      // think that can only occur with aliases. It's also unclear if I can add
+      // additional fields to the Element types that are not in the parse
+      // grammar. Maybe if I make them optional fields?
+
+      // TODO: Sorting may only make sense if comments are not a top-level
+      // element. They need to be tied to an alias (move all aliases to the top
+      // of the file) or a transaction (sort by date)
+
       try {
-        const innerresults = parser.feed(lines).finish();
+        const innerresults = parser.feed(block.block).finish();
         if (innerresults.length !== 1) {
+          // Returning multiple results means that the results were ambiguous
           console.error(
-            `Failed to parse (${innerresults.length} results): "${lines}"`,
+            `Failed to parse (${innerresults.length} results): "${block.block}"`,
           );
           return undefined;
         }
-
-        return innerresults[0];
+        const elements: Element[] = innerresults[0];
+        assignLineNumbersToElements(elements, block);
+        return elements;
       } catch (error) {
-        console.error(`Failed to parse: "${lines}"`);
+        console.error(`Failed to parse: "${block.block}"`);
         console.error(error);
+        hadError = true;
         return undefined;
       }
     })
@@ -146,12 +184,78 @@ export const parse = (
     transactions: txs,
     payees,
     accounts,
+    hadParsingError: hadError,
 
     assetAccounts,
     expenseAccounts,
     incomeAccounts,
     liabilityAccounts,
   };
+};
+
+/**
+ * splitIntoBlocks takes in the contents of a file and divides it into blocks
+ * which can be fed into the parser. Blocks are annotated with their start and
+ * finish line numbers.
+ */
+export const splitIntoBlocks = (fileContents: string): FileBlock[] => {
+  const blocks: FileBlock[] = [];
+  let currentBlock: FileBlock;
+
+  fileContents.split('\n').forEach((line, i) => {
+    // If there is a blank line, save this block and start a new one
+    if (line.trim() === '') {
+      if (currentBlock) {
+        blocks.push(currentBlock);
+        currentBlock = null;
+      }
+      return;
+    }
+
+    if (!currentBlock) {
+      currentBlock = {
+        block: line,
+        firstLine: i,
+        lastLine: i,
+      };
+      return;
+    }
+
+    currentBlock.block += '\n' + line;
+    currentBlock.lastLine = i;
+  });
+
+  if (currentBlock) {
+    // Don't forget the last one if we don't end with a new line
+    blocks.push(currentBlock);
+  }
+
+  return blocks;
+};
+
+/**
+ * assignLineNumbersToElements modifies the provided elements, assigning their
+ * firstLine and lastLine properties based on their relative blockLine property
+ * and the absolute firstLine and lastLine property in the provided FileBlock.
+ */
+const assignLineNumbersToElements = (
+  elements: Element[],
+  block: FileBlock,
+): void => {
+  if (elements.length === 1) {
+    elements[0].firstLine = block.firstLine;
+    elements[0].lastLine = block.lastLine;
+    return;
+  }
+
+  // Each Element in a block should have a blockLine property which is 1-offset.
+  elements.forEach((element, i): void => {
+    element.firstLine = block.firstLine + element.blockLine - 1;
+    element.lastLine =
+      i === elements.length - 1
+        ? (element.lastLine = block.lastLine) // Last element
+        : (element.lastLine = elements[i + 1].blockLine - 2 + block.firstLine);
+  });
 };
 
 const dealiasAccount = (

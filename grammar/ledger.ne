@@ -58,14 +58,15 @@ main ->
   | main %newline element                     {% ([rest,,l]) => { return [rest,l].flat(1) } %}
 
 element ->
-    transaction  {% ([t]) => { return { type: 'tx', value: t } } %}
-  | %comment     {% ([c]) => { return { type: 'comment', value: c.value } } %}
-  | alias        {% ([a]) => { return { type: 'alias', value: a } } %}
+    transaction  {% ([t]) => { var l = t.blockLine; delete t.blockLine; return { type: 'tx', blockLine: l, value: t } } %}
+  | %comment     {% ([c]) => { return { type: 'comment', blockLine: c.line, value: c.value } } %}
+  | alias        {% ([a]) => { var l = a.blockLine; delete a.blockLine; return { type: 'alias', blockLine: l, value: a } } %}
 
 transaction -> %date %ws check:? %payee %comment:? %newline expenselines
                                                   {%
                                                     function(d) {
                                                       return {
+                                                        blockLine: d[0].line,
                                                         date: d[0].value,
                                                         check: d[2] || undefined,
                                                         payee: d[3].value,
@@ -95,6 +96,6 @@ expenseline ->
   | %ws:+ %comment                                {% ([,c]) => { return {comment: c.value} } %}
 
 reconciled -> %reconciled %ws:+                   {% ([r,]) => r.value %}
-alias -> "alias" %account %equal %account         {% ([,l,,r]) => { return { left: l.value, right: r.value } } %}
+alias -> "alias" %account %equal %account         {% ([,l,,r]) => { return { blockLine: l.line, left: l.value, right: r.value } } %}
 amount -> %currency %number                       {% ([c,a]) => { return {currency: c.value, amount: parseFloat(a.value)} } %}
 check -> %check                                   {% ([c]) => parseFloat(c.value) %}
