@@ -3,13 +3,25 @@ import { ISettings } from './settings';
 import { flatMap, sortedUniq } from 'lodash';
 import { Grammar, Parser } from 'nearley';
 
+/**
+ * TransactionCache contains information from the parsed ledger file. It
+ * includes both the raw data that is necessary to reconstruct the ledger file,
+ * as well as data structures more useful for interaction.
+ */
 export interface TransactionCache {
   transactions: Transaction[];
   payees: string[];
   aliases: Map<string, string>;
 
-  // TODO: We need to store the actual Aliases and Comments in here in order to
-  // be able to rebuild the file
+  /**
+   * rawAliases stores the aliases as they come directly from the parser.
+   */
+  rawAliases: Alias[];
+
+  /**
+   * rawComments stores the comments as they come directly from the parser.
+   */
+  rawComments: Comment[];
 
   /**
    * If there was an error during parsing then our internal state does not 100%
@@ -104,12 +116,6 @@ export const parse = (
     .map((block): Element[] => {
       const parser = new Parser(Grammar.fromCompiled(grammar));
 
-      // TODO: Elements need to store the line numbers from the block.
-      // Unfortunately, a single block may result in multiple elements, but I
-      // think that can only occur with aliases. It's also unclear if I can add
-      // additional fields to the Element types that are not in the parse
-      // grammar. Maybe if I make them optional fields?
-
       // TODO: Sorting may only make sense if comments are not a top-level
       // element. They need to be tied to an alias (move all aliases to the top
       // of the file) or a transaction (sort by date)
@@ -137,11 +143,15 @@ export const parse = (
     .flat(1);
 
   const aliases: Alias[] = [];
+  const comments: Comment[] = [];
   const txs: Transaction[] = [];
   results.forEach((el) => {
     switch (el.type) {
       case 'alias':
         aliases.push(el);
+        break;
+      case 'comment':
+        comments.push(el);
         break;
       case 'tx':
         txs.push(el);
@@ -181,6 +191,8 @@ export const parse = (
 
   return {
     aliases: aliasMap,
+    rawAliases: aliases,
+    rawComments: comments,
     transactions: txs,
     payees,
     accounts,

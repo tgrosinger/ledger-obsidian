@@ -501,6 +501,62 @@ alias b=Assets:Banking
   describe('multiple elements in a block are parsed correctly', () => {
     // TODO: When there is better preservation of aliases and comments in the tx
     // cache, write more tests to make sure their line numbers are preserved.
+    test('when there are multiple aliases and a transaction', () => {
+      const contents = `alias e=Expenses
+alias b=Banking
+2021/04/20 Obsidian
+      e:Spending Money    $20.00
+      b:CreditUnion`;
+      const txCache = parse(contents, settings);
+      const expected = {
+        type: 'tx',
+        blockLine: 3,
+        firstLine: 2,
+        lastLine: 4,
+        value: {
+          date: '2021/04/20',
+          payee: 'Obsidian',
+          expenselines: [
+            {
+              account: 'e:Spending Money',
+              amount: 20,
+              currency: '$',
+              reconcile: '',
+            },
+            {
+              account: 'b:CreditUnion',
+              reconcile: '',
+            },
+          ],
+        },
+      };
+      const expectedAlias1 = {
+        type: 'alias',
+        blockLine: 1,
+        firstLine: 0,
+        lastLine: 0,
+        value: {
+          left: 'e',
+          right: 'Expenses',
+        },
+      };
+      const expectedAlias2 = {
+        type: 'alias',
+        blockLine: 2,
+        firstLine: 1,
+        lastLine: 1,
+        value: {
+          left: 'b',
+          right: 'Banking',
+        },
+      };
+      expect(txCache.transactions).toHaveLength(1);
+      expect(txCache.transactions[0]).toEqual(expected);
+      expect(txCache.rawComments).toHaveLength(0);
+      expect(txCache.rawAliases).toHaveLength(2);
+      expect(txCache.rawAliases[0]).toEqual(expectedAlias1);
+      expect(txCache.rawAliases[1]).toEqual(expectedAlias2);
+    });
     test('when there is an alias and a transaction', () => {
       const contents = `alias e=Expenses
 2021/04/20 Obsidian
@@ -529,9 +585,21 @@ alias b=Assets:Banking
           ],
         },
       };
+      const expectedAlias = {
+        type: 'alias',
+        blockLine: 1,
+        firstLine: 0,
+        lastLine: 0,
+        value: {
+          left: 'e',
+          right: 'Expenses',
+        },
+      };
       expect(txCache.transactions).toHaveLength(1);
       expect(txCache.transactions[0]).toEqual(expected);
-      // TODO: Check for the alias and its line number
+      expect(txCache.rawComments).toHaveLength(0);
+      expect(txCache.rawAliases).toHaveLength(1);
+      expect(txCache.rawAliases[0]).toEqual(expectedAlias);
     });
   });
 
