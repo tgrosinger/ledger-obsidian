@@ -130,7 +130,6 @@ export default class LedgerPlugin extends Plugin {
         const activeLeaf = this.app.workspace.getMostRecentLeaf();
         if (checking) {
           const state = activeLeaf.view.getState();
-          console.log(state);
           // TODO: This should check if we are currently in LedgerView, however
           // for some reason the type is not available on the view state here.
           return (

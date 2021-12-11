@@ -1,71 +1,37 @@
 import type { TransactionCache } from '../parser';
-import { AccountPage } from './AccountPage';
-import { MobileTransactionPage, TransactionPage } from './TransactionPage';
+import { AccountsList } from './AccountsList';
+import { MobileTransactionList, TransactionList } from './TransactionPage';
 import { Platform } from 'obsidian';
 import React from 'react';
+import styled from 'styled-components';
+import { AccountVisualization } from './AccountVisualization';
 
 export const LedgerDashboard: React.FC<{
   currencySymbol: string;
   txCache: TransactionCache;
 }> = (props): JSX.Element => {
-  // TODO: If isMobile, transactions should be rendered differently. Don't use a
-  // tabular view on mobile where it won't render very well.
-
-  // TODO: Change the default to the overview once implemented.
-  const [selectedTab, setSelectedTab] = React.useState('transactions');
   const [selectedAccount, setSelectedAccount] = React.useState('');
-
-  const goToAccountPage = (accountName: string): void => {
-    setSelectedTab('accounts');
-    setSelectedAccount(accountName);
-  };
 
   if (!props.txCache) {
     return <p>Loading...</p>;
   }
 
-  return (
-    <>
-      <Header selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
-
-      {selectedTab === 'overview' ? <OverviewPage /> : null}
-
-      {selectedTab === 'transactions' ? (
-        Platform.isMobile ? (
-          <MobileTransactionPage
-            currencySymbol={props.currencySymbol}
-            txCache={props.txCache}
-          />
-        ) : (
-          <TransactionPage
-            currencySymbol={props.currencySymbol}
-            txCache={props.txCache}
-            goToAccountPage={goToAccountPage}
-          />
-        )
-      ) : null}
-
-      {selectedTab === 'accounts' ? (
-        <AccountPage accountName={selectedAccount} txCache={props.txCache} />
-      ) : null}
-    </>
+  return Platform.isMobile ? (
+    <MobileDashboard
+      currencySymbol={props.currencySymbol}
+      txCache={props.txCache}
+    />
+  ) : (
+    <DesktopDashboard
+      currencySymbol={props.currencySymbol}
+      txCache={props.txCache}
+    />
   );
 };
 
-const Header: React.FC<{
-  selectedTab: string;
-  setSelectedTab: React.Dispatch<React.SetStateAction<string>>;
-}> = (props): JSX.Element => (
+const Header: React.FC<{}> = (props): JSX.Element => (
   <div>
     <h2>Ledger</h2>
-    <Button
-      selected={props.selectedTab === 'transactions'}
-      action={() => {
-        props.setSelectedTab('transactions');
-      }}
-    >
-      Transactions
-    </Button>
   </div>
 );
 
@@ -78,6 +44,61 @@ const Button: React.FC<{
   </button>
 );
 
-const OverviewPage: React.FC<{}> = (props): JSX.Element => (
-  <p>Not yet implemented</p>
-);
+const MobileDashboard: React.FC<{
+  currencySymbol: string;
+  txCache: TransactionCache;
+}> = (props): JSX.Element => {
+  const [selectedTab, setSelectedTab] = React.useState('transactions');
+
+  return (
+    <MobileTransactionList
+      currencySymbol={props.currencySymbol}
+      txCache={props.txCache}
+    />
+  );
+};
+
+const FlexContainer = styled.div`
+  display: flex;
+`;
+const FlexSidebar = styled.div`
+  flex-basis: 20%;
+  flex-grow: 0;
+  flex-shrink: 1;
+`;
+const FlexMainContent = styled.div`
+  flex-basis: auto;
+  flex-grow: 1;
+  flex-shrink: 1;
+`;
+
+const DesktopDashboard: React.FC<{
+  currencySymbol: string;
+  txCache: TransactionCache;
+}> = (props): JSX.Element => {
+  const [selectedAccounts, setSelectedAccounts] = React.useState<string[]>([]);
+
+  // TODO: Make AccountsList collapsible for narrow screens
+
+  return (
+    <>
+      <Header />
+
+      <FlexContainer>
+        <FlexSidebar>
+          <AccountsList txCache={props.txCache} />
+        </FlexSidebar>
+        <FlexMainContent>
+          <AccountVisualization />
+          <TransactionList
+            currencySymbol={props.currencySymbol}
+            txCache={props.txCache}
+            setSelectedAccount={(account: string) =>
+              setSelectedAccounts([account])
+            }
+          />
+        </FlexMainContent>
+      </FlexContainer>
+    </>
+  );
+};

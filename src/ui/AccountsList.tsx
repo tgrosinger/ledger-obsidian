@@ -1,13 +1,11 @@
 import type { TransactionCache } from '../parser';
 import React from 'react';
 
-export const AccountPage: React.FC<{
-  accountName: string;
+export const AccountsList: React.FC<{
   txCache: TransactionCache;
 }> = (props): JSX.Element => (
   <>
-    <h2>Account Overview</h2>
-    <p>Details for account {props.accountName}</p>
+    <h2>Account Accounts</h2>
     <p>Not yet implemented</p>
   </>
 );

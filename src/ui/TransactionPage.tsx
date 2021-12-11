@@ -1,9 +1,9 @@
 import { Transaction, TransactionCache } from '../parser';
 import { getTotal } from '../transaction-utils';
-import { _, Grid } from 'gridjs-react';
+import { Grid } from 'gridjs-react';
 import React from 'react';
 
-export const MobileTransactionPage: React.FC<{
+export const MobileTransactionList: React.FC<{
   currencySymbol: string;
   txCache: TransactionCache;
 }> = (props): JSX.Element => (
@@ -39,13 +39,11 @@ export const MobileTransactionEntry: React.FC<{
   return null;
 };
 
-export const TransactionPage: React.FC<{
+export const TransactionList: React.FC<{
   currencySymbol: string;
   txCache: TransactionCache;
-  goToAccountPage: (accountName: string) => void;
+  setSelectedAccount: (accountName: string) => void;
 }> = (props): JSX.Element => {
-  // TODO: Add date range selector and make date in table a hyperlink to select that date.
-
   const rows = props.txCache.transactions.map((tx: Transaction): any[] => {
     if (tx.value.expenselines.length === 2) {
       // If there are only two lines, then this is a simple 'from->to' transaction
@@ -56,18 +54,8 @@ export const TransactionPage: React.FC<{
         tx.value.date,
         tx.value.payee,
         getTotal(tx, props.currencySymbol),
-        _(
-          <AccountCell
-            name={tx.value.expenselines[1].account}
-            goToAccountPage={props.goToAccountPage}
-          />,
-        ),
-        _(
-          <AccountCell
-            name={tx.value.expenselines[0].account}
-            goToAccountPage={props.goToAccountPage}
-          />,
-        ),
+        tx.value.expenselines[1].account,
+        tx.value.expenselines[0].account,
       ];
     }
     // Otherwise, there are multiple 'to' lines to consider
