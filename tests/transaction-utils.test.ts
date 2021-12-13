@@ -1,5 +1,11 @@
 import { Transaction } from '../src/parser';
-import { getCurrency, getTotal } from '../src/transaction-utils';
+import {
+  getCurrency,
+  getTotal,
+  makeAccountTree,
+  Node,
+  sortAccountTree,
+} from '../src/transaction-utils';
 
 describe('getTotal()', () => {
   test('When the last line has an amount', () => {
@@ -182,5 +188,126 @@ describe('getCurrency()', () => {
     };
     const result = getCurrency(tx, '$');
     expect(result).toEqual('$');
+  });
+});
+
+describe('makeAccountTree()', () => {
+  test('When the tree is empty', () => {
+    const input: Node[] = [];
+    makeAccountTree(input, 'e:Food:Grocery');
+    const expected = [
+      {
+        id: 'e',
+        account: 'e',
+        subRows: [
+          {
+            id: 'e:Food',
+            account: 'Food',
+            subRows: [{ id: 'e:Food:Grocery', account: 'Grocery' }],
+          },
+        ],
+      },
+    ];
+    expect(input).toEqual(expected);
+  });
+  test('When adding to existing leaf', () => {
+    const input = [
+      { id: 'e', account: 'e', subRows: [{ id: 'e:Food', account: 'Food' }] },
+    ];
+    makeAccountTree(input, 'e:Food:Grocery');
+    const expected = [
+      {
+        id: 'e',
+        account: 'e',
+        subRows: [
+          {
+            id: 'e:Food',
+            account: 'Food',
+            subRows: [{ id: 'e:Food:Grocery', account: 'Grocery' }],
+          },
+        ],
+      },
+    ];
+    expect(input).toEqual(expected);
+  });
+  test('When adding a new branch', () => {
+    const input = [
+      {
+        id: 'e',
+        account: 'e',
+        subRows: [
+          {
+            id: 'e:Food',
+            account: 'Food',
+            subRows: [{ id: 'e:Food:Grocery', account: 'Grocery' }],
+          },
+        ],
+      },
+    ];
+    makeAccountTree(input, 'e:Bills:Electricity');
+    const expected = [
+      {
+        id: 'e',
+        account: 'e',
+        subRows: [
+          {
+            id: 'e:Food',
+            account: 'Food',
+            subRows: [{ id: 'e:Food:Grocery', account: 'Grocery' }],
+          },
+          {
+            id: 'e:Bills',
+            account: 'Bills',
+            subRows: [{ id: 'e:Bills:Electricity', account: 'Electricity' }],
+          },
+        ],
+      },
+    ];
+    expect(input).toEqual(expected);
+  });
+});
+
+describe('sortAccountTree()', () => {
+  test('Basic sort', () => {
+    const input = [
+      {
+        id: 'e',
+        account: 'e',
+        subRows: [
+          {
+            id: 'e:Food',
+            account: 'Food',
+            subRows: [{ id: 'e:Food:Grocery', account: 'Grocery' }],
+          },
+          {
+            id: 'e:Bills',
+            account: 'Bills',
+            subRows: [{ id: 'e:Bills:Electricity', account: 'Electricity' }],
+          },
+        ],
+      },
+      { id: 'alpha', account: 'alpha' },
+    ];
+    sortAccountTree(input);
+    const expected = [
+      { id: 'alpha', account: 'alpha' },
+      {
+        id: 'e',
+        account: 'e',
+        subRows: [
+          {
+            id: 'e:Bills',
+            account: 'Bills',
+            subRows: [{ id: 'e:Bills:Electricity', account: 'Electricity' }],
+          },
+          {
+            id: 'e:Food',
+            account: 'Food',
+            subRows: [{ id: 'e:Food:Grocery', account: 'Grocery' }],
+          },
+        ],
+      },
+    ];
+    expect(input).toEqual(expected);
   });
 });

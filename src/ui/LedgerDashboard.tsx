@@ -1,10 +1,10 @@
 import type { TransactionCache } from '../parser';
 import { AccountsList } from './AccountsList';
+import { AccountVisualization } from './AccountVisualization';
 import { MobileTransactionList, TransactionList } from './TransactionPage';
 import { Platform } from 'obsidian';
 import React from 'react';
 import styled from 'styled-components';
-import { AccountVisualization } from './AccountVisualization';
 
 export const LedgerDashboard: React.FC<{
   currencySymbol: string;
@@ -86,7 +86,11 @@ const DesktopDashboard: React.FC<{
 
       <FlexContainer>
         <FlexSidebar>
-          <AccountsList txCache={props.txCache} />
+          <AccountsList
+            txCache={props.txCache}
+            selectedAccounts={selectedAccounts}
+            setSelectedAccounts={setSelectedAccounts}
+          />
         </FlexSidebar>
         <FlexMainContent>
           <AccountVisualization />
@@ -99,6 +103,8 @@ const DesktopDashboard: React.FC<{
           />
         </FlexMainContent>
       </FlexContainer>
+
+      <p>{selectedAccounts}</p>
     </>
   );
 };

@@ -1,7 +1,8 @@
 import { Transaction, TransactionCache } from '../parser';
 import { getTotal } from '../transaction-utils';
-import { Grid } from 'gridjs-react';
 import React from 'react';
+import { Column, useSortBy, useTable } from 'react-table';
+import styled from 'styled-components';
 
 export const MobileTransactionList: React.FC<{
   currencySymbol: string;
@@ -39,45 +40,137 @@ export const MobileTransactionEntry: React.FC<{
   return null;
 };
 
+const TableStyles = styled.div`
+  padding: 1rem;
+
+  table {
+    border-spacing: 0;
+    border: 1px solid black;
+
+    tr {
+      :last-child {
+        td {
+          border-bottom: 0;
+        }
+      }
+    }
+
+    th,
+    td {
+      margin: 0;
+      padding: 0.5rem;
+      border-bottom: 1px solid black;
+      border-right: 1px solid black;
+
+      :last-child {
+        border-right: 0;
+      }
+    }
+  }
+`;
+
+const buildTableRows = (
+  txCache: TransactionCache,
+  currencySymbol: string,
+): {
+  date: string;
+  payee: string;
+  total: string;
+  from: string;
+  to: string;
+}[] =>
+  txCache.transactions.map((tx: Transaction) => {
+    if (tx.value.expenselines.length === 2) {
+      // If there are only two lines, then this is a simple 'from->to' transaction
+      return {
+        date: tx.value.date,
+        payee: tx.value.payee,
+        total: getTotal(tx, currencySymbol),
+        from: tx.value.expenselines[1].account,
+        to: tx.value.expenselines[0].account,
+      };
+    }
+    // Otherwise, there are multiple 'to' lines to consider
+
+    return {
+      date: tx.value.date,
+      payee: tx.value.payee,
+      total: '---',
+      from: '---',
+      to: '---',
+    };
+  });
+
 export const TransactionList: React.FC<{
   currencySymbol: string;
   txCache: TransactionCache;
   setSelectedAccount: (accountName: string) => void;
 }> = (props): JSX.Element => {
-  const rows = props.txCache.transactions.map((tx: Transaction): any[] => {
-    if (tx.value.expenselines.length === 2) {
-      // If there are only two lines, then this is a simple 'from->to' transaction
-      const amount = tx.value.expenselines[0].amount
-        ? tx.value.expenselines[0].amount
-        : tx.value.expenselines[1].amount;
-      return [
-        tx.value.date,
-        tx.value.payee,
-        getTotal(tx, props.currencySymbol),
-        tx.value.expenselines[1].account,
-        tx.value.expenselines[0].account,
-      ];
-    }
-    // Otherwise, there are multiple 'to' lines to consider
+  const data = React.useMemo(
+    () => buildTableRows(props.txCache, props.currencySymbol),
+    [props.txCache],
+  );
+  const columns = React.useMemo<Column[]>(
+    () => [
+      {
+        Header: 'Date',
+        accessor: 'date',
+      },
+      {
+        Header: 'Payee',
+        accessor: 'payee',
+      },
+      {
+        Header: 'Total',
+        accessor: 'total',
+      },
+      {
+        Header: 'From Account',
+        accessor: 'from',
+      },
+      {
+        Header: 'To Account',
+        accessor: 'to',
+      },
+    ],
+    [],
+  );
+  const tableInstance = useTable({ columns, data }, useSortBy);
 
-    return [tx.value.date, tx.value.payee];
-  });
+  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
+    tableInstance;
 
   return (
-    <Grid
-      data={rows}
-      columns={['Date', 'Payee', 'Total', 'From Account', 'To Account']}
-      search={true}
-      pagination={{
-        enabled: true,
-        limit: 20,
-      }}
-      style={{
-        th: {
-          'border-bottom': '2px solid var(--background-modifier-border)',
-        },
-      }}
-    />
+    <TableStyles>
+      <table {...getTableProps()}>
+        <thead>
+          {headerGroups.map((headerGroup) => (
+            <tr {...headerGroup.getHeaderGroupProps()}>
+              {headerGroup.headers.map((column) => (
+                <th {...column.getHeaderProps(column.getSortByToggleProps())}>
+                  {column.render('Header')}
+                  <span>
+                    {column.isSorted ? (column.isSortedDesc ? ' ↑' : ' ↓') : ''}
+                  </span>
+                </th>
+              ))}
+            </tr>
+          ))}
+        </thead>
+        <tbody {...getTableBodyProps()}>
+          {rows.map((row) => {
+            prepareRow(row);
+            return (
+              <tr {...row.getRowProps()}>
+                {row.cells.map((cell) => (
+                  <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </TableStyles>
   );
 };
 

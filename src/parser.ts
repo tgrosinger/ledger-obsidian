@@ -1,5 +1,6 @@
 import grammar from '../grammar/ledger';
 import { ISettings } from './settings';
+import { dealiasAccount } from './transaction-utils';
 import { flatMap, sortedUniq } from 'lodash';
 import { Grammar, Parser } from 'nearley';
 
@@ -269,30 +270,6 @@ const assignLineNumbersToElements = (
         : (element.lastLine = elements[i + 1].blockLine - 2 + block.firstLine);
   });
 };
-
-const dealiasAccount = (
-  account: string,
-  aliases: Map<string, string>,
-): string => {
-  const firstDelimeter = account.indexOf(':');
-  if (firstDelimeter > 0) {
-    const prefix = account.substring(0, firstDelimeter);
-    if (aliases.has(prefix)) {
-      return aliases.get(prefix) + account.substring(firstDelimeter);
-    }
-  }
-  return account;
-};
-
-const dealiasAccounts = (
-  accounts: string[],
-  aliases: Map<string, string>,
-): string[] =>
-  sortedUniq(
-    accounts
-      .map((cat) => dealiasAccount(cat, aliases))
-      .sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1)),
-  );
 
 const parseAliases = (aliases: Alias[]): Map<string, string> => {
   const aliasMap = new Map<string, string>();

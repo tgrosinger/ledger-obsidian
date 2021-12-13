@@ -44,3 +44,60 @@ export const getCurrency = (
   }
   return defaultCurrency;
 };
+
+export const dealiasAccount = (
+  account: string,
+  aliases: Map<string, string>,
+): string => {
+  const firstDelimeter = account.indexOf(':');
+  if (firstDelimeter > 0) {
+    const prefix = account.substring(0, firstDelimeter);
+    if (aliases.has(prefix)) {
+      return aliases.get(prefix) + account.substring(firstDelimeter);
+    }
+  }
+  return account;
+};
+
+export interface Node {
+  id: string;
+  account: string;
+  subRows?: Node[];
+  expanded?: boolean;
+}
+
+export const makeAccountTree = (
+  nodes: Node[],
+  newValue: string,
+  parent?: string,
+): void => {
+  const parts = newValue.split(':');
+  const fullName = parent ? `${parent}:${parts[0]}` : parts[0];
+  let destNode = nodes.find((val) => val.account === parts[0]);
+
+  if (!destNode) {
+    destNode = { account: parts[0], id: fullName };
+    nodes.push(destNode);
+  }
+
+  if (parts.length > 1) {
+    if (!destNode.subRows) {
+      destNode.subRows = [];
+    }
+
+    const newParent = parent ? `${parent}:${parts[0]}` : parts[0];
+    makeAccountTree(destNode.subRows, parts.slice(1).join(':'), newParent);
+  }
+};
+
+export const sortAccountTree = (nodes: Node[]): void => {
+  nodes.sort((a: Node, b: Node): number =>
+    a.account.localeCompare(b.account, 'en', { numeric: true }),
+  );
+
+  nodes.forEach((node) => {
+    if (node.subRows) {
+      sortAccountTree(node.subRows);
+    }
+  });
+};
