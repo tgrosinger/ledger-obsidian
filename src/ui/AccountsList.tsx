@@ -94,7 +94,7 @@ export const AccountsList: React.FC<{
     rows,
     prepareRow,
     selectedFlatRows,
-    state: { expanded, selectedRowIds },
+    state: { expanded },
   } = useTable(
     {
       columns,
@@ -104,7 +104,9 @@ export const AccountsList: React.FC<{
     useRowSelect,
   );
 
-  // TODO: How can I give `selectedFlatRows` to the parent component?
+  React.useEffect(() => {
+    props.setSelectedAccounts(selectedFlatRows.map((row) => row.original.id));
+  }, [selectedFlatRows]);
 
   return (
     <TableStyles>
