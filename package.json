@@ -4,9 +4,9 @@
   "description": "Plain text accounting",
   "main": "main.js",
   "scripts": {
-    "test": "jest",
-    "parser-test": "yarn run compile-parser && jest",
-    "test-watch": "jest --watchAll",
+    "fix-parser": "sed -i -e \"s/import moo from 'moo'/const moo = require('moo')/\" grammar/ledger.ts",
+    "test": "yarn run compile-parser && yarn fix-parser && jest",
+    "test-watch": "yarn fix-parser && jest --watchAll",
     "dev": "rollup --config rollup.config.js -w",
     "build": "yarn run compile-parser && rollup --config rollup.config.js --environment BUILD:production",
     "prettier": "prettier --write 'src/**/*.+(ts|tsx|json|html|css)'",
