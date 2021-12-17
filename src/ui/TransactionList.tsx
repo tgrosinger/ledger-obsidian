@@ -1,7 +1,11 @@
 import { Transaction, TransactionCache } from '../parser';
-import { getTotal } from '../transaction-utils';
+import {
+  filterByAccount,
+  filterTransactions,
+  getTotal,
+} from '../transaction-utils';
 import React from 'react';
-import { Column, useSortBy, useTable } from 'react-table';
+import { Column, useFilters, useSortBy, useTable } from 'react-table';
 import styled from 'styled-components';
 
 export const MobileTransactionList: React.FC<{
@@ -70,7 +74,7 @@ const TableStyles = styled.div`
 `;
 
 const buildTableRows = (
-  txCache: TransactionCache,
+  transactions: Transaction[],
   currencySymbol: string,
 ): {
   date: string;
@@ -79,7 +83,7 @@ const buildTableRows = (
   from: string;
   to: string;
 }[] =>
-  txCache.transactions.map((tx: Transaction) => {
+  transactions.map((tx: Transaction) => {
     if (tx.value.expenselines.length === 2) {
       // If there are only two lines, then this is a simple 'from->to' transaction
       return {
@@ -91,11 +95,10 @@ const buildTableRows = (
       };
     }
     // Otherwise, there are multiple 'to' lines to consider
-
     return {
       date: tx.value.date,
       payee: tx.value.payee,
-      total: '---',
+      total: getTotal(tx, currencySymbol),
       from: '---',
       to: '---',
     };
@@ -104,12 +107,17 @@ const buildTableRows = (
 export const TransactionList: React.FC<{
   currencySymbol: string;
   txCache: TransactionCache;
+  selectedAccounts: string[];
   setSelectedAccount: (accountName: string) => void;
 }> = (props): JSX.Element => {
-  const data = React.useMemo(
-    () => buildTableRows(props.txCache, props.currencySymbol),
-    [props.txCache],
-  );
+  const data = React.useMemo(() => {
+    const filters = props.selectedAccounts.map((a) => filterByAccount(a));
+    const filteredTransactions = filterTransactions(
+      props.txCache.transactions,
+      ...filters,
+    );
+    return buildTableRows(filteredTransactions, props.currencySymbol);
+  }, [props.txCache, props.selectedAccounts]);
   const columns = React.useMemo<Column[]>(
     () => [
       {
@@ -135,7 +143,7 @@ export const TransactionList: React.FC<{
     ],
     [],
   );
-  const tableInstance = useTable({ columns, data }, useSortBy);
+  const tableInstance = useTable({ columns, data }, useFilters, useSortBy);
 
   const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
     tableInstance;

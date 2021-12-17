@@ -519,12 +519,14 @@ alias b=Banking
           expenselines: [
             {
               account: 'e:Spending Money',
+              dealiasedAccount: 'Expenses:Spending Money',
               amount: 20,
               currency: '$',
               reconcile: '',
             },
             {
               account: 'b:CreditUnion',
+              dealiasedAccount: 'Banking:CreditUnion',
               reconcile: '',
             },
           ],
@@ -574,6 +576,7 @@ alias b=Banking
           expenselines: [
             {
               account: 'e:Spending Money',
+              dealiasedAccount: 'Expenses:Spending Money',
               amount: 20,
               currency: '$',
               reconcile: '',

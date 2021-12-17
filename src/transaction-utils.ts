@@ -1,4 +1,5 @@
 import { Transaction } from './parser';
+import { some } from 'lodash';
 
 /**
  * getTotal returns the total value of the transaction. It assumes that all
@@ -44,6 +45,37 @@ export const getCurrency = (
   }
   return defaultCurrency;
 };
+
+export type Filter = (tx: Transaction) => boolean;
+
+/**
+ * filterByAccount accepts an account name and attempts to match to
+ * transactions. Checks both account name an dealiased acocunt name.
+ */
+export const filterByAccount =
+  (account: string): Filter =>
+  (tx: Transaction): boolean =>
+    some(
+      tx.value.expenselines,
+      (line) =>
+        (line.account && line.account.startsWith(account)) ||
+        (line.dealiasedAccount && line.dealiasedAccount.startsWith(account)),
+    );
+
+export const filterByPayeeExact =
+  (account: string): Filter =>
+  (tx: Transaction): boolean =>
+    tx.value.payee === account;
+
+/**
+ * filterTransactions filters the provided transactions if _any_ of the provided
+ * filters match. To _and_ filters, apply this function sequentially.
+ */
+export const filterTransactions = (
+  txs: Transaction[],
+  ...filters: Filter[]
+): Transaction[] =>
+  filters.length > 0 ? txs.filter((tx) => some(filters, (fn) => fn(tx))) : txs;
 
 export const dealiasAccount = (
   account: string,

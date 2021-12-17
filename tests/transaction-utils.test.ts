@@ -1,5 +1,8 @@
 import { Transaction } from '../src/parser';
 import {
+  filterByAccount,
+  filterByPayeeExact,
+  filterTransactions,
   getCurrency,
   getTotal,
   makeAccountTree,
@@ -309,5 +312,142 @@ describe('sortAccountTree()', () => {
       },
     ];
     expect(input).toEqual(expected);
+  });
+});
+
+describe('filterTransactions', () => {
+  const tx1: Transaction = {
+    type: 'tx',
+    value: {
+      date: '2021-12-31',
+      payee: 'Costco',
+      expenselines: [
+        {
+          account: 'e:Spending Money',
+          dealiasedAccount: 'Expenses:Spending Money',
+          amount: 100,
+          currency: '$',
+        },
+        {
+          account: 'c:Citi',
+          dealiasedAccount: 'Credit:City',
+        },
+      ],
+    },
+  };
+  const tx2: Transaction = {
+    type: 'tx',
+    value: {
+      date: '2021-12-30',
+      payee: "Trader Joe's",
+      expenselines: [
+        {
+          account: 'e:Food:Grocery',
+          dealiasedAccount: 'Expenses:Food:Grocery',
+          amount: 120,
+          currency: '$',
+        },
+        {
+          account: 'c:Citi',
+          dealiasedAccount: 'Credit:City',
+        },
+      ],
+    },
+  };
+  const tx3: Transaction = {
+    type: 'tx',
+    value: {
+      date: '2021-12-29',
+      payee: 'PCC',
+      expenselines: [
+        {
+          account: 'e:Food:Grocery',
+          dealiasedAccount: 'Expenses:Food:Grocery',
+          amount: 20,
+          currency: '$',
+        },
+        {
+          account: 'c:Citi',
+          dealiasedAccount: 'Credit:City',
+        },
+      ],
+    },
+  };
+  test('When there are no filters', () => {
+    const input = [tx1, tx2, tx3];
+    const result = filterTransactions(input);
+    expect(result).toEqual(input);
+  });
+
+  describe('filterByAccount', () => {
+    test('When the account matches', () => {
+      const input = [tx1, tx2, tx3];
+      const result = filterTransactions(
+        input,
+        filterByAccount('e:Spending Money'),
+      );
+      expect(result).toEqual([tx1]);
+    });
+    test('When the no accounts match', () => {
+      const input = [tx1, tx2, tx3];
+      const result = filterTransactions(
+        input,
+        filterByAccount('e:House:Maintenance'),
+      );
+      expect(result).toEqual([]);
+    });
+    test('When there are multiple matches', () => {
+      const input = [tx1, tx2, tx3];
+      const result = filterTransactions(
+        input,
+        filterByAccount('e:Food:Grocery'),
+      );
+      expect(result).toEqual([tx2, tx3]);
+    });
+    test('When filtering by dealiased account name', () => {
+      const input = [tx1, tx2, tx3];
+      const result = filterTransactions(
+        input,
+        filterByAccount('Expenses:Food:Grocery'),
+      );
+      expect(result).toEqual([tx2, tx3]);
+    });
+  });
+
+  describe('filterByPayee', () => {
+    test('When the payee matches', () => {
+      const input = [tx1, tx2, tx3];
+      const result = filterTransactions(input, filterByPayeeExact('Costco'));
+      expect(result).toEqual([tx1]);
+    });
+    test('When there are no matches', () => {
+      const input = [tx1, tx2, tx3];
+      const result = filterTransactions(
+        input,
+        filterByPayeeExact('Home Depot'),
+      );
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('mutliple filters', () => {
+    test('When the payee and account match different transactions', () => {
+      const input = [tx1, tx2, tx3];
+      const result = filterTransactions(
+        input,
+        filterByPayeeExact('PCC'),
+        filterByAccount('e:Spending Money'),
+      );
+      expect(result).toEqual([tx1, tx3]);
+    });
+    test('When matching multiple of the same filter', () => {
+      const input = [tx1, tx2, tx3];
+      const result = filterTransactions(
+        input,
+        filterByPayeeExact('PCC'),
+        filterByPayeeExact("Trader Joe's"),
+      );
+      expect(result).toEqual([tx2, tx3]);
+    });
   });
 });

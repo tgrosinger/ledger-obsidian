@@ -62,6 +62,7 @@ export interface Expenseline {
   amount?: number;
   currency?: string;
   account: string;
+  dealiasedAccount?: string;
   reconcile?: '' | '*' | '!';
   comment?: string;
   id?: number;
@@ -160,6 +161,20 @@ export const parse = (
     }
   });
 
+  const aliasMap = parseAliases(aliases);
+
+  txs.forEach((tx) => {
+    tx.value.expenselines.forEach((line) => {
+      if (!line.account || line.account === '') {
+        return;
+      }
+      const dealiasedAccount = dealiasAccount(line.account, aliasMap);
+      if (dealiasedAccount !== line.account) {
+        line.dealiasedAccount = dealiasedAccount;
+      }
+    });
+  });
+
   const payees = sortedUniq(
     txs
       .map(({ value }) => value.payee)
@@ -170,8 +185,6 @@ export const parse = (
       value.expenselines.flatMap((line) => (line.account ? line.account : [])),
     ).sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1)),
   );
-
-  const aliasMap = parseAliases(aliases);
 
   const assetAccounts: string[] = [];
   const expenseAccounts: string[] = [];

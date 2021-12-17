@@ -1,7 +1,7 @@
 import type { TransactionCache } from '../parser';
 import { AccountsList } from './AccountsList';
 import { AccountVisualization } from './AccountVisualization';
-import { MobileTransactionList, TransactionList } from './TransactionPage';
+import { MobileTransactionList, TransactionList } from './TransactionList';
 import { Platform } from 'obsidian';
 import React from 'react';
 import styled from 'styled-components';
@@ -97,6 +97,7 @@ const DesktopDashboard: React.FC<{
           <TransactionList
             currencySymbol={props.currencySymbol}
             txCache={props.txCache}
+            selectedAccounts={selectedAccounts}
             setSelectedAccount={(account: string) =>
               setSelectedAccounts([account])
             }
