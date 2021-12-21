@@ -1,6 +1,6 @@
 import grammar from '../grammar/ledger';
 import { ISettings } from './settings';
-import { dealiasAccount } from './transaction-utils';
+import { dealiasAccount, fillMissingAmount } from './transaction-utils';
 import { flatMap, sortedUniq } from 'lodash';
 import { Grammar, Parser } from 'nearley';
 
@@ -164,6 +164,9 @@ export const parse = (
   const aliasMap = parseAliases(aliases);
 
   txs.forEach((tx) => {
+    fillMissingAmount(tx);
+
+    // dealias expense lines
     tx.value.expenselines.forEach((line) => {
       if (!line.account || line.account === '') {
         return;

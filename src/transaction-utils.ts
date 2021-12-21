@@ -1,5 +1,7 @@
 import { Transaction } from './parser';
+import { LineSvgProps } from '@nivo/line';
 import { some } from 'lodash';
+import { Moment } from 'moment';
 
 /**
  * getTotal returns the total value of the transaction. It assumes that all
@@ -8,12 +10,17 @@ import { some } from 'lodash';
  * return a 0 value.
  */
 export const getTotal = (tx: Transaction, defaultCurrency: string): string => {
-  const lines = tx.value.expenselines;
   const currency = getCurrency(tx, defaultCurrency);
+  const total = getTotalAsNum(tx);
+  return currency + total.toFixed(2);
+};
+
+export const getTotalAsNum = (tx: Transaction): number => {
+  const lines = tx.value.expenselines;
 
   // If the last line has an amount, then the inverse of that is the total
   if (lines[lines.length - 1].amount) {
-    return currency + (-1 * lines[lines.length - 1].amount).toFixed(2);
+    return -1 * lines[lines.length - 1].amount;
   }
 
   // The last line does not have an amount, so the other lines must. We can
@@ -24,7 +31,7 @@ export const getTotal = (tx: Transaction, defaultCurrency: string): string => {
       sum += lines[i].amount;
     }
   }
-  return currency + sum.toFixed(2);
+  return sum;
 };
 
 /**
@@ -44,6 +51,66 @@ export const getCurrency = (
     }
   }
   return defaultCurrency;
+};
+
+/**
+ * fillMissingAmmount attempts to fill any empty amount fields in the
+ * transactions expense lines.
+ */
+export const fillMissingAmount = (tx: Transaction): void => {
+  const lines = tx.value.expenselines;
+  const commentLines: number[] = [];
+  let missingIndex = -1;
+
+  for (let i = 0; i < lines.length; i++) {
+    if (!lines[i].amount) {
+      if (!lines[i].account || lines[i].account === '') {
+        commentLines.push(i);
+        continue;
+      }
+      if (missingIndex !== -1) {
+        console.debug(tx);
+        throw new Error(
+          'Transaction has multiple expense lines without an amount. At most one is allowed.',
+        );
+      }
+      missingIndex = i;
+    }
+  }
+
+  if (missingIndex === -1) {
+    return;
+  }
+
+  const total = getTotalAsNum(tx);
+  if (missingIndex + 1 === lines.length) {
+    // The last line is missing. It should be the inverse of the rest of the lines.
+    lines[missingIndex].amount = -1 * total;
+  } else {
+    // A non-last line is missing. It should be the total minus the other non-last lines.
+    lines[missingIndex].amount = lines.reduce(
+      (prev, line, i) =>
+        i === missingIndex || i + 1 === lines.length || commentLines.includes(i)
+          ? prev
+          : prev - line.amount,
+      total,
+    );
+  }
+};
+
+export const valueForAccount = (tx: Transaction, account: string): number => {
+  for (let i = 0; i < tx.value.expenselines.length; i++) {
+    const line = tx.value.expenselines[i];
+    if (
+      (line.account && line.account === account) ||
+      (line.dealiasedAccount && line.dealiasedAccount === account)
+    ) {
+      return i + 1 === tx.value.expenselines.length
+        ? -1 * getTotalAsNum(tx) // On the last line
+        : line.amount;
+    }
+  }
+  return 0;
 };
 
 export type Filter = (tx: Transaction) => boolean;
@@ -66,6 +133,10 @@ export const filterByPayeeExact =
   (account: string): Filter =>
   (tx: Transaction): boolean =>
     tx.value.payee === account;
+
+export const filterByStartDate = (start: Moment): Filter => null;
+
+export const filterByEndDate = (start: Moment): Filter => null;
 
 /**
  * filterTransactions filters the provided transactions if _any_ of the provided

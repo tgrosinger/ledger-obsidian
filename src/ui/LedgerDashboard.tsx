@@ -93,7 +93,10 @@ const DesktopDashboard: React.FC<{
           />
         </FlexSidebar>
         <FlexMainContent>
-          <AccountVisualization />
+          <AccountVisualization
+            txCache={props.txCache}
+            selectedAccounts={selectedAccounts}
+          />
           <TransactionList
             currencySymbol={props.currencySymbol}
             txCache={props.txCache}
@@ -104,8 +107,6 @@ const DesktopDashboard: React.FC<{
           />
         </FlexMainContent>
       </FlexContainer>
-
-      <p>{selectedAccounts}</p>
     </>
   );
 };

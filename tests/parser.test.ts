@@ -105,6 +105,7 @@ describe('parsing a ledger file', () => {
             },
             {
               account: 'b:CreditUnion',
+              amount: -20,
               reconcile: '',
             },
           ],
@@ -348,6 +349,7 @@ describe('parsing a ledger file', () => {
             },
             {
               account: 'приработок:урлапов',
+              amount: -2000,
               reconcile: '',
             },
           ],
@@ -527,6 +529,7 @@ alias b=Banking
             {
               account: 'b:CreditUnion',
               dealiasedAccount: 'Banking:CreditUnion',
+              amount: -20,
               reconcile: '',
             },
           ],
@@ -583,6 +586,7 @@ alias b=Banking
             },
             {
               account: 'b:CreditUnion',
+              amount: -20,
               reconcile: '',
             },
           ],

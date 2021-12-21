@@ -1,5 +1,6 @@
 import { Transaction } from '../src/parser';
 import {
+  fillMissingAmount,
   filterByAccount,
   filterByPayeeExact,
   filterTransactions,
@@ -191,6 +192,181 @@ describe('getCurrency()', () => {
     };
     const result = getCurrency(tx, '$');
     expect(result).toEqual('$');
+  });
+});
+
+describe('fillMissingAmount()', () => {
+  describe('When there is a comment line', () => {
+    test('and the comment is the first line', () => {
+      const input: Transaction = {
+        type: 'tx',
+        value: {
+          date: '2021/12/04',
+          payee: 'Testing',
+          expenselines: [
+            {
+              account: '',
+              comment: 'This is a comment',
+            },
+            {
+              account: 'account1',
+              amount: 10.5,
+            },
+            {
+              account: 'account3',
+              amount: -10.5,
+            },
+          ],
+        },
+      };
+      fillMissingAmount(input);
+      expect(input.value.expenselines[0].amount).toBeUndefined();
+      expect(input.value.expenselines[1].amount).toEqual(10.5);
+      expect(input.value.expenselines[2].amount).toEqual(-10.5);
+    });
+    test('and there is a missing amount', () => {
+      const input: Transaction = {
+        type: 'tx',
+        value: {
+          date: '2021/12/04',
+          payee: 'Testing',
+          expenselines: [
+            {
+              account: 'account1',
+            },
+            {
+              account: '',
+              comment: 'This is a comment',
+            },
+            {
+              account: 'account3',
+              amount: -10.5,
+            },
+          ],
+        },
+      };
+      fillMissingAmount(input);
+      expect(input.value.expenselines[0].amount).toEqual(10.5);
+      expect(input.value.expenselines[1].amount).toBeUndefined();
+    });
+    test('and there are no missing amounts', () => {
+      const input: Transaction = {
+        type: 'tx',
+        value: {
+          date: '2021/12/04',
+          payee: 'Testing',
+          expenselines: [
+            {
+              account: 'account1',
+              amount: 10.5,
+            },
+            {
+              account: '',
+              comment: 'This is a comment',
+            },
+            {
+              account: 'account3',
+              amount: -10.5,
+            },
+          ],
+        },
+      };
+      fillMissingAmount(input);
+      expect(input.value.expenselines[0].amount).toEqual(10.5);
+      expect(input.value.expenselines[1].amount).toBeUndefined();
+    });
+  });
+  describe('When there are only two expense lines', () => {
+    test('and the first line is missing', () => {
+      const input: Transaction = {
+        type: 'tx',
+        value: {
+          date: '2021/12/04',
+          payee: 'Testing',
+          expenselines: [
+            {
+              account: 'account1',
+            },
+            {
+              account: 'account3',
+              amount: -10.5,
+            },
+          ],
+        },
+      };
+      fillMissingAmount(input);
+      expect(input.value.expenselines[0].amount).toEqual(10.5);
+    });
+    test('and the second line is missing', () => {
+      const input: Transaction = {
+        type: 'tx',
+        value: {
+          date: '2021/12/04',
+          payee: 'Testing',
+          expenselines: [
+            {
+              account: 'account1',
+              amount: 10.5,
+            },
+            {
+              account: 'account3',
+            },
+          ],
+        },
+      };
+      fillMissingAmount(input);
+      expect(input.value.expenselines[1].amount).toEqual(-10.5);
+    });
+  });
+  describe('When there are three expense lines', () => {
+    test('and the last line is missing', () => {
+      const input: Transaction = {
+        type: 'tx',
+        value: {
+          date: '2021/12/04',
+          payee: 'Testing',
+          expenselines: [
+            {
+              account: 'account1',
+              amount: 10.5,
+            },
+            {
+              account: 'account1',
+              amount: 5,
+            },
+            {
+              account: 'account3',
+            },
+          ],
+        },
+      };
+      fillMissingAmount(input);
+      expect(input.value.expenselines[2].amount).toEqual(-15.5);
+    });
+    test('and the middle line is missing', () => {
+      const input: Transaction = {
+        type: 'tx',
+        value: {
+          date: '2021/12/04',
+          payee: 'Testing',
+          expenselines: [
+            {
+              account: 'account1',
+              amount: 10.5,
+            },
+            {
+              account: 'account1',
+            },
+            {
+              account: 'account3',
+              amount: -15.5,
+            },
+          ],
+        },
+      };
+      fillMissingAmount(input);
+      expect(input.value.expenselines[1].amount).toEqual(5);
+    });
   });
 });
 
