@@ -1,7 +1,7 @@
 import type LedgerPlugin from './main';
 import { TransactionCache } from './parser';
 import { LedgerDashboard } from './ui/LedgerDashboard';
-import { TextFileView, TFile, WorkspaceLeaf } from 'obsidian';
+import { Menu, TextFileView, TFile, ViewState, WorkspaceLeaf } from 'obsidian';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
@@ -13,6 +13,18 @@ export class LedgerView extends TextFileView {
   constructor(leaf: WorkspaceLeaf, plugin: LedgerPlugin) {
     super(leaf);
     this.plugin = plugin;
+
+    this.addAction('pencil', 'Switch to Markdown View', () => {
+      const state = leaf.view.getState();
+      leaf.setViewState(
+        {
+          type: 'markdown',
+          state,
+          popstate: true,
+        } as ViewState,
+        { focus: true },
+      );
+    });
 
     this.redraw();
   }

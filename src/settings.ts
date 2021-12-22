@@ -1,6 +1,6 @@
 const defaultSettings: ISettings = {
   currencySymbol: '$',
-  ledgerFile: 'Ledger.md',
+  ledgerFile: 'transactions.ledger',
   includeFinalLineAmount: false,
   enableLedgerVis: false,
 

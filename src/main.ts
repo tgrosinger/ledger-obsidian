@@ -55,13 +55,8 @@ export default class LedgerPlugin extends Plugin {
 
     this.registerView(LedgerViewType, (leaf) => new LedgerView(leaf, this));
 
-    // TODO: Consider switch to using a custom file type
-    // This does however add an extra step to making sure it works with sync.
-    // this.registerExtensions(['ledger'], LedgerViewType);
-
-    // TODO: Look into moving this menu button into the header row.
-    // Maybe using onLayoutChange, detect any Leafs with the Ledger file,
-    // then use leaf.OnHeaderMenu.
+    // TODO: Add a warning to enable syncing other files
+    this.registerExtensions(['ledger'], LedgerViewType);
 
     this.registerEvent(
       this.app.vault.on('modify', (file: TAbstractFile) => {
@@ -89,7 +84,12 @@ export default class LedgerPlugin extends Plugin {
               item.setIcon('ledger');
               item.setActive(true);
               item.onClick(() => {
-                this.switchToLedgerView(leaf);
+                const state = leaf.view.getState();
+                leaf.setViewState({
+                  type: LedgerViewType,
+                  state: { file: state.file },
+                  popstate: true,
+                } as ViewState);
               });
             });
           }
@@ -103,42 +103,6 @@ export default class LedgerPlugin extends Plugin {
       icon: 'ledger',
       callback: () => {
         new AddExpenseModal(this).open();
-      },
-    });
-
-    this.addCommand({
-      id: 'open-ledger-view',
-      name: 'Switch to Ledger View',
-      checkCallback: (checking: boolean): boolean | void => {
-        const activeLeaf = this.app.workspace.getMostRecentLeaf();
-        if (checking) {
-          const state = activeLeaf.view.getState();
-          return (
-            this.settings.enableLedgerVis &&
-            state.file === this.settings.ledgerFile
-          );
-        }
-
-        this.switchToLedgerView(activeLeaf);
-      },
-    });
-
-    this.addCommand({
-      id: 'open-markdown-view',
-      name: 'Switch to Markdown View',
-      checkCallback: (checking: boolean): boolean | void => {
-        const activeLeaf = this.app.workspace.getMostRecentLeaf();
-        if (checking) {
-          const state = activeLeaf.view.getState();
-          // TODO: This should check if we are currently in LedgerView, however
-          // for some reason the type is not available on the view state here.
-          return (
-            this.settings.enableLedgerVis &&
-            state.file === this.settings.ledgerFile
-          );
-        }
-
-        this.switchToMarkdownView(activeLeaf);
       },
     });
 
@@ -195,31 +159,6 @@ export default class LedgerPlugin extends Plugin {
     // TODO: Support pre-populating fields, or even completely skipping the form
     // by passing the correct data here.
     new AddExpenseModal(this).open();
-  };
-
-  private readonly switchToMarkdownView = async (
-    leaf: WorkspaceLeaf,
-  ): Promise<void> => {
-    const state = leaf.view.getState();
-    await leaf.setViewState(
-      {
-        type: 'markdown',
-        state,
-        popstate: true,
-      } as ViewState,
-      { focus: true },
-    );
-  };
-
-  private readonly switchToLedgerView = async (
-    leaf: WorkspaceLeaf,
-  ): Promise<void> => {
-    const state = leaf.view.getState();
-    await leaf.setViewState({
-      type: LedgerViewType,
-      state: { file: state.file },
-      popstate: true,
-    } as ViewState);
   };
 }
 
