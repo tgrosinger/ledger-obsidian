@@ -12,6 +12,7 @@ import { CreateLedgerEntry } from './ui/CreateLedgerEntry';
 import type { default as MomentType } from 'moment';
 import {
   addIcon,
+  MarkdownView,
   Menu,
   MenuItem,
   Modal,
@@ -23,6 +24,7 @@ import {
 } from 'obsidian';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { around } from 'monkey-around';
 
 declare global {
   interface Window {
@@ -66,35 +68,51 @@ export default class LedgerPlugin extends Plugin {
       }),
     );
 
-    this.registerEvent(
-      this.app.workspace.on(
-        'file-menu',
-        (
-          menu: Menu,
-          file: TAbstractFile,
-          source: string,
-          leaf: WorkspaceLeaf,
-        ) => {
-          if (
-            this.settings.enableLedgerVis &&
-            file.path === this.settings.ledgerFile
-          ) {
-            menu.addItem((item: MenuItem) => {
-              item.setTitle('Switch to Ledger View');
-              item.setIcon('ledger');
-              item.setActive(true);
-              item.onClick(() => {
-                const state = leaf.view.getState();
-                leaf.setViewState({
-                  type: LedgerViewType,
-                  state: { file: state.file },
-                  popstate: true,
-                } as ViewState);
+    const self = this;
+    /*
+    let addedOnce = false;
+    this.register(
+      around(MarkdownView.prototype, {
+        addAction(next) {
+          return function (icon, title, callback) {
+            console.log('Add actions called: ' + title);
+            if (!addedOnce) {
+              addedOnce = true;
+              this.addAction('ledger', 'testing', () => {
+                console.log('clicked!');
               });
-            });
-          }
+            }
+            return next.call(icon, title, callback);
+          };
         },
-      ),
+      }),
+    );
+    */
+    this.register(
+      around(MarkdownView.prototype, {
+        onMoreOptionsMenu(next) {
+          return function (menu: Menu) {
+            if (this.file.path === self.settings.ledgerFile) {
+              menu
+                .addItem((item) => {
+                  item
+                    .setTitle('Open as Ledger file')
+                    .setIcon('ledger')
+                    .onClick(() => {
+                      const state = this.leaf.view.getState();
+                      this.leaf.setViewState({
+                        type: LedgerViewType,
+                        state: { file: state.file },
+                        popstate: true,
+                      } as ViewState);
+                    });
+                })
+                .addSeparator();
+            }
+            next.call(this, menu);
+          };
+        },
+      }),
     );
 
     this.addCommand({

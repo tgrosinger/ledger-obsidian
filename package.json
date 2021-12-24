@@ -59,6 +59,7 @@
     "chartist": "0.11.4",
     "fuse.js": "6.4.6",
     "lodash": "4.17.21",
+    "monkey-around": "2.2.0",
     "moo": "0.5.1",
     "neverthrow": "3.0.0",
     "react": "^17.0.2",

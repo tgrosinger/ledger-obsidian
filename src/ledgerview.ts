@@ -1,7 +1,7 @@
 import type LedgerPlugin from './main';
 import { TransactionCache } from './parser';
 import { LedgerDashboard } from './ui/LedgerDashboard';
-import { Menu, TextFileView, TFile, ViewState, WorkspaceLeaf } from 'obsidian';
+import { TextFileView, TFile, ViewState, WorkspaceLeaf } from 'obsidian';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
@@ -30,7 +30,7 @@ export class LedgerView extends TextFileView {
   }
 
   public canAcceptExtension(extension: string): boolean {
-    return extension === 'ledger' || extension === 'md';
+    return extension === 'ledger';
   }
 
   public getViewType(): string {
