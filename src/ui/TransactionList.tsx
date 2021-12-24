@@ -133,6 +133,12 @@ export const TransactionList: React.FC<{
     );
     return buildTableRows(filteredTransactions, props.currencySymbol);
   }, [props.txCache, props.selectedAccounts, props.startDate, props.endDate]);
+
+  if (data.length === 0) {
+    // TODO: Style and center this
+    return <p>No transactions for the selected time period.</p>;
+  }
+
   const columns = React.useMemo<Column[]>(
     () => [
       {
