@@ -119,6 +119,8 @@ const DesktopDashboard: React.FC<{
             setSelectedAccount={(account: string) =>
               setSelectedAccounts([account])
             }
+            startDate={startDate}
+            endDate={endDate}
           />
         </FlexMainContent>
       </FlexContainer>

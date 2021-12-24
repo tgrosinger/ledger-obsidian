@@ -133,9 +133,15 @@ export const filterByPayeeExact =
   (tx: Transaction): boolean =>
     tx.value.payee === account;
 
-export const filterByStartDate = (start: Moment): Filter => null;
+export const filterByStartDate =
+  (start: Moment): Filter =>
+  (tx) =>
+    start.isSameOrBefore(window.moment(tx.value.date));
 
-export const filterByEndDate = (start: Moment): Filter => null;
+export const filterByEndDate =
+  (end: Moment): Filter =>
+  (tx) =>
+    end.isSameOrAfter(window.moment(tx.value.date));
 
 /**
  * filterTransactions filters the provided transactions if _any_ of the provided

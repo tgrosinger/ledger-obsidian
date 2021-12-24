@@ -1,9 +1,13 @@
 import { Transaction, TransactionCache } from '../parser';
 import {
   filterByAccount,
+  filterByEndDate,
+  filterByStartDate,
   filterTransactions,
   getTotal,
 } from '../transaction-utils';
+import { filter } from 'lodash';
+import { Moment } from 'moment';
 import React from 'react';
 import { Column, useFilters, useSortBy, useTable } from 'react-table';
 import styled from 'styled-components';
@@ -109,15 +113,26 @@ export const TransactionList: React.FC<{
   txCache: TransactionCache;
   selectedAccounts: string[];
   setSelectedAccount: (accountName: string) => void;
+  startDate: Moment;
+  endDate: Moment;
 }> = (props): JSX.Element => {
   const data = React.useMemo(() => {
-    const filters = props.selectedAccounts.map((a) => filterByAccount(a));
-    const filteredTransactions = filterTransactions(
+    // Filters are applied sequentially when they need to be and-ed together.
+    // This might not be the most efficient solution...
+    let filteredTransactions = filterTransactions(
       props.txCache.transactions,
-      ...filters,
+      ...props.selectedAccounts.map((a) => filterByAccount(a)),
+    );
+    filteredTransactions = filterTransactions(
+      filteredTransactions,
+      filterByStartDate(props.startDate),
+    );
+    filteredTransactions = filterTransactions(
+      filteredTransactions,
+      filterByEndDate(props.endDate),
     );
     return buildTableRows(filteredTransactions, props.currencySymbol);
-  }, [props.txCache, props.selectedAccounts]);
+  }, [props.txCache, props.selectedAccounts, props.startDate, props.endDate]);
   const columns = React.useMemo<Column[]>(
     () => [
       {
