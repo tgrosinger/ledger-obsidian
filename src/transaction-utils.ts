@@ -1,5 +1,4 @@
 import { Transaction } from './parser';
-import { LineSvgProps } from '@nivo/line';
 import { some } from 'lodash';
 import { Moment } from 'moment';
 

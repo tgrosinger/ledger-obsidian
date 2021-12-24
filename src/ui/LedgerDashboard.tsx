@@ -1,6 +1,8 @@
+import { Interval } from '../date-utils';
 import type { TransactionCache } from '../parser';
 import { AccountsList } from './AccountsList';
 import { AccountVisualization } from './AccountVisualization';
+import { DateRangeSelector } from './DateRangeSelector';
 import { MobileTransactionList, TransactionList } from './TransactionList';
 import { Platform } from 'obsidian';
 import React from 'react';
@@ -10,8 +12,6 @@ export const LedgerDashboard: React.FC<{
   currencySymbol: string;
   txCache: TransactionCache;
 }> = (props): JSX.Element => {
-  const [selectedAccount, setSelectedAccount] = React.useState('');
-
   if (!props.txCache) {
     return <p>Loading...</p>;
   }
@@ -31,17 +31,13 @@ export const LedgerDashboard: React.FC<{
 
 const Header: React.FC<{}> = (props): JSX.Element => (
   <div>
-    <h2>Ledger</h2>
+    <FlexContainer>
+      <FlexSidebar>
+        <h2>Ledger</h2>
+      </FlexSidebar>
+      <FlexFloatRight>{props.children}</FlexFloatRight>
+    </FlexContainer>
   </div>
-);
-
-const Button: React.FC<{
-  selected: boolean;
-  action?: () => void;
-}> = (props): JSX.Element => (
-  <button className={props.selected ? 'mod-cta' : ''} onClick={props.action}>
-    {props.children}
-  </button>
 );
 
 const MobileDashboard: React.FC<{
@@ -66,6 +62,10 @@ const FlexSidebar = styled.div`
   flex-grow: 0;
   flex-shrink: 1;
 `;
+const FlexFloatRight = styled.div`
+  margin-left: auto;
+  flex-shrink: 1;
+`;
 const FlexMainContent = styled.div`
   flex-basis: auto;
   flex-grow: 1;
@@ -77,12 +77,24 @@ const DesktopDashboard: React.FC<{
   txCache: TransactionCache;
 }> = (props): JSX.Element => {
   const [selectedAccounts, setSelectedAccounts] = React.useState<string[]>([]);
-
-  // TODO: Make AccountsList collapsible for narrow screens
+  const [startDate, setStartDate] = React.useState(
+    window.moment().subtract(2, 'months'),
+  );
+  const [endDate, setEndDate] = React.useState(window.moment());
+  const [interval, setInterval] = React.useState<Interval>('week');
 
   return (
     <>
-      <Header />
+      <Header>
+        <DateRangeSelector
+          startDate={startDate}
+          endDate={endDate}
+          setStartDate={setStartDate}
+          setEndDate={setEndDate}
+          interval={interval}
+          setInterval={setInterval}
+        />
+      </Header>
 
       <FlexContainer>
         <FlexSidebar>
@@ -96,6 +108,9 @@ const DesktopDashboard: React.FC<{
           <AccountVisualization
             txCache={props.txCache}
             selectedAccounts={selectedAccounts}
+            startDate={startDate}
+            endDate={endDate}
+            interval={interval}
           />
           <TransactionList
             currencySymbol={props.currencySymbol}

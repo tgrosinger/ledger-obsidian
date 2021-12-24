@@ -1,66 +1,6 @@
+import { bucketTransactions } from './date-utils';
 import { Transaction } from './parser';
 import { getTotalAsNum, valueForAccount } from './transaction-utils';
-
-/**
- * A grouper accepts a transaction and returns the key which should be used to
- * group this transaction into a bucket.
- */
-export type Grouper = (tx: Transaction) => string;
-
-// TODO: Consider changing this to use the date of the Monday before to make the
-// chart more readable.
-export const grouperByWeek: Grouper = (tx: Transaction): string =>
-  window.moment(tx.value.date).format('YYYY-WW');
-
-export const grouperByMonth: Grouper = (tx: Transaction): string =>
-  window.moment(tx.value.date).format('YYYY-MM');
-
-/**
- * transactionGroupSorter accepts the data format created by groupTransactions
- * and sorts the result in chronological order. It assumes that the key values
- * will be naively numerically sortable (i.e. YYYY-MM or YYYY-WW)
- */
-const transactionGroupSorter = (
-  a: [string, Transaction[]],
-  b: [string, Transaction[]],
-): number => {
-  const aKey = a[0];
-  const bKey = b[0];
-  if (aKey.length !== bKey.length) {
-    console.debug(a);
-    console.debug(b);
-    throw new Error('Unexpected keys when sorting transaction groups');
-  }
-  for (let i = 0; i < aKey.length; i++) {
-    if (aKey[i] > bKey[i]) {
-      return 1;
-    }
-    if (aKey[i] < bKey[i]) {
-      return -1;
-    }
-  }
-  return 0;
-};
-
-const groupTransactions = (
-  txs: Transaction[],
-  grouperFn: Grouper,
-): [string, Transaction[]][] => {
-  const m: Map<string, Transaction[]> = new Map();
-  txs.forEach((tx) => {
-    const key = grouperFn(tx);
-    const txGroup = m.get(key);
-    if (txGroup) {
-      txGroup.push(tx);
-    } else {
-      m.set(key, [tx]);
-    }
-  });
-
-  const toReturn = [...m.entries()];
-  toReturn.sort(transactionGroupSorter);
-  return toReturn;
-};
 
 export type ChartData = {
   x: string | number | Date;
@@ -69,16 +9,16 @@ export type ChartData = {
 
 export const makeBalanceData = (
   txs: Transaction[],
-  grouperFn: Grouper,
+  bucketNames: string[],
   account: string,
   startingBalance: number,
 ): ChartData => {
-  const groupedTXs = groupTransactions(txs, grouperFn);
+  const groupedTXs = bucketTransactions(bucketNames, txs);
   const data: ChartData = [];
   let prevBalance = startingBalance;
-  groupedTXs.forEach(([key, value]) => {
+  groupedTXs.forEach((value, key) => {
     prevBalance = accountBalance(value, account, prevBalance);
-    data.push({ x: key, y: prevBalance });
+    data.push({ x: key.format('YYYY-MM-DD'), y: prevBalance });
   });
   return data;
 };

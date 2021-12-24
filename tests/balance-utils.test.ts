@@ -1,8 +1,6 @@
 import {
   accountBalance,
   allDealiasedAccountBalances,
-  grouperByMonth,
-  grouperByWeek,
   makeBalanceData,
   removeDuplicateAccounts,
 } from '../src/balance-utils';
@@ -72,22 +70,31 @@ const tx3: Transaction = {
 // TODO: Fix the number adding
 // TODO: Need to include a sorting function somewhere
 describe('makeBalanceData()', () => {
+  const months = ['2021-11-01', '2021-12-01'];
+  const weeks = [
+    '2021-11-29',
+    '2021-12-06',
+    '2021-12-13',
+    '2021-12-20',
+    '2021-12-27',
+    '2022-01-03',
+  ];
   describe('by Month', () => {
     test('Using dealiased accounts', () => {
       const input = [tx1, tx2, tx3];
-      const result = makeBalanceData(input, grouperByMonth, 'Credit:Citi', -20);
+      const result = makeBalanceData(input, months, 'Credit:Citi', -20);
       const expected = [
-        { x: '2021-11', y: -40 },
-        { x: '2021-12', y: -260 },
+        { x: '2021-11-01', y: -40 },
+        { x: '2021-12-01', y: -260 },
       ];
       expect(result).toEqual(expected);
     });
     test('Using account alias', () => {
       const input = [tx1, tx2, tx3];
-      const result = makeBalanceData(input, grouperByMonth, 'c:Citi', -20);
+      const result = makeBalanceData(input, months, 'c:Citi', -20);
       const expected = [
-        { x: '2021-11', y: -40 },
-        { x: '2021-12', y: -260 },
+        { x: '2021-11-01', y: -40 },
+        { x: '2021-12-01', y: -260 },
       ];
       expect(result).toEqual(expected);
     });
@@ -95,11 +102,14 @@ describe('makeBalanceData()', () => {
   describe('by Week', () => {
     test('Simple test', () => {
       const input = [tx1, tx2, tx3];
-      const result = makeBalanceData(input, grouperByWeek, 'Credit:Citi', 20);
+      const result = makeBalanceData(input, weeks, 'Credit:Citi', 20);
       const expected = [
-        { x: '2021-48', y: 0 },
-        { x: '2021-50', y: -120 },
-        { x: '2021-52', y: -220 },
+        { x: '2021-11-29', y: 0 },
+        { x: '2021-12-06', y: 0 },
+        { x: '2021-12-13', y: -120 },
+        { x: '2021-12-20', y: -120 },
+        { x: '2021-12-27', y: -220 },
+        { x: '2022-01-03', y: -220 },
       ];
       expect(result).toEqual(expected);
     });

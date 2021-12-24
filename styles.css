@@ -35,6 +35,87 @@ Settings Page
 }
 
 /*
+Chartist Legend Plugin
+*/
+
+.ct-legend {
+  position: relative;
+  text-align: center; /* Position of the group, use either left or right */
+  z-index: 10;
+}
+.ct-legend li {
+  display: inline; /* Make the legend in one row */
+  text-align: center;
+  position: relative;
+  padding-left: 23px;
+  margin-right: 20px;
+  margin-top: 3px;
+  list-style-type: none; /* Hide the default bullet */
+}
+.ct-legend li:before {
+  width: 15px; /* How big is the color */
+  height: 15px; /* How big is the color */
+  position: absolute;
+  left: 0;
+  content: '';
+  border: 3px solid transparent;
+  border-radius: 2px;
+}
+.ct-legend.ct-legend-inside {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+/*
+These colors must be matched with the series-a, series-b, etc. from below.
+*/
+.ct-series-0:before {
+  background-color: #d70206;
+}
+.ct-series-1:before {
+  background-color: #f05b4f;
+}
+.ct-series-2:before {
+  background-color: #f4c63d;
+}
+.ct-series-3:before {
+  background-color: #d17905;
+}
+.ct-series-4:before {
+  background-color: #453d3f;
+}
+.ct-series-5:before {
+  background-color: #59922b;
+}
+.ct-series-6:before {
+  background-color: #0544d3;
+}
+.ct-series-7:before {
+  background-color: #6b0392;
+}
+.ct-series-8:before {
+  background-color: #f05b4f;
+}
+.ct-series-9:before {
+  background-color: #dda458;
+}
+.ct-series-10:before {
+  background-color: #eacf7d;
+}
+.ct-series-11:before {
+  background-color: #86797d;
+}
+.ct-series-12:before {
+  background-color: #b2c326;
+}
+.ct-series-13:before {
+  background-color: #6188e2;
+}
+.ct-series-14:before {
+  background-color: #a748ca;
+}
+
+/*
 Chartist Stylesheet
 */
 

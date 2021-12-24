@@ -1,6 +1,6 @@
 import { Transaction, TransactionCache } from '../parser';
 import { CurrencyInput } from './CurrencyInput';
-import { WideInput, WideSelect } from './SharedStyles';
+import { WideDatePicker, WideSelect } from './SharedStyles';
 import { TextSuggest } from './TextSuggest';
 import { union } from 'lodash';
 import moment from 'moment';
@@ -12,16 +12,7 @@ const Margin = styled.div`
   margin: 5px 0;
 `;
 
-const DatePicker = styled(WideInput)`
-  background: var(--background-modifier-form-field);
-  border: 1px solid var(--background-modifier-border);
-  color: var(--text-normal);
-  padding: 5px 14px;
-  border-radius: 4px;
-  height: 30px;
-`;
-
-const DatePickerMobile = styled(DatePicker)`
+const DatePickerMobile = styled(WideDatePicker)`
   display: block;
   padding: 8px 14px;
   height: auto;
@@ -147,7 +138,7 @@ export const CreateLedgerEntry: React.FC<{
             onChange={(e) => setDate(e.target.value)}
           />
         ) : (
-          <DatePicker
+          <WideDatePicker
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
