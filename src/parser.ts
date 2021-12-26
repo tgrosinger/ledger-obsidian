@@ -117,6 +117,8 @@ export const parse = (
   fileContents: string,
   settings: ISettings,
 ): TransactionCache => {
+  console.time('ledger-file-parse');
+
   const blocks = splitIntoBlocks(fileContents);
   let hadError: boolean = false;
   const results = blocks
@@ -212,8 +214,13 @@ export const parse = (
     }
   });
 
+  const firstTxDate = firstDate(txs);
+
+  console.timeLog('ledger-file-parse');
+  console.timeEnd('ledger-file-parse');
+
   return {
-    firstDate: firstDate(txs),
+    firstDate: firstTxDate,
     aliases: aliasMap,
     rawAliases: aliases,
     rawComments: comments,

@@ -81,15 +81,22 @@ const DesktopDashboard: React.FC<{
   txCache: TransactionCache;
 }> = (props): JSX.Element => {
   const dailyAccountBalanceMap = React.useMemo(() => {
+    console.time('daily-balance-map');
+
     const changeMap = makeDailyAccountBalanceChangeMap(
       props.txCache.transactions,
     );
-    return makeDailyBalanceMap(
+    const balanceMap = makeDailyBalanceMap(
       props.txCache.accounts,
       changeMap,
       props.txCache.firstDate,
       window.moment(),
     );
+
+    console.timeLog('daily-balance-map');
+    console.timeEnd('daily-balance-map');
+
+    return balanceMap;
   }, [props.txCache]);
 
   const [selectedAccounts, setSelectedAccounts] = React.useState<string[]>([]);
