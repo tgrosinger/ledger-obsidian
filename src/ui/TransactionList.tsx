@@ -87,8 +87,8 @@ interface TableRow {
 const buildTableRows = (
   transactions: Transaction[],
   currencySymbol: string,
-): TableRow[] =>
-  transactions.map((tx: Transaction) => {
+): TableRow[] => {
+  const tableRows = transactions.map((tx: Transaction) => {
     if (tx.value.expenselines.length === 2) {
       // If there are only two lines, then this is a simple 'from->to' transaction
       return {
@@ -108,6 +108,17 @@ const buildTableRows = (
       to: <i>Multiple</i>,
     };
   });
+
+  tableRows.sort((a, b): number => {
+    const aDate = window.moment(a.date);
+    const bDate = window.moment(b.date);
+    if (aDate.isSame(bDate)) {
+      return 0;
+    }
+    return aDate.isBefore(bDate) ? 1 : -1;
+  });
+  return tableRows;
+};
 
 // TODO: Clicking in a transaction should open it in the transaction modal and allow editing.
 
