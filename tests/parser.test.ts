@@ -1,10 +1,8 @@
 import { parse, splitIntoBlocks } from '../src/parser';
 import { settingsWithDefaults } from '../src/settings';
+import * as moment from 'moment';
 
-// For some reaosn it may be necessary to change the moo import
-// in the generated file for the tests to pass.
-// const moo = require('moo')
-
+window.moment = moment;
 const settings = settingsWithDefaults({});
 
 describe('splitIntoBlocks()', () => {
@@ -111,6 +109,7 @@ describe('parsing a ledger file', () => {
           ],
         },
       };
+      expect(txCache.firstDate).toEqual(window.moment('2021/04/20'));
       expect(txCache.transactions).toHaveLength(1);
       expect(txCache.transactions[0]).toEqual(expected);
     });
@@ -491,12 +490,12 @@ alias b=Assets:Banking
 
       const txCache = parse(contents, customSettings);
       expect(txCache.accounts).toHaveLength(4);
-      expect(txCache.assetAccounts).toEqual(['b:CreditUnion']);
+      expect(txCache.assetAccounts).toEqual(['Assets:Banking:CreditUnion']);
       expect(txCache.expenseAccounts).toEqual([
-        'e:Food:Groceries',
-        'e:Spending Money',
+        'Expenses:Food:Groceries',
+        'Expenses:Spending Money',
       ]);
-      expect(txCache.liabilityAccounts).toEqual(['c:Chase']);
+      expect(txCache.liabilityAccounts).toEqual(['Liabilities:Credit:Chase']);
       expect(txCache.incomeAccounts).toEqual([]);
     });
   });

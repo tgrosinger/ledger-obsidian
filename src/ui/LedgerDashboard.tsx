@@ -3,13 +3,23 @@ import type { TransactionCache } from '../parser';
 import { AccountsList } from './AccountsList';
 import { AccountVisualization } from './AccountVisualization';
 import { DateRangeSelector } from './DateRangeSelector';
-import { MobileTransactionList, TransactionList } from './TransactionList';
+import { NetWorthVisualization } from './NetWorthVisualization';
+import {
+  MobileTransactionList,
+  RecentTransactionList,
+  TransactionList,
+} from './TransactionList';
 import { Platform } from 'obsidian';
 import React from 'react';
+import {
+  makeDailyAccountBalanceChangeMap,
+  makeDailyBalanceMap,
+} from 'src/balance-utils';
+import { ISettings } from 'src/settings';
 import styled from 'styled-components';
 
 export const LedgerDashboard: React.FC<{
-  currencySymbol: string;
+  settings: ISettings;
   txCache: TransactionCache;
 }> = (props): JSX.Element => {
   if (!props.txCache) {
@@ -17,15 +27,9 @@ export const LedgerDashboard: React.FC<{
   }
 
   return Platform.isMobile ? (
-    <MobileDashboard
-      currencySymbol={props.currencySymbol}
-      txCache={props.txCache}
-    />
+    <MobileDashboard settings={props.settings} txCache={props.txCache} />
   ) : (
-    <DesktopDashboard
-      currencySymbol={props.currencySymbol}
-      txCache={props.txCache}
-    />
+    <DesktopDashboard settings={props.settings} txCache={props.txCache} />
   );
 };
 
@@ -41,14 +45,14 @@ const Header: React.FC<{}> = (props): JSX.Element => (
 );
 
 const MobileDashboard: React.FC<{
-  currencySymbol: string;
+  settings: ISettings;
   txCache: TransactionCache;
 }> = (props): JSX.Element => {
   const [selectedTab, setSelectedTab] = React.useState('transactions');
 
   return (
     <MobileTransactionList
-      currencySymbol={props.currencySymbol}
+      currencySymbol={props.settings.currencySymbol}
       txCache={props.txCache}
     />
   );
@@ -73,9 +77,21 @@ const FlexMainContent = styled.div`
 `;
 
 const DesktopDashboard: React.FC<{
-  currencySymbol: string;
+  settings: ISettings;
   txCache: TransactionCache;
 }> = (props): JSX.Element => {
+  const dailyAccountBalanceMap = React.useMemo(() => {
+    const changeMap = makeDailyAccountBalanceChangeMap(
+      props.txCache.transactions,
+    );
+    return makeDailyBalanceMap(
+      props.txCache.accounts,
+      changeMap,
+      props.txCache.firstDate,
+      window.moment(),
+    );
+  }, [props.txCache]);
+
   const [selectedAccounts, setSelectedAccounts] = React.useState<string[]>([]);
   const [startDate, setStartDate] = React.useState(
     window.moment().subtract(2, 'months'),
@@ -105,23 +121,43 @@ const DesktopDashboard: React.FC<{
           />
         </FlexSidebar>
         <FlexMainContent>
-          <AccountVisualization
-            txCache={props.txCache}
-            selectedAccounts={selectedAccounts}
-            startDate={startDate}
-            endDate={endDate}
-            interval={interval}
-          />
-          <TransactionList
-            currencySymbol={props.currencySymbol}
-            txCache={props.txCache}
-            selectedAccounts={selectedAccounts}
-            setSelectedAccount={(account: string) =>
-              setSelectedAccounts([account])
-            }
-            startDate={startDate}
-            endDate={endDate}
-          />
+          {selectedAccounts.length === 0 ? (
+            <>
+              <NetWorthVisualization
+                dailyAccountBalanceMap={dailyAccountBalanceMap}
+                startDate={startDate}
+                endDate={endDate}
+                interval={interval}
+                settings={props.settings}
+              />
+              <RecentTransactionList
+                currencySymbol={props.settings.currencySymbol}
+                txCache={props.txCache}
+                startDate={startDate}
+                endDate={endDate}
+              />
+            </>
+          ) : (
+            <>
+              <AccountVisualization
+                dailyAccountBalanceMap={dailyAccountBalanceMap}
+                selectedAccounts={selectedAccounts}
+                startDate={startDate}
+                endDate={endDate}
+                interval={interval}
+              />
+              <TransactionList
+                currencySymbol={props.settings.currencySymbol}
+                txCache={props.txCache}
+                selectedAccounts={selectedAccounts}
+                setSelectedAccount={(account: string) =>
+                  setSelectedAccounts([account])
+                }
+                startDate={startDate}
+                endDate={endDate}
+              />
+            </>
+          )}
         </FlexMainContent>
       </FlexContainer>
     </>

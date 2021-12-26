@@ -1,11 +1,12 @@
 import {
-  accountBalance,
-  allDealiasedAccountBalances,
-  makeBalanceData,
+  DailyAccountBalanceChangeMap,
+  makeDailyAccountBalanceChangeMap,
+  makeDailyBalanceMap,
   removeDuplicateAccounts,
 } from '../src/balance-utils';
+import { Transaction } from '../src/parser';
+import { fillMissingAmount } from '../src/transaction-utils';
 import * as moment from 'moment';
-import { Transaction } from 'src/parser';
 
 window.moment = moment;
 
@@ -66,100 +67,6 @@ const tx3: Transaction = {
     ],
   },
 };
-
-// TODO: Fix the number adding
-// TODO: Need to include a sorting function somewhere
-describe('makeBalanceData()', () => {
-  const months = ['2021-11-01', '2021-12-01'];
-  const weeks = [
-    '2021-11-29',
-    '2021-12-06',
-    '2021-12-13',
-    '2021-12-20',
-    '2021-12-27',
-    '2022-01-03',
-  ];
-  describe('by Month', () => {
-    test('Using dealiased accounts', () => {
-      const input = [tx1, tx2, tx3];
-      const result = makeBalanceData(input, months, 'Credit:Citi', -20);
-      const expected = [
-        { x: '2021-11-01', y: -40 },
-        { x: '2021-12-01', y: -260 },
-      ];
-      expect(result).toEqual(expected);
-    });
-    test('Using account alias', () => {
-      const input = [tx1, tx2, tx3];
-      const result = makeBalanceData(input, months, 'c:Citi', -20);
-      const expected = [
-        { x: '2021-11-01', y: -40 },
-        { x: '2021-12-01', y: -260 },
-      ];
-      expect(result).toEqual(expected);
-    });
-  });
-  describe('by Week', () => {
-    test('Simple test', () => {
-      const input = [tx1, tx2, tx3];
-      const result = makeBalanceData(input, weeks, 'Credit:Citi', 20);
-      const expected = [
-        { x: '2021-11-29', y: 0 },
-        { x: '2021-12-06', y: 0 },
-        { x: '2021-12-13', y: -120 },
-        { x: '2021-12-20', y: -120 },
-        { x: '2021-12-27', y: -220 },
-        { x: '2022-01-03', y: -220 },
-      ];
-      expect(result).toEqual(expected);
-    });
-  });
-});
-
-describe('allDealiasedAccountBalances()', () => {
-  test('With single transaction', () => {
-    const input = [tx1];
-    const result = allDealiasedAccountBalances(input);
-    const expected = new Map([
-      ['Expenses:Spending Money', 100],
-      ['Credit:Citi', -100],
-    ]);
-    expect(result).toEqual(expected);
-  });
-  test('With multiple transactions', () => {
-    const input = [tx1, tx2, tx3];
-    const result = allDealiasedAccountBalances(input);
-    const expected = new Map([
-      ['Expenses:Spending Money', 100],
-      ['Expenses:Food:Grocery', 140],
-      ['Credit:Citi', -240],
-    ]);
-    expect(result).toEqual(expected);
-  });
-});
-
-describe('accountBalance()', () => {
-  test('When there are no transactions', () => {
-    const input: Transaction[] = [];
-    const result = accountBalance(input, 'e:Spending Money', 145.34);
-    expect(result).toEqual(145.34);
-  });
-  test('When there are multiple transaction', () => {
-    const input = [tx2, tx3];
-    const result = accountBalance(input, 'e:Food:Grocery', 10);
-    expect(result).toEqual(150);
-  });
-  test('When the account should be negative', () => {
-    const input = [tx1, tx2, tx3];
-    const result = accountBalance(input, 'c:Citi', 0);
-    expect(result).toEqual(-240);
-  });
-  test('When using the dealiased account name', () => {
-    const input = [tx2, tx3];
-    const result = accountBalance(input, 'Expenses:Food:Grocery', 5.5);
-    expect(result).toEqual(145.5);
-  });
-});
 
 describe('removeDuplicateAccounts()', () => {
   test('When there is only one account with one layer', () => {
@@ -235,5 +142,225 @@ describe('removeDuplicateAccounts()', () => {
     ];
     const result = removeDuplicateAccounts(input);
     expect(result).toEqual(expected);
+  });
+});
+
+describe('Balance maps', () => {
+  const tx4: Transaction = {
+    type: 'tx',
+    value: {
+      date: '2021-12-16',
+      payee: 'Costco',
+      expenselines: [
+        {
+          account: 'e:Spending Money',
+          dealiasedAccount: 'Expenses:Spending Money',
+          amount: 100,
+          currency: '$',
+        },
+        {
+          account: 'c:Citi',
+          dealiasedAccount: 'Credit:Citi',
+        },
+      ],
+    },
+  };
+  const tx5: Transaction = {
+    type: 'tx',
+    value: {
+      date: '2021-12-15',
+      payee: "Trader Joe's",
+      expenselines: [
+        {
+          account: 'e:Food:Grocery',
+          dealiasedAccount: 'Expenses:Food:Grocery',
+          amount: 120,
+          currency: '$',
+        },
+        {
+          account: 'c:Citi',
+          dealiasedAccount: 'Credit:Citi',
+        },
+      ],
+    },
+  };
+  const tx6: Transaction = {
+    type: 'tx',
+    value: {
+      date: '2021-12-10',
+      payee: 'PCC',
+      expenselines: [
+        {
+          account: 'e:Food:Grocery',
+          dealiasedAccount: 'Expenses:Food:Grocery',
+          amount: 20,
+          currency: '$',
+        },
+        {
+          account: 'c:Citi',
+          dealiasedAccount: 'Credit:Citi',
+        },
+      ],
+    },
+  };
+
+  fillMissingAmount(tx4);
+  fillMissingAmount(tx5);
+  fillMissingAmount(tx6);
+
+  const expectedDailyAccountBalanceChangeMap: DailyAccountBalanceChangeMap =
+    new Map([
+      [
+        '2021-12-10',
+        new Map([
+          ['Expenses:Food:Grocery', 20],
+          ['Credit:Citi', -20],
+        ]),
+      ],
+      [
+        '2021-12-15',
+        new Map([
+          ['Expenses:Food:Grocery', 120],
+          ['Credit:Citi', -120],
+        ]),
+      ],
+      [
+        '2021-12-16',
+        new Map([
+          ['Expenses:Spending Money', 100],
+          ['Credit:Citi', -100],
+        ]),
+      ],
+    ]);
+
+  describe('makeDailyAccountBalanceChangeMap()', () => {
+    test('simple test', () => {
+      const input = [tx4, tx5, tx6];
+      const result = makeDailyAccountBalanceChangeMap(input);
+      expect(result).toEqual(expectedDailyAccountBalanceChangeMap);
+    });
+  });
+
+  describe('makeDailyBalanceMap()', () => {
+    test('simple test', () => {
+      const accounts = [
+        'Credit:Citi',
+        'Expenses:Spending Money',
+        'Expenses:Food:Grocery',
+      ];
+      const result = makeDailyBalanceMap(
+        accounts,
+        expectedDailyAccountBalanceChangeMap,
+        window.moment('2021-12-08'),
+        window.moment('2021-12-20'),
+      );
+      const expected = new Map([
+        [
+          '2021-12-08',
+          new Map([
+            ['Credit:Citi', 0],
+            ['Expenses:Spending Money', 0],
+            ['Expenses:Food:Grocery', 0],
+          ]),
+        ],
+        [
+          '2021-12-09',
+          new Map([
+            ['Credit:Citi', 0],
+            ['Expenses:Spending Money', 0],
+            ['Expenses:Food:Grocery', 0],
+          ]),
+        ],
+        [
+          '2021-12-10',
+          new Map([
+            ['Credit:Citi', -20],
+            ['Expenses:Spending Money', 0],
+            ['Expenses:Food:Grocery', 20],
+          ]),
+        ],
+        [
+          '2021-12-11',
+          new Map([
+            ['Credit:Citi', -20],
+            ['Expenses:Spending Money', 0],
+            ['Expenses:Food:Grocery', 20],
+          ]),
+        ],
+        [
+          '2021-12-12',
+          new Map([
+            ['Credit:Citi', -20],
+            ['Expenses:Spending Money', 0],
+            ['Expenses:Food:Grocery', 20],
+          ]),
+        ],
+        [
+          '2021-12-13',
+          new Map([
+            ['Credit:Citi', -20],
+            ['Expenses:Spending Money', 0],
+            ['Expenses:Food:Grocery', 20],
+          ]),
+        ],
+        [
+          '2021-12-14',
+          new Map([
+            ['Credit:Citi', -20],
+            ['Expenses:Spending Money', 0],
+            ['Expenses:Food:Grocery', 20],
+          ]),
+        ],
+        [
+          '2021-12-15',
+          new Map([
+            ['Credit:Citi', -140],
+            ['Expenses:Spending Money', 0],
+            ['Expenses:Food:Grocery', 140],
+          ]),
+        ],
+        [
+          '2021-12-16',
+          new Map([
+            ['Credit:Citi', -240],
+            ['Expenses:Spending Money', 100],
+            ['Expenses:Food:Grocery', 140],
+          ]),
+        ],
+        [
+          '2021-12-17',
+          new Map([
+            ['Credit:Citi', -240],
+            ['Expenses:Spending Money', 100],
+            ['Expenses:Food:Grocery', 140],
+          ]),
+        ],
+        [
+          '2021-12-18',
+          new Map([
+            ['Credit:Citi', -240],
+            ['Expenses:Spending Money', 100],
+            ['Expenses:Food:Grocery', 140],
+          ]),
+        ],
+        [
+          '2021-12-19',
+          new Map([
+            ['Credit:Citi', -240],
+            ['Expenses:Spending Money', 100],
+            ['Expenses:Food:Grocery', 140],
+          ]),
+        ],
+        [
+          '2021-12-20',
+          new Map([
+            ['Credit:Citi', -240],
+            ['Expenses:Spending Money', 100],
+            ['Expenses:Food:Grocery', 140],
+          ]),
+        ],
+      ]);
+      expect(result).toEqual(expected);
+    });
   });
 });

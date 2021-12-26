@@ -1,7 +1,12 @@
 import grammar from '../grammar/ledger';
 import { ISettings } from './settings';
-import { dealiasAccount, fillMissingAmount } from './transaction-utils';
+import {
+  dealiasAccount,
+  fillMissingAmount,
+  firstDate,
+} from './transaction-utils';
 import { flatMap, sortedUniq } from 'lodash';
+import { Moment } from 'moment';
 import { Grammar, Parser } from 'nearley';
 
 /**
@@ -11,6 +16,7 @@ import { Grammar, Parser } from 'nearley';
  */
 export interface TransactionCache {
   transactions: Transaction[];
+  firstDate: Moment;
   payees: string[];
   aliases: Map<string, string>;
 
@@ -32,28 +38,27 @@ export interface TransactionCache {
   hadParsingError: boolean;
 
   /**
-   * Accounts contains a list of all accounts from the file, unmodified.
-   * Being unmodified, aliases may or may not be in use.
+   * Accounts contains a list of all accounts from the file, dealiased if possible.
    */
   accounts: string[];
 
   /**
-   * expenseAccounts is not dealiased and only contains expense accounts.
+   * expenseAccounts is dealiased and only contains expense accounts.
    */
   expenseAccounts: string[];
 
   /**
-   * assetAccounts is not dealiased and only contains asset accounts.
+   * assetAccounts is dealiased and only contains asset accounts.
    */
   assetAccounts: string[];
 
   /**
-   * incomeAccounts is not dealiased and only contains income accounts.
+   * incomeAccounts is dealiased and only contains income accounts.
    */
   incomeAccounts: string[];
 
   /**
-   * liabilityAccounts is not dealiased and only contains liability accounts.
+   * liabilityAccounts is dealiased and only contains liability accounts.
    */
   liabilityAccounts: string[];
 }
@@ -185,7 +190,9 @@ export const parse = (
   );
   const accounts = sortedUniq(
     flatMap(txs, ({ value }) =>
-      value.expenselines.flatMap((line) => (line.account ? line.account : [])),
+      value.expenselines.flatMap((line) =>
+        line.account ? line.dealiasedAccount || line.account : [],
+      ),
     ).sort((a, b) => (a.toLowerCase() > b.toLowerCase() ? 1 : -1)),
   );
 
@@ -194,19 +201,19 @@ export const parse = (
   const incomeAccounts: string[] = [];
   const liabilityAccounts: string[] = [];
   accounts.forEach((c) => {
-    const dealiasedA = dealiasAccount(c, aliasMap);
-    if (dealiasedA.startsWith(settings.assetAccountsPrefix)) {
+    if (c.startsWith(settings.assetAccountsPrefix)) {
       assetAccounts.push(c);
-    } else if (dealiasedA.startsWith(settings.expenseAccountsPrefix)) {
+    } else if (c.startsWith(settings.expenseAccountsPrefix)) {
       expenseAccounts.push(c);
-    } else if (dealiasedA.startsWith(settings.incomeAccountsPrefix)) {
+    } else if (c.startsWith(settings.incomeAccountsPrefix)) {
       incomeAccounts.push(c);
-    } else if (dealiasedA.startsWith(settings.liabilityAccountsPrefix)) {
+    } else if (c.startsWith(settings.liabilityAccountsPrefix)) {
       liabilityAccounts.push(c);
     }
   });
 
   return {
+    firstDate: firstDate(txs),
     aliases: aliasMap,
     rawAliases: aliases,
     rawComments: comments,

@@ -6,7 +6,6 @@ import {
   filterTransactions,
   getTotal,
 } from '../transaction-utils';
-import { filter } from 'lodash';
 import { Moment } from 'moment';
 import React from 'react';
 import { Column, useFilters, useSortBy, useTable } from 'react-table';
@@ -77,16 +76,18 @@ const TableStyles = styled.div`
   }
 `;
 
-const buildTableRows = (
-  transactions: Transaction[],
-  currencySymbol: string,
-): {
+interface TableRow {
   date: string;
   payee: string;
   total: string;
   from: string;
-  to: string;
-}[] =>
+  to: string | JSX.Element;
+}
+
+const buildTableRows = (
+  transactions: Transaction[],
+  currencySymbol: string,
+): TableRow[] =>
   transactions.map((tx: Transaction) => {
     if (tx.value.expenselines.length === 2) {
       // If there are only two lines, then this is a simple 'from->to' transaction
@@ -103,10 +104,40 @@ const buildTableRows = (
       date: tx.value.date,
       payee: tx.value.payee,
       total: getTotal(tx, currencySymbol),
-      from: '---',
-      to: '---',
+      from: tx.value.expenselines.last().account,
+      to: <i>Multiple</i>,
     };
   });
+
+// TODO: Clicking in a transaction should open it in the transaction modal and allow editing.
+
+export const RecentTransactionList: React.FC<{
+  currencySymbol: string;
+  txCache: TransactionCache;
+  startDate: Moment;
+  endDate: Moment;
+}> = (props): JSX.Element => {
+  const data = React.useMemo(() => {
+    let filteredTransactions = filterTransactions(
+      props.txCache.transactions,
+      filterByStartDate(props.startDate),
+    );
+    filteredTransactions = filterTransactions(
+      filteredTransactions,
+      filterByEndDate(props.endDate),
+    );
+    if (filteredTransactions.length > 10) {
+      filteredTransactions = filteredTransactions.slice(-10);
+    }
+    return buildTableRows(filteredTransactions, props.currencySymbol);
+  }, [props.txCache, props.startDate, props.endDate]);
+  return (
+    <>
+      <h2>Last 10 Transactions for Selected Dates</h2>
+      <TransactionTable data={data} />
+    </>
+  );
+};
 
 export const TransactionList: React.FC<{
   currencySymbol: string;
@@ -134,6 +165,12 @@ export const TransactionList: React.FC<{
     return buildTableRows(filteredTransactions, props.currencySymbol);
   }, [props.txCache, props.selectedAccounts, props.startDate, props.endDate]);
 
+  return <TransactionTable data={data} />;
+};
+
+const TransactionTable: React.FC<{
+  data: TableRow[];
+}> = ({ data }): JSX.Element => {
   if (data.length === 0) {
     // TODO: Style and center this
     return <p>No transactions for the selected time period.</p>;

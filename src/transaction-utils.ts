@@ -1,4 +1,4 @@
-import { Transaction } from './parser';
+import { Transaction, TransactionCache } from './parser';
 import { some } from 'lodash';
 import { Moment } from 'moment';
 
@@ -51,6 +51,28 @@ export const getCurrency = (
   }
   return defaultCurrency;
 };
+
+export const isAssetAccount = (
+  tx: Transaction,
+  txCache: TransactionCache,
+): boolean =>
+  some(txCache.assetAccounts, (accountName) =>
+    some(
+      tx.value.expenselines,
+      (line) =>
+        (line.account && line.account === accountName) ||
+        (line.dealiasedAccount && line.dealiasedAccount === accountName),
+    ),
+  );
+
+/**
+ * firstDate returns the date of the earliest transaction.
+ */
+export const firstDate = (txs: Transaction[]): Moment =>
+  txs.reduce((prev, tx) => {
+    const current = window.moment(tx.value.date);
+    return current.isSameOrBefore(prev) ? current : prev;
+  }, window.moment());
 
 /**
  * fillMissingAmmount attempts to fill any empty amount fields in the

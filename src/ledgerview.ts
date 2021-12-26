@@ -91,7 +91,7 @@ export class LedgerView extends TextFileView {
     const contentEl = this.containerEl.children[1];
     ReactDOM.render(
       React.createElement(LedgerDashboard, {
-        currencySymbol: this.plugin.settings.currencySymbol,
+        settings: this.plugin.settings,
         txCache: this.plugin.txCache,
       }),
       this.contentEl,

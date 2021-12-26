@@ -1,9 +1,10 @@
+import { makeNetWorthData } from '../balance-utils';
 import { Interval, makeBucketNames } from '../date-utils';
+import { ISettings } from '../settings';
 import { ILineChartOptions } from 'chartist';
 import { Moment } from 'moment';
 import React from 'react';
 import ChartistGraph from 'react-chartist';
-import { makeBalanceData, removeDuplicateAccounts } from 'src/balance-utils';
 import styled from 'styled-components';
 
 const Chart = styled.div`
@@ -12,25 +13,27 @@ const Chart = styled.div`
   }
 `;
 
-export const AccountVisualization: React.FC<{
+export const NetWorthVisualization: React.FC<{
   dailyAccountBalanceMap: Map<string, Map<string, number>>;
-  selectedAccounts: string[];
   startDate: Moment;
   endDate: Moment;
   interval: Interval;
+  settings: ISettings;
 }> = (props): JSX.Element => {
-  const filteredAccounts = removeDuplicateAccounts(props.selectedAccounts);
   const dateBuckets = makeBucketNames(
     props.interval,
     props.startDate,
     props.endDate,
   );
-
   const data = {
     labels: dateBuckets,
-    series: filteredAccounts.map((account) =>
-      makeBalanceData(props.dailyAccountBalanceMap, dateBuckets, account),
-    ),
+    series: [
+      makeNetWorthData(
+        props.dailyAccountBalanceMap,
+        dateBuckets,
+        props.settings,
+      ),
+    ],
   };
 
   const options: ILineChartOptions = {
@@ -41,16 +44,11 @@ export const AccountVisualization: React.FC<{
   };
 
   const type = 'Line';
-
   return (
     <>
-      <ul className="ct-legend">
-        {filteredAccounts.map((account, i) => (
-          <li key={account} className={`ct-series-${i}`}>
-            {account}
-          </li>
-        ))}
-      </ul>
+      <h2>Net Worth</h2>
+      <i>Assets minus liabilities</i>
+
       <Chart>
         <ChartistGraph data={data} options={options} type={type} />
       </Chart>

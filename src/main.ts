@@ -10,6 +10,7 @@ import { ISettings, settingsWithDefaults } from './settings';
 import { SettingsTab } from './settings-tab';
 import { CreateLedgerEntry } from './ui/CreateLedgerEntry';
 import type { default as MomentType } from 'moment';
+import { around } from 'monkey-around';
 import {
   addIcon,
   MarkdownView,
@@ -24,7 +25,6 @@ import {
 } from 'obsidian';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { around } from 'monkey-around';
 
 declare global {
   interface Window {
@@ -68,6 +68,7 @@ export default class LedgerPlugin extends Plugin {
       }),
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     /*
     let addedOnce = false;
