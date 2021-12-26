@@ -26,6 +26,12 @@ export const AccountVisualization: React.FC<{
     props.endDate,
   );
 
+  // TODO: It doesn't make a ton of sense to show the balance for all time of an
+  // expense account or an income account. When these accounts are selected it
+  // should probably automatically switch to a "diff-for-this-bucket" view.
+  // Asset and Liability accounts could be useful to view in either mode, but
+  // should probably default to the "balance-over-all-time" mode.
+
   const data = {
     labels: dateBuckets,
     series: filteredAccounts.map((account) =>

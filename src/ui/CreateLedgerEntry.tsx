@@ -53,7 +53,7 @@ export const CreateLedgerEntry: React.FC<{
       case 'income':
         return c === 1 ? 'Asset' : 'Expense';
       case 'transfer':
-        return c === 1 ? 'From' : 'To';
+        return c === 1 ? 'To' : 'From';
     }
   };
 
@@ -79,8 +79,8 @@ export const CreateLedgerEntry: React.FC<{
   const save = async (): Promise<void> => {
     let localPayee = payee;
     if (txType === 'transfer') {
-      const from = account1.split(':').last();
-      const to = account2.split(':').last();
+      const to = account1.split(':').last();
+      const from = account2.split(':').last();
       localPayee = `${from} to ${to}`;
     }
 
@@ -88,8 +88,10 @@ export const CreateLedgerEntry: React.FC<{
       new Notice('Payee must not be empty');
       return;
     } else if (date === '') {
-      // TODO: Default to today
       new Notice('Must select a date');
+      return;
+    } else if (total === '' || Number.isNaN(parseFloat(total))) {
+      new Notice('Must specify an amount');
       return;
     } else if (account1 === '') {
       new Notice(`${getAccountName(1)} account must not be empty`);
@@ -99,6 +101,7 @@ export const CreateLedgerEntry: React.FC<{
       return;
     }
 
+    // TODO: This is not a ISO8601. Once reconciliation is added, remove this and reformat file.
     const formattedDate = date.replace(/-/g, '/');
     const tx: Transaction = {
       type: 'tx',

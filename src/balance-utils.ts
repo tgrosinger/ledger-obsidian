@@ -43,8 +43,11 @@ export const makeBalanceData = (
   account: string,
 ): ChartData =>
   bucketNames.map((bucket) => {
+    // TODO: This must distinguish between getting the balance for a leaf
+    // account and a branch account. If it's a branch it should instead sum all
+    // the balances for all of the leaves on that branch.
+
     const balance = dailyAccountBalanceMap.get(bucket)?.get(account);
-    console.log(balance);
     return { x: bucket, y: balance };
   });
 
