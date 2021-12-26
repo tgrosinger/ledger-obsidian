@@ -84,7 +84,8 @@ export const fillMissingAmount = (tx: Transaction): void => {
   let missingIndex = -1;
 
   for (let i = 0; i < lines.length; i++) {
-    if (!lines[i].amount) {
+    // Explicit compare to undefined to avoide accidentally comparing to 0
+    if (lines[i].amount === undefined) {
       if (!lines[i].account || lines[i].account === '') {
         commentLines.push(i);
         continue;

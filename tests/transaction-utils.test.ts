@@ -275,6 +275,32 @@ describe('fillMissingAmount()', () => {
       expect(input.value.expenselines[0].amount).toEqual(10.5);
       expect(input.value.expenselines[1].amount).toBeUndefined();
     });
+    test('and there is an amount that is zero', () => {
+      const input: Transaction = {
+        type: 'tx',
+        value: {
+          date: '2021/12/04',
+          payee: 'Testing',
+          expenselines: [
+            {
+              account: 'account1',
+              amount: 10.5,
+            },
+            {
+              account: '',
+              amount: 0,
+            },
+            {
+              account: 'account3',
+            },
+          ],
+        },
+      };
+      fillMissingAmount(input);
+      expect(input.value.expenselines[0].amount).toEqual(10.5);
+      expect(input.value.expenselines[1].amount).toEqual(0);
+      expect(input.value.expenselines[2].amount).toEqual(-10.5);
+    });
   });
   describe('When there are only two expense lines', () => {
     test('and the first line is missing', () => {
