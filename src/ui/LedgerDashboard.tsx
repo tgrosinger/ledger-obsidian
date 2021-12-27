@@ -51,12 +51,15 @@ const MobileDashboard: React.FC<{
 }> = (props): JSX.Element => {
   const [selectedTab, setSelectedTab] = React.useState('transactions');
 
+  /*
   return (
     <MobileTransactionList
       currencySymbol={props.settings.currencySymbol}
       txCache={props.txCache}
     />
   );
+  */
+  return <p>Dashboard not yet supported on mobile.</p>;
 };
 
 const FlexContainer = styled.div`
