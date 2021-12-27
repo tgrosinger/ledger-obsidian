@@ -1,6 +1,7 @@
-import { parse, splitIntoBlocks } from '../src/parser';
+import { Alias, parse, splitIntoBlocks, Transaction } from '../src/parser';
 import { settingsWithDefaults } from '../src/settings';
 import * as moment from 'moment';
+import { ParseError } from 'src/error';
 
 window.moment = moment;
 const settings = settingsWithDefaults({});
@@ -86,11 +87,14 @@ describe('parsing a ledger file', () => {
       e:Spending Money    $20.00
       b:CreditUnion`;
       const txCache = parse(contents, settings);
-      const expected = {
+      const expected: Transaction = {
         type: 'tx',
         blockLine: 1,
-        firstLine: 0,
-        lastLine: 2,
+        block: {
+          firstLine: 0,
+          lastLine: 2,
+          block: contents,
+        },
         value: {
           date: '2021/04/20',
           payee: 'Obsidian',
@@ -118,11 +122,14 @@ describe('parsing a ledger file', () => {
       e:Spending Money    $20.00
       b:CreditUnion       $-20.00`;
       const txCache = parse(contents, settings);
-      const expected = {
+      const expected: Transaction = {
         type: 'tx',
         blockLine: 1,
-        firstLine: 0,
-        lastLine: 2,
+        block: {
+          firstLine: 0,
+          lastLine: 2,
+          block: contents,
+        },
         value: {
           date: '2021/04/20',
           payee: 'Obsidian',
@@ -151,11 +158,14 @@ describe('parsing a ledger file', () => {
       e:Household Goods   $5.00
       b:CreditUnion       $-25.00`;
       const txCache = parse(contents, settings);
-      const expected = {
+      const expected: Transaction = {
         type: 'tx',
         blockLine: 1,
-        firstLine: 0,
-        lastLine: 3,
+        block: {
+          firstLine: 0,
+          lastLine: 3,
+          block: contents,
+        },
         value: {
           date: '2021/04/20',
           payee: 'Obsidian',
@@ -193,11 +203,14 @@ describe('parsing a ledger file', () => {
       e:Food:Groceries    $45.00
       b:CreditUnion       $-45.00`;
       const txCache = parse(contents, settings);
-      const expected1 = {
+      const expected1: Transaction = {
         type: 'tx',
         blockLine: 1,
-        firstLine: 0,
-        lastLine: 2,
+        block: {
+          firstLine: 0,
+          lastLine: 2,
+          block: contents.split('\n').slice(0, 3).join('\n'),
+        },
         value: {
           date: '2021/04/20',
           payee: 'Obsidian',
@@ -217,11 +230,14 @@ describe('parsing a ledger file', () => {
           ],
         },
       };
-      const expected2 = {
+      const expected2: Transaction = {
         type: 'tx',
         blockLine: 1,
-        firstLine: 4,
-        lastLine: 6,
+        block: {
+          firstLine: 4,
+          lastLine: 6,
+          block: contents.split('\n').slice(4).join('\n'),
+        },
         value: {
           date: '2021/04/21',
           payee: 'Food Co-op',
@@ -241,7 +257,7 @@ describe('parsing a ledger file', () => {
           ],
         },
       };
-      expect(txCache.hadParsingError).toBeFalsy();
+      expect(txCache.parsingErrors).toEqual([]);
       expect(txCache.transactions).toHaveLength(2);
       expect(txCache.transactions[0]).toEqual(expected1);
       expect(txCache.transactions[1]).toEqual(expected2);
@@ -252,11 +268,14 @@ describe('parsing a ledger file', () => {
     * e:Household Goods   $5.00
       b:CreditUnion       $-25.00`;
       const txCache = parse(contents, settings);
-      const expected = {
+      const expected: Transaction = {
         type: 'tx',
         blockLine: 1,
-        firstLine: 0,
-        lastLine: 3,
+        block: {
+          firstLine: 0,
+          lastLine: 3,
+          block: contents,
+        },
         value: {
           date: '2021/04/20',
           payee: 'Obsidian',
@@ -291,11 +310,14 @@ describe('parsing a ledger file', () => {
       e:Household Goods   $5.00
       b:CreditUnion       $-25.00`;
       const txCache = parse(contents, settings);
-      const expected = {
+      const expected: Transaction = {
         type: 'tx',
         blockLine: 1,
-        firstLine: 0,
-        lastLine: 3,
+        block: {
+          firstLine: 0,
+          lastLine: 3,
+          block: contents,
+        },
         value: {
           date: '2021/04/20',
           payee: 'Obsidian',
@@ -331,11 +353,14 @@ describe('parsing a ledger file', () => {
       счет:наличка:черныйКошель  Р2000.00
       приработок:урлапов`;
       const txCache = parse(contents, settings);
-      const expected = {
+      const expected: Transaction = {
         type: 'tx',
         blockLine: 1,
-        firstLine: 0,
-        lastLine: 2,
+        block: {
+          firstLine: 0,
+          lastLine: 2,
+          block: contents,
+        },
         value: {
           date: '2021/01/01',
           payee: 'халтура',
@@ -354,7 +379,7 @@ describe('parsing a ledger file', () => {
           ],
         },
       };
-      expect(txCache.hadParsingError).toBeFalsy();
+      expect(txCache.parsingErrors).toEqual([]);
       expect(txCache.transactions).toHaveLength(1);
       expect(txCache.transactions[0]).toEqual(expected);
     });
@@ -369,11 +394,14 @@ describe('parsing a ledger file', () => {
       e:Food:Groceries    $45.00
       b:CreditUnion       $-45.00`;
       const txCache = parse(contents, settings);
-      const expected1 = {
+      const expected1: Transaction = {
         type: 'tx',
         blockLine: 1,
-        firstLine: 0,
-        lastLine: 2,
+        block: {
+          firstLine: 0,
+          lastLine: 2,
+          block: contents.split('\n').slice(0, 3).join('\n'),
+        },
         value: {
           date: '2021/04/20',
           payee: 'Obsidian',
@@ -393,11 +421,14 @@ describe('parsing a ledger file', () => {
           ],
         },
       };
-      const expected2 = {
+      const expected2: Transaction = {
         type: 'tx',
         blockLine: 1,
-        firstLine: 6,
-        lastLine: 8,
+        block: {
+          firstLine: 6,
+          lastLine: 8,
+          block: contents.split('\n').slice(6).join('\n'),
+        },
         value: {
           date: '2021/04/21',
           payee: 'Food Co-op',
@@ -417,7 +448,17 @@ describe('parsing a ledger file', () => {
           ],
         },
       };
-      expect(txCache.hadParsingError).toBeTruthy();
+      expect(txCache.parsingErrors.length).toEqual(1);
+      expect(txCache.parsingErrors[0].message).toEqual(
+        'Failed to parse block in ledger file',
+      );
+      expect(txCache.parsingErrors[0]).toHaveProperty('error');
+      expect(txCache.parsingErrors[0]).toHaveProperty('block');
+      expect((txCache.parsingErrors[0] as ParseError).block).toEqual({
+        block: '      An unexpected line',
+        firstLine: 4,
+        lastLine: 4,
+      });
       expect(txCache.transactions).toHaveLength(2);
       expect(txCache.transactions[0]).toEqual(expected1);
       expect(txCache.transactions[1]).toEqual(expected2);
@@ -509,11 +550,14 @@ alias b=Banking
       e:Spending Money    $20.00
       b:CreditUnion`;
       const txCache = parse(contents, settings);
-      const expected = {
+      const expected: Transaction = {
         type: 'tx',
         blockLine: 3,
-        firstLine: 2,
-        lastLine: 4,
+        block: {
+          firstLine: 2,
+          lastLine: 4,
+          block: contents.split('\n').splice(2).join('\n'),
+        },
         value: {
           date: '2021/04/20',
           payee: 'Obsidian',
@@ -534,21 +578,27 @@ alias b=Banking
           ],
         },
       };
-      const expectedAlias1 = {
+      const expectedAlias1: Alias = {
         type: 'alias',
         blockLine: 1,
-        firstLine: 0,
-        lastLine: 0,
+        block: {
+          firstLine: 0,
+          lastLine: 0,
+          block: contents.split('\n')[0],
+        },
         value: {
           left: 'e',
           right: 'Expenses',
         },
       };
-      const expectedAlias2 = {
+      const expectedAlias2: Alias = {
         type: 'alias',
         blockLine: 2,
-        firstLine: 1,
-        lastLine: 1,
+        block: {
+          firstLine: 1,
+          lastLine: 1,
+          block: contents.split('\n')[1],
+        },
         value: {
           left: 'b',
           right: 'Banking',
@@ -567,11 +617,14 @@ alias b=Banking
       e:Spending Money    $20.00
       b:CreditUnion`;
       const txCache = parse(contents, settings);
-      const expected = {
+      const expected: Transaction = {
         type: 'tx',
         blockLine: 2,
-        firstLine: 1,
-        lastLine: 3,
+        block: {
+          firstLine: 1,
+          lastLine: 3,
+          block: contents.split('\n').slice(1).join('\n'),
+        },
         value: {
           date: '2021/04/20',
           payee: 'Obsidian',
@@ -591,11 +644,14 @@ alias b=Banking
           ],
         },
       };
-      const expectedAlias = {
+      const expectedAlias: Alias = {
         type: 'alias',
         blockLine: 1,
-        firstLine: 0,
-        lastLine: 0,
+        block: {
+          firstLine: 0,
+          lastLine: 0,
+          block: contents.split('\n')[0],
+        },
         value: {
           left: 'e',
           right: 'Expenses',
@@ -616,16 +672,20 @@ alias b=Banking
     e:Spending Money                         $30.00  ;  Coat
   * c:Citi                  $-266.58`;
     const txCache = parse(contents, settings);
-    const expected = {
+    const expected: Transaction = {
       type: 'tx',
       blockLine: 1,
-      firstLine: 0,
-      lastLine: 4,
+      block: {
+        firstLine: 0,
+        lastLine: 4,
+        block: contents,
+      },
       value: {
         date: '2019/09/16',
         payee: 'Costco',
         expenselines: [
           {
+            account: undefined,
             comment: 'Needs more splits',
           },
           {

@@ -4,6 +4,7 @@ import { AccountsList } from './AccountsList';
 import { AccountVisualization } from './AccountVisualization';
 import { DateRangeSelector } from './DateRangeSelector';
 import { NetWorthVisualization } from './NetWorthVisualization';
+import { ParseErrors } from './ParseErrors';
 import {
   MobileTransactionList,
   RecentTransactionList,
@@ -128,6 +129,9 @@ const DesktopDashboard: React.FC<{
           />
         </FlexSidebar>
         <FlexMainContent>
+          {props.txCache.parsingErrors.length > 0 ? (
+            <ParseErrors txCache={props.txCache} />
+          ) : null}
           {selectedAccounts.length === 0 ? (
             <>
               <NetWorthVisualization

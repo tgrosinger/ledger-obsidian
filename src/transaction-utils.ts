@@ -1,6 +1,8 @@
-import { Transaction, TransactionCache } from './parser';
+import { TxError } from './error';
+import { Transaction } from './parser';
 import { some } from 'lodash';
 import { Moment } from 'moment';
+import { err, ok, Result } from 'neverthrow';
 
 /**
  * getTotal returns the total value of the transaction. It assumes that all
@@ -52,19 +54,6 @@ export const getCurrency = (
   return defaultCurrency;
 };
 
-export const isAssetAccount = (
-  tx: Transaction,
-  txCache: TransactionCache,
-): boolean =>
-  some(txCache.assetAccounts, (accountName) =>
-    some(
-      tx.value.expenselines,
-      (line) =>
-        (line.account && line.account === accountName) ||
-        (line.dealiasedAccount && line.dealiasedAccount === accountName),
-    ),
-  );
-
 /**
  * firstDate returns the date of the earliest transaction.
  */
@@ -78,7 +67,7 @@ export const firstDate = (txs: Transaction[]): Moment =>
  * fillMissingAmmount attempts to fill any empty amount fields in the
  * transactions expense lines.
  */
-export const fillMissingAmount = (tx: Transaction): void => {
+export const fillMissingAmount = (tx: Transaction): Result<void, TxError> => {
   const lines = tx.value.expenselines;
   const commentLines: number[] = [];
   let missingIndex = -1;
@@ -91,17 +80,18 @@ export const fillMissingAmount = (tx: Transaction): void => {
         continue;
       }
       if (missingIndex !== -1) {
-        console.debug(tx);
-        throw new Error(
-          'Transaction has multiple expense lines without an amount. At most one is allowed.',
-        );
+        return err({
+          transaction: tx,
+          message:
+            'Transaction has multiple expense lines without an amount. At most one is allowed.',
+        });
       }
       missingIndex = i;
     }
   }
 
   if (missingIndex === -1) {
-    return;
+    return ok(null);
   }
 
   const total = getTotalAsNum(tx);
@@ -118,6 +108,8 @@ export const fillMissingAmount = (tx: Transaction): void => {
       total,
     );
   }
+
+  return ok(null);
 };
 
 export const valueForAccount = (tx: Transaction, account: string): number => {

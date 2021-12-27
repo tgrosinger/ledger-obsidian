@@ -219,7 +219,8 @@ describe('fillMissingAmount()', () => {
           ],
         },
       };
-      fillMissingAmount(input);
+      const result = fillMissingAmount(input);
+      result.mapErr(fail);
       expect(input.value.expenselines[0].amount).toBeUndefined();
       expect(input.value.expenselines[1].amount).toEqual(10.5);
       expect(input.value.expenselines[2].amount).toEqual(-10.5);
@@ -245,7 +246,8 @@ describe('fillMissingAmount()', () => {
           ],
         },
       };
-      fillMissingAmount(input);
+      const result = fillMissingAmount(input);
+      result.mapErr(fail);
       expect(input.value.expenselines[0].amount).toEqual(10.5);
       expect(input.value.expenselines[1].amount).toBeUndefined();
     });
@@ -271,7 +273,8 @@ describe('fillMissingAmount()', () => {
           ],
         },
       };
-      fillMissingAmount(input);
+      const result = fillMissingAmount(input);
+      result.mapErr(fail);
       expect(input.value.expenselines[0].amount).toEqual(10.5);
       expect(input.value.expenselines[1].amount).toBeUndefined();
     });
@@ -296,11 +299,43 @@ describe('fillMissingAmount()', () => {
           ],
         },
       };
-      fillMissingAmount(input);
+      const result = fillMissingAmount(input);
+      result.mapErr(fail);
       expect(input.value.expenselines[0].amount).toEqual(10.5);
       expect(input.value.expenselines[1].amount).toEqual(0);
       expect(input.value.expenselines[2].amount).toEqual(-10.5);
     });
+  });
+  test('and there is more than one missing amount', () => {
+    const input: Transaction = {
+      type: 'tx',
+      value: {
+        date: '2021/12/04',
+        payee: 'Testing',
+        expenselines: [
+          {
+            account: 'account1',
+            amount: 10.5,
+          },
+          {
+            account: 'account2',
+          },
+          {
+            account: 'account3',
+          },
+        ],
+      },
+    };
+    const result = fillMissingAmount(input);
+    result.match(fail, (e) => {
+      expect(e.message).toEqual(
+        'Transaction has multiple expense lines without an amount. At most one is allowed.',
+      );
+      expect(e.transaction).toEqual(input);
+    });
+    expect(input.value.expenselines[0].amount).toEqual(10.5);
+    expect(input.value.expenselines[1].amount).toBeUndefined();
+    expect(input.value.expenselines[2].amount).toBeUndefined();
   });
   describe('When there are only two expense lines', () => {
     test('and the first line is missing', () => {
@@ -320,7 +355,8 @@ describe('fillMissingAmount()', () => {
           ],
         },
       };
-      fillMissingAmount(input);
+      const result = fillMissingAmount(input);
+      result.mapErr(fail);
       expect(input.value.expenselines[0].amount).toEqual(10.5);
     });
     test('and the second line is missing', () => {
@@ -340,7 +376,8 @@ describe('fillMissingAmount()', () => {
           ],
         },
       };
-      fillMissingAmount(input);
+      const result = fillMissingAmount(input);
+      result.mapErr(fail);
       expect(input.value.expenselines[1].amount).toEqual(-10.5);
     });
   });
@@ -366,7 +403,8 @@ describe('fillMissingAmount()', () => {
           ],
         },
       };
-      fillMissingAmount(input);
+      const result = fillMissingAmount(input);
+      result.mapErr(fail);
       expect(input.value.expenselines[2].amount).toEqual(-15.5);
     });
     test('and the middle line is missing', () => {
@@ -390,7 +428,8 @@ describe('fillMissingAmount()', () => {
           ],
         },
       };
-      fillMissingAmount(input);
+      const result = fillMissingAmount(input);
+      result.mapErr(fail);
       expect(input.value.expenselines[1].amount).toEqual(5);
     });
   });

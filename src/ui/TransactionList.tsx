@@ -109,6 +109,7 @@ const buildTableRows = (
     };
   });
 
+  // Sort so most recent transactions come first
   tableRows.sort((a, b): number => {
     const aDate = window.moment(a.date);
     const bDate = window.moment(b.date);
@@ -117,6 +118,7 @@ const buildTableRows = (
     }
     return aDate.isBefore(bDate) ? 1 : -1;
   });
+
   return tableRows;
 };
 

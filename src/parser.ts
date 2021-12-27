@@ -1,4 +1,5 @@
 import grammar from '../grammar/ledger';
+import { Error } from './error';
 import { ISettings } from './settings';
 import {
   dealiasAccount,
@@ -31,11 +32,13 @@ export interface TransactionCache {
   rawComments: Comment[];
 
   /**
-   * If there was an error during parsing then our internal state does not 100%
-   * represent the state of the ledger file. We should not attempt to overwrite
-   * the file, for example to sort transactions.
+   * parsingErrors contains a list of all errors which occured while parsing the
+   * ledger file. If there are any errors, then the results of the transaction
+   * cache may not be completely valid due to transactions that could not be
+   * parsed. These errors should be displayed to the user so they can be
+   * rectified.
    */
-  hadParsingError: boolean;
+  parsingErrors: Error[];
 
   /**
    * Accounts contains a list of all accounts from the file, dealiased if possible.
@@ -76,10 +79,10 @@ export interface Expenseline {
 export interface Transaction {
   type: 'tx';
   blockLine?: number;
-  firstLine?: number;
-  lastLine?: number;
+  block?: FileBlock;
   value: {
     check?: number;
+    comment?: string;
     date: string;
     payee: string;
     expenselines: Expenseline[];
@@ -89,8 +92,7 @@ export interface Transaction {
 export interface Alias {
   type: 'alias';
   blockLine?: number;
-  firstLine?: number;
-  lastLine?: number;
+  block?: FileBlock;
   value: {
     left: string;
     right: string;
@@ -100,12 +102,11 @@ export interface Alias {
 export interface Comment {
   type: 'comment';
   blockLine?: number;
-  firstLine?: number;
-  lastLine?: number;
+  block?: FileBlock;
   value: string;
 }
 
-interface FileBlock {
+export interface FileBlock {
   block: string;
   firstLine: number;
   lastLine: number;
@@ -120,7 +121,7 @@ export const parse = (
   console.time('ledger-file-parse');
 
   const blocks = splitIntoBlocks(fileContents);
-  let hadError: boolean = false;
+  const errors: Error[] = [];
   const results = blocks
     .map((block): Element[] => {
       const parser = new Parser(Grammar.fromCompiled(grammar));
@@ -133,18 +134,21 @@ export const parse = (
         const innerresults = parser.feed(block.block).finish();
         if (innerresults.length !== 1) {
           // Returning multiple results means that the results were ambiguous
-          console.error(
-            `Failed to parse (${innerresults.length} results): "${block.block}"`,
-          );
+          errors.push({
+            message: 'Ambiguous parsing results for block in ledger file',
+            block,
+          });
           return undefined;
         }
         const elements: Element[] = innerresults[0];
         assignLineNumbersToElements(elements, block);
         return elements;
       } catch (error) {
-        console.error(`Failed to parse: "${block.block}"`);
-        console.error(error);
-        hadError = true;
+        errors.push({
+          message: 'Failed to parse block in ledger file',
+          error,
+          block,
+        });
         return undefined;
       }
     })
@@ -170,8 +174,16 @@ export const parse = (
 
   const aliasMap = parseAliases(aliases);
 
+  // If a transaction violates assumtions due to being malformed, we will remove
+  // it to avoid breaking later logic.
+  const txsToRemove: Transaction[] = [];
+
   txs.forEach((tx) => {
-    fillMissingAmount(tx);
+    fillMissingAmount(tx).mapErr((e) => {
+      errors.push(e);
+      txsToRemove.push(tx);
+      return;
+    });
 
     // dealias expense lines
     tx.value.expenselines.forEach((line) => {
@@ -183,6 +195,10 @@ export const parse = (
         line.dealiasedAccount = dealiasedAccount;
       }
     });
+  });
+
+  txsToRemove.forEach((tx) => {
+    txs.remove(tx);
   });
 
   const payees = sortedUniq(
@@ -227,7 +243,7 @@ export const parse = (
     transactions: txs,
     payees,
     accounts,
-    hadParsingError: hadError,
+    parsingErrors: errors,
 
     assetAccounts,
     expenseAccounts,
@@ -286,18 +302,28 @@ const assignLineNumbersToElements = (
   block: FileBlock,
 ): void => {
   if (elements.length === 1) {
-    elements[0].firstLine = block.firstLine;
-    elements[0].lastLine = block.lastLine;
+    elements[0].block = block;
     return;
   }
 
   // Each Element in a block should have a blockLine property which is 1-offset.
   elements.forEach((element, i): void => {
-    element.firstLine = block.firstLine + element.blockLine - 1;
-    element.lastLine =
+    const firstLine = block.firstLine + element.blockLine - 1;
+    const lastLine =
       i === elements.length - 1
-        ? (element.lastLine = block.lastLine) // Last element
-        : (element.lastLine = elements[i + 1].blockLine - 2 + block.firstLine);
+        ? block.lastLine // Last element
+        : elements[i + 1].blockLine - 2 + block.firstLine;
+    element.block = {
+      firstLine,
+      lastLine,
+      block: block.block
+        .split('\n')
+        .slice(
+          element.blockLine - 1,
+          element.blockLine + (lastLine - firstLine),
+        )
+        .join('\n'),
+    };
   });
 };
 
