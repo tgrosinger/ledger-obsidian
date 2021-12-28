@@ -6,7 +6,8 @@ import {
   sortAccountTree,
 } from '../transaction-utils';
 import React from 'react';
-import { useExpanded, useRowSelect, useTable } from 'react-table';
+import { Row, useExpanded, useRowSelect, useTable } from 'react-table';
+import { ISettings } from 'src/settings';
 import styled from 'styled-components';
 
 const TableStyles = styled.div`
@@ -42,6 +43,7 @@ const TableH3 = styled.span`
 
 export const AccountsList: React.FC<{
   txCache: TransactionCache;
+  settings: ISettings;
   selectedAccounts: string[];
   setSelectedAccounts: React.Dispatch<React.SetStateAction<string[]>>;
 }> = (props): JSX.Element => {
@@ -125,6 +127,24 @@ export const AccountsList: React.FC<{
                     onClick={() => {
                       if (j !== 0) {
                         row.toggleRowSelected();
+                        const account = row.original.id;
+
+                        if (
+                          props.txCache.assetAccounts.contains(account) ||
+                          props.txCache.liabilityAccounts.contains(account)
+                        ) {
+                          // Deselect any non asset or liability accounts
+                          deselectRowsWithoutPrefix(rows, [
+                            props.settings.assetAccountsPrefix,
+                            props.settings.liabilityAccountsPrefix,
+                          ]);
+                        } else {
+                          // Deselect any non expense or income accounts
+                          deselectRowsWithoutPrefix(rows, [
+                            props.settings.expenseAccountsPrefix,
+                            props.settings.incomeAccountsPrefix,
+                          ]);
+                        }
                       }
                     }}
                     {...cell.getCellProps()}
@@ -139,4 +159,36 @@ export const AccountsList: React.FC<{
       </table>
     </TableStyles>
   );
+};
+
+const deselectRowsWithoutPrefix = (
+  rows: Row<object>[],
+  prefixes: string[],
+): void => {
+  // This doesn't work yet, because toggleRowSelected does not work correctly
+  // when you deselect all the children of a selected parent. I think toggling
+  // the parent then actually re-selects it.
+  /*
+  rows.forEach((row) => {
+    if (!row.isSelected) {
+      return;
+    }
+
+    const account: string = row.original.id;
+
+    let found = false;
+    for (let i = 0; i < prefixes.length; i++) {
+      const prefix = prefixes[i];
+      if (account.startsWith(prefix)) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      // Not in the provided lists of accounts, so we will deselect it.
+      row.toggleRowSelected();
+    }
+  });
+  */
 };

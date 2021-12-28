@@ -127,6 +127,7 @@ const DesktopDashboard: React.FC<{
         <FlexSidebar>
           <AccountsList
             txCache={props.txCache}
+            settings={props.settings}
             selectedAccounts={selectedAccounts}
             setSelectedAccounts={setSelectedAccounts}
           />

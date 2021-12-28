@@ -51,6 +51,28 @@ export const makeBalanceData = (
     return { x: bucket, y: balance };
   });
 
+/**
+ * makeDeltaData creates a list of data points representing the change in
+ * balance of an account between the provided buckets.
+ */
+export const makeDeltaData = (
+  dailyAccountBalanceMap: Map<string, Map<string, number>>,
+  bucketBefore: string,
+  bucketNames: string[],
+  account: string,
+): ChartData =>
+  bucketNames.map((bucket, i) => {
+    // TODO: This must distinguish between getting the balance for a leaf
+    // account and a branch account. If it's a branch it should instead sum all
+    // the balances for all of the leaves on that branch.
+
+    const prevBucket = i === 0 ? bucketBefore : bucketNames[i - 1];
+    const prevBalance =
+      dailyAccountBalanceMap.get(prevBucket)?.get(account) || 0;
+    const balance = dailyAccountBalanceMap.get(bucket)?.get(account) || 0;
+    return { x: bucket, y: balance - prevBalance };
+  });
+
 interface RootNode {
   children: TreeNode[];
 }

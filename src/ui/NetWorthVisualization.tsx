@@ -38,7 +38,7 @@ export const NetWorthVisualization: React.FC<{
 
   const options: ILineChartOptions = {
     height: '300px',
-    width: '800px',
+    width: '100%',
     showArea: false,
     showPoint: true,
   };
