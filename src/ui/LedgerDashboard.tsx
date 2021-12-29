@@ -156,6 +156,7 @@ const DesktopDashboard: React.FC<{
             <>
               <AccountVisualization
                 dailyAccountBalanceMap={dailyAccountBalanceMap}
+                allAccounts={props.txCache.accounts}
                 selectedAccounts={selectedAccounts}
                 startDate={startDate}
                 endDate={endDate}

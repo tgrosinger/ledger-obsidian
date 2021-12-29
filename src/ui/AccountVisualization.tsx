@@ -32,6 +32,7 @@ const Chart = styled.div`
 
 export const AccountVisualization: React.FC<{
   dailyAccountBalanceMap: Map<string, Map<string, number>>;
+  allAccounts: string[];
   selectedAccounts: string[];
   startDate: Moment;
   endDate: Moment;
@@ -51,12 +52,14 @@ export const AccountVisualization: React.FC<{
     mode === 'balance' ? (
       <BalanceVisualization
         dailyAccountBalanceMap={props.dailyAccountBalanceMap}
+        allAccounts={props.allAccounts}
         accounts={filteredAccounts}
         dateBuckets={dateBuckets}
       />
     ) : (
       <DeltaVisualization
         dailyAccountBalanceMap={props.dailyAccountBalanceMap}
+        allAccounts={props.allAccounts}
         accounts={filteredAccounts}
         dateBuckets={dateBuckets}
         startDate={props.startDate}
@@ -96,13 +99,19 @@ export const AccountVisualization: React.FC<{
 
 const BalanceVisualization: React.FC<{
   dailyAccountBalanceMap: Map<string, Map<string, number>>;
+  allAccounts: string[];
   accounts: string[];
   dateBuckets: string[];
 }> = (props): JSX.Element => {
   const data = {
     labels: props.dateBuckets,
     series: props.accounts.map((account) =>
-      makeBalanceData(props.dailyAccountBalanceMap, props.dateBuckets, account),
+      makeBalanceData(
+        props.dailyAccountBalanceMap,
+        props.dateBuckets,
+        account,
+        props.allAccounts,
+      ),
     ),
   };
 
@@ -118,6 +127,7 @@ const BalanceVisualization: React.FC<{
 
 const DeltaVisualization: React.FC<{
   dailyAccountBalanceMap: Map<string, Map<string, number>>;
+  allAccounts: string[];
   accounts: string[];
   dateBuckets: string[];
   startDate: Moment;
@@ -134,6 +144,7 @@ const DeltaVisualization: React.FC<{
           .format('YYYY-MM-DD'),
         props.dateBuckets,
         account,
+        props.allAccounts,
       ),
     ),
   };

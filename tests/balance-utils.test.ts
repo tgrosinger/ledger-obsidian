@@ -1,7 +1,10 @@
 import {
   DailyAccountBalanceChangeMap,
+  findChildAccounts,
+  makeBalanceData,
   makeDailyAccountBalanceChangeMap,
   makeDailyBalanceMap,
+  makeDeltaData,
   removeDuplicateAccounts,
 } from '../src/balance-utils';
 import { Transaction } from '../src/parser';
@@ -362,5 +365,142 @@ describe('Balance maps', () => {
       ]);
       expect(result).toEqual(expected);
     });
+  });
+});
+
+describe('make account visualization data', () => {
+  const allAccounts = [
+    'Expenses:Food',
+    'Expenses:Food:Grocery',
+    'Expenses:Spending Money',
+    'Credit:Citi',
+  ];
+  const buckets = ['2021-12-14', '2021-12-15', '2021-12-16', '2021-12-17'];
+  const balanceMap: Map<string, Map<string, number>> = new Map([
+    [
+      '2021-12-14',
+      new Map([
+        ['Credit:Citi', -20],
+        ['Expenses:Spending Money', 0],
+        ['Expenses:Food:Grocery', 20],
+      ]),
+    ],
+    [
+      '2021-12-15',
+      new Map([
+        ['Credit:Citi', -20],
+        ['Expenses:Spending Money', 0],
+        ['Expenses:Food:Grocery', 20],
+      ]),
+    ],
+    [
+      '2021-12-16',
+      new Map([
+        ['Credit:Citi', -150],
+        ['Expenses:Spending Money', 0],
+        ['Expenses:Food:Grocery', 140],
+        ['Expenses:Food', 10],
+      ]),
+    ],
+    [
+      '2021-12-17',
+      new Map([
+        ['Credit:Citi', -250],
+        ['Expenses:Spending Money', 100],
+        ['Expenses:Food:Grocery', 140],
+        ['Expenses:Food', 10],
+      ]),
+    ],
+  ]);
+
+  describe('makeBalanceData()', () => {
+    test('When there is no child account', () => {
+      const result = makeBalanceData(
+        balanceMap,
+        buckets,
+        'Expenses:Food:Grocery',
+        allAccounts,
+      );
+      expect(result).toEqual([
+        { x: '2021-12-14', y: 20 },
+        { x: '2021-12-15', y: 20 },
+        { x: '2021-12-16', y: 140 },
+        { x: '2021-12-17', y: 140 },
+      ]);
+    });
+
+    test('When there is a child account', () => {
+      const result = makeBalanceData(
+        balanceMap,
+        buckets,
+        'Expenses:Food',
+        allAccounts,
+      );
+      expect(result).toEqual([
+        { x: '2021-12-14', y: 20 },
+        { x: '2021-12-15', y: 20 },
+        { x: '2021-12-16', y: 150 },
+        { x: '2021-12-17', y: 150 },
+      ]);
+    });
+  });
+  describe('makeDeltaData()', () => {
+    test('When there is no child account', () => {
+      const result = makeDeltaData(
+        balanceMap,
+        '2021-12-13',
+        buckets,
+        'Expenses:Food:Grocery',
+        allAccounts,
+      );
+      expect(result).toEqual([
+        { x: '2021-12-14', y: 20 },
+        { x: '2021-12-15', y: 0 },
+        { x: '2021-12-16', y: 120 },
+        { x: '2021-12-17', y: 0 },
+      ]);
+    });
+
+    test('When there is a child account', () => {
+      const result = makeDeltaData(
+        balanceMap,
+        '2021-12-13',
+        buckets,
+        'Expenses:Food',
+        allAccounts,
+      );
+      expect(result).toEqual([
+        { x: '2021-12-14', y: 20 },
+        { x: '2021-12-15', y: 0 },
+        { x: '2021-12-16', y: 130 },
+        { x: '2021-12-17', y: 0 },
+      ]);
+    });
+  });
+});
+
+describe('findChildAccounts', () => {
+  test('when an account should match', () => {
+    const accounts = [
+      'Expenses:Food',
+      'Expenses:Food:Grocery',
+      'Expenses:Food:Restaurants',
+    ];
+    const results = findChildAccounts('Expenses:Food', accounts);
+    expect(results).toEqual([
+      'Expenses:Food:Grocery',
+      'Expenses:Food:Restaurants',
+    ]);
+  });
+
+  test('does not match incorrectly', () => {
+    const accounts = [
+      'Expenses:Fo',
+      'Expenses:Food',
+      'Expenses:Food:Grocery',
+      'Expenses:Food:Restaurants',
+    ];
+    const results = findChildAccounts('Expenses:Fo', accounts);
+    expect(results).toEqual([]);
   });
 });

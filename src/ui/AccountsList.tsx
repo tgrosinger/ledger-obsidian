@@ -49,7 +49,7 @@ const Tree: React.FC<{
 
   const id = props.data.id;
   const selected = props.selectedAccounts.contains(id);
-  const toggleSelected = () => {
+  const toggleSelected = (): void => {
     if (selected) {
       props.setSelectedAccounts(
         props.selectedAccounts.filter((account) => account !== id),

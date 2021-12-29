@@ -1,4 +1,4 @@
-import { Transaction, TransactionCache } from './parser';
+import { Transaction } from './parser';
 import { ISettings } from './settings';
 import { Moment } from 'moment';
 
@@ -41,15 +41,20 @@ export const makeBalanceData = (
   dailyAccountBalanceMap: Map<string, Map<string, number>>,
   bucketNames: string[],
   account: string,
-): ChartData =>
-  bucketNames.map((bucket) => {
-    // TODO: This must distinguish between getting the balance for a leaf
-    // account and a branch account. If it's a branch it should instead sum all
-    // the balances for all of the leaves on that branch.
+  allAccounts: string[],
+): ChartData => {
+  const accounts = [...findChildAccounts(account, allAccounts), account];
+  return bucketNames.map((bucket) => {
+    const accountBalances = dailyAccountBalanceMap.get(bucket);
+    const balance = accounts.reduce(
+      (prev, currentAccount) =>
+        (accountBalances?.get(currentAccount) || 0) + prev,
+      0,
+    );
 
-    const balance = dailyAccountBalanceMap.get(bucket)?.get(account);
     return { x: bucket, y: balance };
   });
+};
 
 /**
  * makeDeltaData creates a list of data points representing the change in
@@ -60,18 +65,33 @@ export const makeDeltaData = (
   bucketBefore: string,
   bucketNames: string[],
   account: string,
-): ChartData =>
-  bucketNames.map((bucket, i) => {
-    // TODO: This must distinguish between getting the balance for a leaf
-    // account and a branch account. If it's a branch it should instead sum all
-    // the balances for all of the leaves on that branch.
-
+  allAccounts: string[],
+): ChartData => {
+  const accounts = [...findChildAccounts(account, allAccounts), account];
+  return bucketNames.map((bucket, i) => {
     const prevBucket = i === 0 ? bucketBefore : bucketNames[i - 1];
-    const prevBalance =
-      dailyAccountBalanceMap.get(prevBucket)?.get(account) || 0;
-    const balance = dailyAccountBalanceMap.get(bucket)?.get(account) || 0;
-    return { x: bucket, y: balance - prevBalance };
+    const accountBalances = dailyAccountBalanceMap.get(bucket);
+    const prevAccountBalances = dailyAccountBalanceMap.get(prevBucket);
+
+    const balance = accounts.reduce((prev, currentAccount) => {
+      const b1 = prevAccountBalances?.get(currentAccount) || 0;
+      const b2 = accountBalances?.get(currentAccount) || 0;
+      return b2 - b1 + prev;
+    }, 0);
+
+    return { x: bucket, y: balance };
   });
+};
+
+/**
+ * findChildAccounts returns a list of accounts which are children to the
+ * provided account.
+ */
+export const findChildAccounts = (
+  account: string,
+  accounts: string[],
+): string[] =>
+  accounts.filter((candidate) => candidate.startsWith(account + ':'));
 
 interface RootNode {
   children: TreeNode[];
