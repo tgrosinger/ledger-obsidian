@@ -10,36 +10,113 @@ import { Row, useExpanded, useRowSelect, useTable } from 'react-table';
 import { ISettings } from 'src/settings';
 import styled from 'styled-components';
 
-const TableStyles = styled.div`
-  padding: 1rem;
+const TreeRow = styled.div`
+  margin-right: 10px;
+  display: flex;
+  align-items: stretch;
 
-  table {
-    width: 100%;
-
-    tr.selected {
-      background-color: var(--background-secondary);
-    }
-
-    tr:hover {
-      background-color: var(--background-primary-alt);
-    }
-
-    th,
-    td {
-      margin: 0;
-      padding: 0.25rem;
-    }
-
-    td:first-child {
-      width: 5px;
-    }
+  .selected {
+    background-color: var(--background-secondary);
   }
 `;
 
-const TableH3 = styled.span`
-  font-weight: 800;
-  margin-left: -1rem;
+const AccountName = styled.span`
+  flex-grow: 1;
+  margin-bottom: 2px;
+  padding: 1px 6px;
+
+  :hover {
+    background-color: var(--background-primary-alt);
+  }
 `;
+
+const Expander = styled.span`
+  flex-grow: 0;
+  display: inline-block;
+  width: 15px;
+`;
+
+const Tree: React.FC<{
+  txCache: TransactionCache;
+  settings: ISettings;
+  data: Node;
+  depth: number;
+  selectedAccounts: string[];
+  setSelectedAccounts: React.Dispatch<React.SetStateAction<string[]>>;
+}> = (props): JSX.Element => {
+  const [expanded, setExpanded] = React.useState(props.data.expanded || false);
+  const hasChildren = props.data.subRows && props.data.subRows.length > 0;
+
+  const id = props.data.id;
+  const selected = props.selectedAccounts.contains(id);
+  const toggleSelected = () => {
+    if (selected) {
+      props.setSelectedAccounts(
+        props.selectedAccounts.filter((account) => account !== id),
+      );
+    } else {
+      const newSelected = [...props.selectedAccounts, id];
+      if (
+        props.txCache.assetAccounts.contains(id) ||
+        props.txCache.liabilityAccounts.contains(id)
+      ) {
+        props.setSelectedAccounts(
+          deselectRowsWithoutPrefix(newSelected, [
+            props.settings.assetAccountsPrefix,
+            props.settings.liabilityAccountsPrefix,
+          ]),
+        );
+      } else if (
+        props.txCache.expenseAccounts.contains(id) ||
+        props.txCache.incomeAccounts.contains(id)
+      ) {
+        props.setSelectedAccounts(
+          deselectRowsWithoutPrefix(newSelected, [
+            props.settings.expenseAccountsPrefix,
+            props.settings.incomeAccountsPrefix,
+          ]),
+        );
+      } else {
+        props.setSelectedAccounts(newSelected);
+      }
+    }
+  };
+
+  // TODO: Figure out why the `i` and `e` rows exist
+
+  return (
+    <>
+      <TreeRow style={{ paddingLeft: `${props.depth}rem` }}>
+        {hasChildren ? (
+          <Expander onClick={() => setExpanded(!expanded)}>
+            {expanded ? '-' : '+'}
+          </Expander>
+        ) : (
+          <Expander />
+        )}
+        <AccountName
+          className={selected ? 'selected' : ''}
+          onClick={toggleSelected}
+        >
+          {props.data.account}
+        </AccountName>
+      </TreeRow>
+      {hasChildren && expanded
+        ? props.data.subRows.map((child) => (
+            <Tree
+              txCache={props.txCache}
+              settings={props.settings}
+              data={child}
+              key={child.id}
+              depth={props.depth + 1}
+              selectedAccounts={props.selectedAccounts}
+              setSelectedAccounts={props.setSelectedAccounts}
+            />
+          ))
+        : null}
+    </>
+  );
+};
 
 export const AccountsList: React.FC<{
   txCache: TransactionCache;
@@ -47,39 +124,9 @@ export const AccountsList: React.FC<{
   selectedAccounts: string[];
   setSelectedAccounts: React.Dispatch<React.SetStateAction<string[]>>;
 }> = (props): JSX.Element => {
-  const columns = React.useMemo(
-    () => [
-      {
-        id: 'expander',
-        Cell: ({ row }) =>
-          row.canExpand && row.depth > 0 ? (
-            <span {...row.getToggleRowExpandedProps()}>
-              {row.isExpanded ? '-' : '+'}
-            </span>
-          ) : null,
-      },
-      {
-        Header: 'Account',
-        accessor: 'account',
-        Cell: ({ row, value }) =>
-          row.depth === 0 ? (
-            <TableH3>{value}</TableH3>
-          ) : (
-            <span
-              {...row.getToggleRowExpandedProps({
-                style: { paddingLeft: `${row.depth - 1}rem` },
-              })}
-            >
-              {value}
-            </span>
-          ),
-      },
-    ],
-    [],
-  );
-
   const data = React.useMemo(() => {
     const nodes: Node[] = [];
+    console.log(props.txCache.accounts);
     props.txCache.accounts.forEach((account: string) => {
       makeAccountTree(nodes, dealiasAccount(account, props.txCache.aliases));
     });
@@ -90,105 +137,38 @@ export const AccountsList: React.FC<{
     return nodes;
   }, [props.txCache]);
 
-  const {
-    getTableProps,
-    getTableBodyProps,
-    rows,
-    prepareRow,
-    selectedFlatRows,
-    state: { expanded },
-  } = useTable(
-    {
-      columns,
-      data,
-    },
-    useExpanded,
-    useRowSelect,
-  );
-
-  React.useEffect(() => {
-    props.setSelectedAccounts(selectedFlatRows.map((row) => row.original.id));
-  }, [selectedFlatRows]);
-
   return (
-    <TableStyles>
-      <h2>Accounts</h2>
-      <table {...getTableProps()}>
-        <tbody {...getTableBodyProps()}>
-          {rows.map((row, i) => {
-            prepareRow(row);
-            return (
-              <tr
-                className={row.isSelected ? 'selected' : ''}
-                {...row.getRowProps()}
-              >
-                {row.cells.map((cell, j) => (
-                  <td
-                    onClick={() => {
-                      if (j !== 0) {
-                        row.toggleRowSelected();
-                        const account = row.original.id;
-
-                        if (
-                          props.txCache.assetAccounts.contains(account) ||
-                          props.txCache.liabilityAccounts.contains(account)
-                        ) {
-                          // Deselect any non asset or liability accounts
-                          deselectRowsWithoutPrefix(rows, [
-                            props.settings.assetAccountsPrefix,
-                            props.settings.liabilityAccountsPrefix,
-                          ]);
-                        } else {
-                          // Deselect any non expense or income accounts
-                          deselectRowsWithoutPrefix(rows, [
-                            props.settings.expenseAccountsPrefix,
-                            props.settings.incomeAccountsPrefix,
-                          ]);
-                        }
-                      }
-                    }}
-                    {...cell.getCellProps()}
-                  >
-                    {cell.render('Cell')}
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </TableStyles>
+    <>
+      {data.map((root) => (
+        <Tree
+          txCache={props.txCache}
+          settings={props.settings}
+          data={root}
+          key={root.id}
+          depth={0}
+          selectedAccounts={props.selectedAccounts}
+          setSelectedAccounts={props.setSelectedAccounts}
+        />
+      ))}
+    </>
   );
 };
 
+/**
+ * deselecteRowsWithoutPrefix filters the provided list of accounts, removing
+ * ones which do not start with one of the provided prefixes. This can be used
+ * to make sure the selected accounts are all of the same type, which helps
+ * ensure the visualization fits the account type.
+ */
 const deselectRowsWithoutPrefix = (
-  rows: Row<object>[],
+  selectedAccounts: string[],
   prefixes: string[],
-): void => {
-  // This doesn't work yet, because toggleRowSelected does not work correctly
-  // when you deselect all the children of a selected parent. I think toggling
-  // the parent then actually re-selects it.
-  /*
-  rows.forEach((row) => {
-    if (!row.isSelected) {
-      return;
-    }
-
-    const account: string = row.original.id;
-
-    let found = false;
+): string[] =>
+  selectedAccounts.filter((account) => {
     for (let i = 0; i < prefixes.length; i++) {
-      const prefix = prefixes[i];
-      if (account.startsWith(prefix)) {
-        found = true;
-        break;
+      if (account.startsWith(prefixes[i])) {
+        return true;
       }
     }
-
-    if (!found) {
-      // Not in the provided lists of accounts, so we will deselect it.
-      row.toggleRowSelected();
-    }
+    return false;
   });
-  */
-};

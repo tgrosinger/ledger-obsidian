@@ -539,6 +539,31 @@ alias b=Assets:Banking
       expect(txCache.liabilityAccounts).toEqual(['Liabilities:Credit:Chase']);
       expect(txCache.incomeAccounts).toEqual([]);
     });
+    test('an account that is the same as the alias', () => {
+      const contents = `alias e=Expenses
+alias b=Assets:Banking
+      
+2021/04/20 Obsidian
+      e                   $20.00
+      b:CreditUnion       $-20.00`;
+
+      const customSettings = settingsWithDefaults({
+        assetAccountsPrefix: 'Assets',
+        expenseAccountsPrefix: 'Expenses',
+        incomeAccountsPrefix: 'Income',
+        liabilityAccountsPrefix: 'Liabilities',
+      });
+
+      const txCache = parse(contents, customSettings);
+      expect(txCache.accounts).toEqual([
+        'Assets:Banking:CreditUnion',
+        'Expenses',
+      ]);
+      expect(txCache.assetAccounts).toEqual(['Assets:Banking:CreditUnion']);
+      expect(txCache.expenseAccounts).toEqual(['Expenses']);
+      expect(txCache.liabilityAccounts).toEqual([]);
+      expect(txCache.incomeAccounts).toEqual([]);
+    });
   });
   describe('multiple elements in a block are parsed correctly', () => {
     // TODO: When there is better preservation of aliases and comments in the tx

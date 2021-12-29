@@ -178,6 +178,8 @@ export const dealiasAccount = (
     if (aliases.has(prefix)) {
       return aliases.get(prefix) + account.substring(firstDelimeter);
     }
+  } else if (aliases.has(account)) {
+    return aliases.get(account);
   }
   return account;
 };
