@@ -31,16 +31,25 @@ export class SettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Ledger File')
-      .setDesc('Path in the Vault to your Ledger file. Must be a .md file.')
+      .setDesc(
+        'Path in the Vault to your Ledger file. NOTE: If you use Obsidian Sync, you must enable "Sync all other types".',
+      )
       .addText((text) => {
         text
           .setValue(this.plugin.settings.ledgerFile)
-          .setPlaceholder('Ledger.md');
+          .setPlaceholder('transactions.ledger');
         text.inputEl.onblur = (e: FocusEvent) => {
-          this.plugin.settings.ledgerFile = (
-            e.target as HTMLInputElement
-          ).value;
-          this.plugin.saveData(this.plugin.settings);
+          const target = e.target as HTMLInputElement;
+          const newValue = target.value;
+
+          if (newValue.endsWith('.ledger')) {
+            target.setCustomValidity('');
+            this.plugin.settings.ledgerFile = newValue;
+            this.plugin.saveData(this.plugin.settings);
+          } else {
+            target.setCustomValidity('File must end with .ledger');
+          }
+          target.reportValidity();
         };
       });
 

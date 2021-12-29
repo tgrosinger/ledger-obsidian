@@ -192,6 +192,8 @@ class AddExpenseModal extends Modal {
   public onOpen = (): void => {
     ReactDOM.render(
       React.createElement(CreateLedgerEntry, {
+        displayFileWarning:
+          !this.plugin.settings.ledgerFile.endsWith('.ledger'),
         currencySymbol: this.plugin.settings.currencySymbol,
         saveFn: async (tx: Transaction): Promise<void> => {
           const formatted = formatExpense(tx, this.plugin.settings);

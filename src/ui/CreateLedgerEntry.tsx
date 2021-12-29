@@ -19,12 +19,25 @@ const DatePickerMobile = styled(WideDatePicker)`
   font-size: 17px;
 `;
 
+const Warning = styled.div`
+  background: var(--background-modifier-error);
+  width: 458px;
+  padding: 10px 15px;
+`;
+
 export const CreateLedgerEntry: React.FC<{
+  displayFileWarning: boolean;
   currencySymbol: string;
   saveFn: (tx: Transaction) => Promise<void>;
   txCache: TransactionCache;
   close: () => void;
-}> = ({ currencySymbol, saveFn, txCache, close }): JSX.Element => {
+}> = ({
+  displayFileWarning,
+  currencySymbol,
+  saveFn,
+  txCache,
+  close,
+}): JSX.Element => {
   const [payee, setPayee] = React.useState('');
   const [txType, setTxType] = React.useState('expense');
   const [total, setTotal] = React.useState<string>('');
@@ -126,12 +139,19 @@ export const CreateLedgerEntry: React.FC<{
   };
 
   // TODO: Replace txType Select with nice buttons
-  // TODO: Make this support income or transfers as well
-  // TODO: Filter accounts based on whether entering an expense, income, or transfer
+  // TODO: Support adding comments
   // TODO: Support splitting transactions
   return (
     <>
       <h2>Add to Ledger</h2>
+
+      {displayFileWarning ? (
+        <Warning>
+          Please rename your ledger file to end with the .ledger extension. Once
+          renamed, please update the configuration option in the Ledger plugin
+          settings.
+        </Warning>
+      ) : null}
 
       <Margin>
         {Platform.isMobile ? (
