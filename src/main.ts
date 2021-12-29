@@ -125,6 +125,13 @@ export default class LedgerPlugin extends Plugin {
       },
     });
 
+    this.addCommand({
+      id: 'ledger-open-dashboard',
+      name: 'Open Ledger dashboard',
+      icon: 'ledger',
+      callback: this.openLedgerDashboard,
+    });
+
     this.app.workspace.onLayoutReady(() => {
       this.updateTransactionCache();
     });
@@ -155,6 +162,69 @@ export default class LedgerPlugin extends Plugin {
     this.settings = settingsWithDefaults(await this.loadData());
     this.saveData(this.settings);
   }
+
+  private readonly openLedgerDashboard = async (): Promise<void> => {
+    let leaf = this.app.workspace.activeLeaf;
+    if (leaf.getViewState().pinned) {
+      leaf = this.app.workspace.splitActiveLeaf('horizontal');
+    }
+
+    let ledgerTFile = this.app.vault
+      .getFiles()
+      .find((file) => file.path === this.settings.ledgerFile);
+    if (!ledgerTFile) {
+      ledgerTFile = await this.app.vault.create(
+        this.settings.ledgerFile,
+        this.generateLedgerFileExampleContent(),
+      );
+    }
+
+    leaf.openFile(ledgerTFile);
+  };
+
+  private readonly generateLedgerFileExampleContent = (): string =>
+    `alias a=${this.settings.assetAccountsPrefix}
+alias b=${this.settings.assetAccountsPrefix}:Banking
+alias c=${this.settings.liabilityAccountsPrefix}:Credit
+alias l=${this.settings.liabilityAccountsPrefix}
+alias e=${this.settings.expenseAccountsPrefix}
+alias i=${this.settings.incomeAccountsPrefix}
+
+; Lines starting with a semicolon are comments and will not be parsed.
+
+; This is an example of what a transaction looks like.
+; Every transaction must balance to 0 if you add up all the lines.
+; If the last line is left empty, it will automatically balance the transaction.
+; 
+; 2021-12-25 Starbucks Coffee
+;     e:Food:Treats     $5.25
+;     c:Chase
+
+; Use this transaction to fill in the balances from your bank accounts.
+; This only needs to be done once, and enables you to reconcile your
+; Ledger file with your bank account statements.
+
+${window.moment().format('YYYY-MM-DD')} Starting Balances
+    ; Add a line for each bank account or credit card
+    c:Chase            $-250.45
+    b:BankOfAmerica    $450.27
+    StartingBalance    ; Leave this line alone
+
+; Lots more information about this format can be found on the
+; Ledger CLI homepage. Please note however that not quite all
+; of the Ledger CLI functionality is supported by this plugin.
+;     https://www.ledger-cli.org
+
+; You can add transactions here easily using the "Add to Ledger"
+; Command in Obsidian. You can even make a shortcut to it on your
+; mobile phone homescreen. See the README for more information.
+
+; If you have questions, please use the Github discussions:
+;     https://github.com/tgrosinger/ledger-obsidian/discussions/landing
+; If you encounter issues, please search the existing Github issues,
+; and create a new one if your issue has not already been solved.
+;     https://github.com/tgrosinger/ledger-obsidian/issues
+`;
 
   /**
    * updateTransactionCache is called whenever a modification to the ledger file
