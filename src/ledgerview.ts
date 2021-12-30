@@ -1,3 +1,4 @@
+import { getTransactionCache } from './file-interface';
 import type LedgerPlugin from './main';
 import { TransactionCache } from './parser';
 import { LedgerDashboard } from './ui/LedgerDashboard';
@@ -9,10 +10,13 @@ export const LedgerViewType = 'ledger';
 
 export class LedgerView extends TextFileView {
   private readonly plugin: LedgerPlugin;
+  private txCache: TransactionCache;
+  private currentFilePath: string;
 
   constructor(leaf: WorkspaceLeaf, plugin: LedgerPlugin) {
     super(leaf);
     this.plugin = plugin;
+    this.txCache = plugin.txCache;
 
     this.addAction('pencil', 'Switch to Markdown View', () => {
       const state = leaf.view.getState();
@@ -74,15 +78,31 @@ export class LedgerView extends TextFileView {
 
   public async onLoadFile(file: TFile): Promise<void> {
     console.debug('Ledger: File being loaded: ' + file.path);
+    if (file.path === this.plugin.settings.ledgerFile) {
+      this.txCache = this.plugin.txCache;
+    } else {
+      // TODO: Setup a file watch for modifications while this file is open.
+      console.debug(
+        'Ledger: Generating txCache for other Ledger file: ' + file.path,
+      );
+      this.txCache = await getTransactionCache(
+        this.plugin.app.metadataCache,
+        this.plugin.app.vault,
+        this.plugin.settings,
+        file.path,
+      );
+    }
 
-    // TODO: Update the txCache and call redraw();
-    // (unless this call is redundant with setViewData)
+    if (this.currentFilePath !== file.path) {
+      this.currentFilePath = file.path;
+      this.redraw();
+    }
   }
 
   public async onUnloadFile(file: TFile): Promise<void> {
     console.debug('Ledger: File being unloaded: ' + file.path);
-
     // TODO: Use this to persist any changes that need to be saved.
+    // TODO: Tear down the file watch if this is a non-default file.
   }
 
   public readonly redraw = (): void => {
@@ -94,7 +114,7 @@ export class LedgerView extends TextFileView {
         tutorialIndex: this.plugin.settings.tutorialIndex,
         setTutorialIndex: this.setTutorialIndex,
         settings: this.plugin.settings,
-        txCache: this.plugin.txCache,
+        txCache: this.txCache,
       }),
       this.contentEl,
     );
@@ -107,7 +127,13 @@ export class LedgerView extends TextFileView {
 
   private readonly handleTxCacheUpdate = (txCache: TransactionCache): void => {
     console.debug('Ledger: received an updated txCache for dashboard');
-    this.redraw();
+
+    // The plugin only monitors the ledger file for changes, so we will only be
+    // notified for that file. If we are viewing a different file currently then
+    // we should not redraw for this event.
+    if (this.currentFilePath === this.plugin.settings.ledgerFile) {
+      this.redraw();
+    }
   };
 
   // TODO: Create a save function that can be passed into the React app to save

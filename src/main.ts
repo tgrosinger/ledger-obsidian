@@ -20,6 +20,7 @@ import {
   ObsidianProtocolData,
   Plugin,
   TAbstractFile,
+  TFile,
   ViewState,
   WorkspaceLeaf,
 } from 'obsidian';
@@ -49,7 +50,8 @@ export default class LedgerPlugin extends Plugin {
     this.addSettingTab(new SettingsTab(this));
 
     addIcon('ledger', billIcon);
-    this.addRibbonIcon('ledger', 'Add to Ledger', () => {
+    this.addRibbonIcon('ledger', 'Add to Ledger', async () => {
+      await this.createLedgerFileIfMissing();
       new AddExpenseModal(this).open();
     });
 
@@ -120,7 +122,8 @@ export default class LedgerPlugin extends Plugin {
       id: 'ledger-add-transaction',
       name: 'Add to Ledger',
       icon: 'ledger',
-      callback: () => {
+      callback: async () => {
+        await this.createLedgerFileIfMissing();
         new AddExpenseModal(this).open();
       },
     });
@@ -179,6 +182,11 @@ export default class LedgerPlugin extends Plugin {
       leaf = this.app.workspace.splitActiveLeaf('horizontal');
     }
 
+    const ledgerTFile = await this.createLedgerFileIfMissing();
+    leaf.openFile(ledgerTFile);
+  };
+
+  private readonly createLedgerFileIfMissing = async (): Promise<TFile> => {
     let ledgerTFile = this.app.vault
       .getFiles()
       .find((file) => file.path === this.settings.ledgerFile);
@@ -187,9 +195,9 @@ export default class LedgerPlugin extends Plugin {
         this.settings.ledgerFile,
         this.generateLedgerFileExampleContent(),
       );
+      await this.updateTransactionCache();
     }
-
-    leaf.openFile(ledgerTFile);
+    return ledgerTFile;
   };
 
   private readonly generateLedgerFileExampleContent = (): string =>
@@ -247,6 +255,7 @@ ${window.moment().format('YYYY-MM-DD')} Starting Balances
       this.app.metadataCache,
       this.app.vault,
       this.settings,
+      this.settings.ledgerFile,
     );
 
     this.txCacheSubscriptions.forEach((fn) => fn(this.txCache));

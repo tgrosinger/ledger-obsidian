@@ -46,11 +46,14 @@ export const getTransactionCache = async (
   cache: MetadataCache,
   vault: Vault,
   settings: ISettings,
+  ledgerFilePath: string,
 ): Promise<TransactionCache> => {
-  const file =
-    cache.getFirstLinkpathDest(settings.ledgerFile, '') ||
-    (await vault.create(settings.ledgerFile, ''));
-  const fileContents = await vault.read(file);
+  const file = cache.getFirstLinkpathDest(ledgerFilePath, '');
+  if (!file) {
+    console.debug('Ledger: Unable to find Ledger file to parse');
+    return undefined;
+  }
 
+  const fileContents = await vault.read(file);
   return parse(fileContents, settings);
 };
