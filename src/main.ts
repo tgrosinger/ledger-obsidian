@@ -132,6 +132,16 @@ export default class LedgerPlugin extends Plugin {
       callback: this.openLedgerDashboard,
     });
 
+    this.addCommand({
+      id: 'ledger-intro-tutorial',
+      name: 'Reset Ledger Tutorial progress',
+      icon: 'ledger',
+      callback: () => {
+        this.settings.tutorialIndex = 0;
+        this.saveData(this.settings);
+      },
+    });
+
     this.app.workspace.onLayoutReady(() => {
       this.updateTransactionCache();
     });

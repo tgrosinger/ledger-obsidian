@@ -3433,6 +3433,16 @@ inherits@2:
   resolved "https://registry.yarnpkg.com/inherits/-/inherits-2.0.4.tgz#0fa2c64f932917c3433a0ded55363aae37416b7c"
   integrity sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==
 
+intro.js-react@0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/intro.js-react/-/intro.js-react-0.5.0.tgz#d4e67a4f6e4726bee803222ff09d6deacb4598c8"
+  integrity sha512-tr9uhoy/aRgcdZxpqYC/TPSVlJ/Gt9Kx4mpI7clCdFa7c3SG8reJugIa1U5XnWlDLRNMc+e8egb8Jf186yvc1A==
+
+intro.js@4.3.0:
+  version "4.3.0"
+  resolved "https://registry.yarnpkg.com/intro.js/-/intro.js-4.3.0.tgz#39d072e638eae9c8491e225b8565ad63b6aaf1f7"
+  integrity sha512-F4LXM42QIXcO3/2myGBBFdbbUVUK0lBhK7pAxPLd082u+3HfvigFR+Rptqy05q3OzjG/O0vMFDedrnHdSPi2rQ==
+
 is-accessor-descriptor@^0.1.6:
   version "0.1.6"
   resolved "https://registry.yarnpkg.com/is-accessor-descriptor/-/is-accessor-descriptor-0.1.6.tgz#a9e12cb3ae8d876727eeef3843f8a0897b5c98d6"

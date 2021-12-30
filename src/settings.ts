@@ -1,4 +1,6 @@
 const defaultSettings: ISettings = {
+  tutorialIndex: 0,
+
   currencySymbol: '$',
   ledgerFile: 'transactions.ledger',
   includeFinalLineAmount: false,
@@ -11,6 +13,8 @@ const defaultSettings: ISettings = {
 };
 
 export interface ISettings {
+  tutorialIndex: number;
+
   currencySymbol: string;
   ledgerFile: string;
   includeFinalLineAmount: boolean;

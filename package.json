@@ -58,6 +58,8 @@
     "@popperjs/core": "2.9.2",
     "chartist": "0.11.4",
     "fuse.js": "6.4.6",
+    "intro.js": "4.3.0",
+    "intro.js-react": "0.5.0",
     "lodash": "4.17.21",
     "monkey-around": "2.2.0",
     "moo": "0.5.1",

@@ -1,5 +1,11 @@
 import { Interval } from '../date-utils';
-import { Button, DatePicker } from './SharedStyles';
+import {
+  Button,
+  DatePicker,
+  FlexContainer,
+  FlexFloatRight,
+  FlexShrink,
+} from './SharedStyles';
 import { Moment } from 'moment';
 import { Notice } from 'obsidian';
 import React from 'react';
@@ -17,94 +23,96 @@ export const DateRangeSelector: React.FC<{
   interval: Interval;
   setInterval: React.Dispatch<React.SetStateAction<Interval>>;
 }> = (props): JSX.Element => (
-    <>
-      <div>
-        <Button
-          selected={props.interval === 'day'}
-          action={() => {
-            props.setInterval('day');
-            validateAndUpdateEndDate(
-              'day',
-              props.startDate,
-              props.endDate,
-              props.setEndDate,
-            );
-          }}
-        >
-          Daily
-        </Button>
-        <Button
-          selected={props.interval === 'week'}
-          action={() => {
-            props.setInterval('week');
-            validateAndUpdateEndDate(
-              'week',
-              props.startDate,
-              props.endDate,
-              props.setEndDate,
-            );
-          }}
-        >
-          Weekly
-        </Button>
-        <Button
-          selected={props.interval === 'month'}
-          action={() => {
-            props.setInterval('month');
-            validateAndUpdateEndDate(
-              'month',
-              props.startDate,
-              props.endDate,
-              props.setEndDate,
-            );
-          }}
-        >
-          Monthly
-        </Button>
+  <FlexContainer>
+    <FlexFloatRight className="ledger-interval-selectors">
+      <Button
+        selected={props.interval === 'day'}
+        action={() => {
+          props.setInterval('day');
+          validateAndUpdateEndDate(
+            'day',
+            props.startDate,
+            props.endDate,
+            props.setEndDate,
+          );
+        }}
+      >
+        Daily
+      </Button>
+      <Button
+        selected={props.interval === 'week'}
+        action={() => {
+          props.setInterval('week');
+          validateAndUpdateEndDate(
+            'week',
+            props.startDate,
+            props.endDate,
+            props.setEndDate,
+          );
+        }}
+      >
+        Weekly
+      </Button>
+      <Button
+        selected={props.interval === 'month'}
+        action={() => {
+          props.setInterval('month');
+          validateAndUpdateEndDate(
+            'month',
+            props.startDate,
+            props.endDate,
+            props.setEndDate,
+          );
+        }}
+      >
+        Monthly
+      </Button>
+    </FlexFloatRight>
 
-        <DatePicker
-          type="date"
-          placeholder="Start"
-          value={props.startDate.format('YYYY-MM-DD')}
-          onChange={(e) => {
-            const newDate = window.moment(e.target.value);
+    <FlexShrink className="ledger-daterange-selectors">
+      <DatePicker
+        type="date"
+        placeholder="Start"
+        value={props.startDate.format('YYYY-MM-DD')}
+        onChange={(e) => {
+          const newDate = window.moment(e.target.value);
+          props.setStartDate(newDate);
+          if (newDate.isAfter(props.endDate)) {
+            props.setEndDate(newDate);
+          } else {
+            validateAndUpdateEndDate(
+              props.interval,
+              newDate,
+              props.endDate,
+              props.setEndDate,
+            );
+          }
+        }}
+      />
+      <MarginSpan>➜</MarginSpan>
+      <DatePicker
+        type="date"
+        placeholder="End"
+        value={props.endDate.format('YYYY-MM-DD')}
+        max={window.moment().format('YYYY-MM-DD')}
+        onChange={(e) => {
+          const newDate = window.moment(e.target.value);
+          props.setEndDate(newDate.clone());
+          if (newDate.isBefore(props.startDate)) {
             props.setStartDate(newDate);
-            if (newDate.isAfter(props.endDate)) {
-              props.setEndDate(newDate);
-            } else {
-              validateAndUpdateEndDate(
-                props.interval,
-                newDate,
-                props.endDate,
-                props.setEndDate,
-              );
-            }
-          }}
-        />
-        <MarginSpan>➜</MarginSpan>
-        <DatePicker
-          type="date"
-          placeholder="End"
-          value={props.endDate.format('YYYY-MM-DD')}
-          max={window.moment().format('YYYY-MM-DD')}
-          onChange={(e) => {
-            const newDate = window.moment(e.target.value);
-            props.setEndDate(newDate.clone());
-            if (newDate.isBefore(props.startDate)) {
-              props.setStartDate(newDate);
-            } else {
-              validateAndUpdateStartDate(
-                props.interval,
-                props.startDate,
-                newDate,
-                props.setStartDate,
-              );
-            }
-          }}
-        />
-      </div>
-    </>
-  );
+          } else {
+            validateAndUpdateStartDate(
+              props.interval,
+              props.startDate,
+              newDate,
+              props.setStartDate,
+            );
+          }
+        }}
+      />
+    </FlexShrink>
+  </FlexContainer>
+);
 
 const validateAndUpdateStartDate = (
   interval: Interval,

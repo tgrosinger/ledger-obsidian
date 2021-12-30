@@ -138,7 +138,7 @@ export const AccountsList: React.FC<{
   }, [props.txCache]);
 
   return (
-    <>
+    <div className="ledger-account-list">
       {data.map((root) => (
         <Tree
           txCache={props.txCache}
@@ -150,7 +150,7 @@ export const AccountsList: React.FC<{
           setSelectedAccounts={props.setSelectedAccounts}
         />
       ))}
-    </>
+    </div>
   );
 };
 

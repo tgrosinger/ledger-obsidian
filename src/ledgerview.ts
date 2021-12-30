@@ -91,11 +91,18 @@ export class LedgerView extends TextFileView {
     const contentEl = this.containerEl.children[1];
     ReactDOM.render(
       React.createElement(LedgerDashboard, {
+        tutorialIndex: this.plugin.settings.tutorialIndex,
+        setTutorialIndex: this.setTutorialIndex,
         settings: this.plugin.settings,
         txCache: this.plugin.txCache,
       }),
       this.contentEl,
     );
+  };
+
+  private readonly setTutorialIndex = (index: number): void => {
+    this.plugin.settings.tutorialIndex = index;
+    this.plugin.saveData(this.plugin.settings);
   };
 
   private readonly handleTxCacheUpdate = (txCache: TransactionCache): void => {

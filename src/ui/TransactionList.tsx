@@ -48,7 +48,7 @@ export const MobileTransactionEntry: React.FC<{
 };
 
 const TableStyles = styled.div`
-  padding: 1rem;
+  padding-right: 1rem;
 
   table {
     border-spacing: 0;
@@ -252,16 +252,3 @@ const TransactionTable: React.FC<{
     </TableStyles>
   );
 };
-
-const AccountCell: React.FC<{
-  name: string;
-  goToAccountPage: (accountName: string) => void;
-}> = (props): JSX.Element => (
-  <a
-    onClick={() => {
-      props.goToAccountPage(props.name);
-    }}
-  >
-    {props.name}
-  </a>
-);

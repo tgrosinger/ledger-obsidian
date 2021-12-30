@@ -6,10 +6,13 @@ import { DateRangeSelector } from './DateRangeSelector';
 import { NetWorthVisualization } from './NetWorthVisualization';
 import { ParseErrors } from './ParseErrors';
 import {
-  MobileTransactionList,
-  RecentTransactionList,
-  TransactionList,
-} from './TransactionList';
+  FlexContainer,
+  FlexFloatRight,
+  FlexMainContent,
+  FlexShrink,
+} from './SharedStyles';
+import { RecentTransactionList, TransactionList } from './TransactionList';
+import { Step, Steps } from 'intro.js-react';
 import { Platform } from 'obsidian';
 import React from 'react';
 import {
@@ -19,7 +22,13 @@ import {
 import { ISettings } from 'src/settings';
 import styled from 'styled-components';
 
+const FlexSidebar = styled(FlexShrink)`
+  flex-basis: 20%;
+`;
+
 export const LedgerDashboard: React.FC<{
+  tutorialIndex: number;
+  setTutorialIndex: (index: number) => void;
   settings: ISettings;
   txCache: TransactionCache;
 }> = (props): JSX.Element => {
@@ -27,10 +36,21 @@ export const LedgerDashboard: React.FC<{
     return <p>Loading...</p>;
   }
 
+  const [tutorialIndex, setTutorialIndex] = React.useState(props.tutorialIndex);
+  const setTutorialIndexWrapper = (index: number): void => {
+    setTutorialIndex(index); // This updates the current state
+    props.setTutorialIndex(index); // This updates the saved state
+  };
+
   return Platform.isMobile ? (
     <MobileDashboard settings={props.settings} txCache={props.txCache} />
   ) : (
-    <DesktopDashboard settings={props.settings} txCache={props.txCache} />
+    <DesktopDashboard
+      tutorialIndex={tutorialIndex}
+      setTutorialIndex={setTutorialIndexWrapper}
+      settings={props.settings}
+      txCache={props.txCache}
+    />
   );
 };
 
@@ -62,25 +82,9 @@ const MobileDashboard: React.FC<{
   return <p>Dashboard not yet supported on mobile.</p>;
 };
 
-const FlexContainer = styled.div`
-  display: flex;
-`;
-const FlexSidebar = styled.div`
-  flex-basis: 20%;
-  flex-grow: 0;
-  flex-shrink: 1;
-`;
-const FlexFloatRight = styled.div`
-  margin-left: auto;
-  flex-shrink: 1;
-`;
-const FlexMainContent = styled.div`
-  flex-basis: auto;
-  flex-grow: 1;
-  flex-shrink: 1;
-`;
-
 const DesktopDashboard: React.FC<{
+  tutorialIndex: number;
+  setTutorialIndex: (index: number) => void;
   settings: ISettings;
   txCache: TransactionCache;
 }> = (props): JSX.Element => {
@@ -121,6 +125,12 @@ const DesktopDashboard: React.FC<{
           interval={interval}
           setInterval={setInterval}
         />
+        {props.tutorialIndex !== -1 ? (
+          <Tutorial
+            tutorialIndex={props.tutorialIndex}
+            setTutorialIndex={props.setTutorialIndex}
+          />
+        ) : null}
       </Header>
 
       <FlexContainer>
@@ -177,5 +187,72 @@ const DesktopDashboard: React.FC<{
         </FlexMainContent>
       </FlexContainer>
     </>
+  );
+};
+
+const Tutorial: React.FC<{
+  tutorialIndex: number;
+  setTutorialIndex: (index: number) => void;
+}> = (props): JSX.Element => {
+  const steps: Step[] = [
+    {
+      intro:
+        'Welcome to the Obsidian Ledger plugin. Let me show you around a bit!',
+      tooltipClass: 'ledger-tutorial-tooltip',
+    },
+    {
+      intro: 'Click on account names to view their transactions and balance.',
+      element: '.ledger-account-list',
+      tooltipClass: 'ledger-tutorial-tooltip',
+    },
+    {
+      intro: 'Change the interval over which transactions are rolled up.',
+      element: '.ledger-interval-selectors',
+      tooltipClass: 'ledger-tutorial-tooltip',
+    },
+    {
+      intro: 'Only transactions within this date range will be displayed.',
+      element: '.ledger-daterange-selectors',
+      tooltipClass: 'ledger-tutorial-tooltip',
+    },
+    {
+      intro: 'Click here to edit your Ledger file as raw text.',
+      element: 'a[aria-label="Switch to Markdown View"]',
+      tooltipClass: 'ledger-tutorial-tooltip',
+    },
+    {
+      intro:
+        'There are more helpful tips in your Ledger file. Go take a look at it in raw text mode.',
+      tooltipClass: 'ledger-tutorial-tooltip',
+    },
+    {
+      intro: (
+        <p>
+          If you have any questions, please visit the{' '}
+          <a href="https://github.com/tgrosinger/ledger-obsidian/discussions">
+            Github Discussions Page
+          </a>
+          .
+        </p>
+      ),
+      tooltipClass: 'ledger-tutorial-tooltip',
+    },
+  ];
+
+  const onExit = (index: number): void => {
+    if (index + 1 === steps.length) {
+      props.setTutorialIndex(-1);
+    } else {
+      props.setTutorialIndex(index);
+    }
+  };
+
+  return (
+    <Steps
+      enabled={true}
+      steps={steps}
+      onExit={onExit}
+      initialStep={props.tutorialIndex}
+    />
   );
 };
