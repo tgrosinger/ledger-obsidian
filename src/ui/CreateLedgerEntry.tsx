@@ -28,6 +28,7 @@ const Warning = styled.div`
 export const CreateLedgerEntry: React.FC<{
   displayFileWarning: boolean;
   currencySymbol: string;
+  // TODO: Pass in a transaction to use as the starting point for editing or cloning a transaction.
   saveFn: (tx: Transaction) => Promise<void>;
   txCache: TransactionCache;
   close: () => void;

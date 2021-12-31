@@ -39,8 +39,6 @@ export default class LedgerPlugin extends Plugin {
   public txCache: TransactionCache;
   private txCacheSubscriptions: ((txCache: TransactionCache) => void)[];
 
-  private readonly renderer: LedgerView;
-
   public async onload(): Promise<void> {
     console.log('ledger: Loading plugin v' + this.manifest.version);
 
@@ -59,7 +57,6 @@ export default class LedgerPlugin extends Plugin {
 
     this.registerView(LedgerViewType, (leaf) => new LedgerView(leaf, this));
 
-    // TODO: Add a warning to enable syncing other files
     this.registerExtensions(['ledger'], LedgerViewType);
 
     this.registerEvent(

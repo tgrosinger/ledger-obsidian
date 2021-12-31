@@ -4,7 +4,6 @@ const defaultSettings: ISettings = {
   currencySymbol: '$',
   ledgerFile: 'transactions.ledger',
   includeFinalLineAmount: false,
-  enableLedgerVis: false,
 
   assetAccountsPrefix: 'Assets',
   expenseAccountsPrefix: 'Expenses',
@@ -18,7 +17,6 @@ export interface ISettings {
   currencySymbol: string;
   ledgerFile: string;
   includeFinalLineAmount: boolean;
-  enableLedgerVis: boolean;
 
   assetAccountsPrefix: string;
   expenseAccountsPrefix: string;
