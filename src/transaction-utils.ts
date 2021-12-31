@@ -12,15 +12,19 @@ export const formatTransaction = (
   tx: Transaction,
   currencySymbol: string,
 ): string => {
-  // TODO: Include the comment in the output
-  // TODO: Use the currency symbol in the expense line if there is one
-  // TODO: Don't lose the reconciliation symbol
   const joinedLines = tx.value.expenselines
-    .map(({ account, amount }, i) =>
-      i !== tx.value.expenselines.length - 1
-        ? `    ${account}    ${currencySymbol}${amount.toFixed(2)}`
-        : `    ${account}`,
-    )
+    .map((line, i) => {
+      const currency = line.currency ? line.currency : currencySymbol;
+      const symb = line.reconcile ? line.reconcile : ' ';
+      const comment = line.comment ? `    ; ${line.comment}` : '';
+      return line.account
+        ? i !== tx.value.expenselines.length - 1
+          ? `  ${symb} ${line.account}    ${currency}${line.amount.toFixed(
+              2,
+            )}${comment}`
+          : `  ${symb} ${line.account}${comment}`
+        : comment;
+    })
     .join('\n');
   return `\n${tx.value.date} ${tx.value.payee}\n${joinedLines}`;
 };

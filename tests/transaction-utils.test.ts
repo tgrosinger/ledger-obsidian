@@ -1,4 +1,5 @@
-import { Transaction } from '../src/parser';
+import { parse, Transaction } from '../src/parser';
+import { settingsWithDefaults } from '../src/settings';
 import {
   fillMissingAmount,
   filterByAccount,
@@ -11,8 +12,30 @@ import {
   Node,
   sortAccountTree,
 } from '../src/transaction-utils';
+import * as moment from 'moment';
+
+window.moment = moment;
 
 describe('formatting a transaction into ledger', () => {
+  test('a transaction with a line comment and reconciliation symbol', () => {
+    const contents = `2021-04-20 Obsidian
+  ! e:Spending Money    $20.00    ; Inline comment
+    ; line comment
+    b:CreditUnion`;
+    const txCache = parse(contents, settingsWithDefaults({}));
+    expect(txCache.parsingErrors).toEqual([]);
+    const output = formatTransaction(txCache.transactions[0], '$');
+    expect(output).toEqual('\n' + contents);
+  });
+  test('a transaction with non-default currency', () => {
+    const contents = `2021-04-20 Obsidian
+  * e:Spending Money    €20.00
+  ! b:CreditUnion`;
+    const txCache = parse(contents, settingsWithDefaults({}));
+    expect(txCache.parsingErrors).toEqual([]);
+    const output = formatTransaction(txCache.transactions[0], '$');
+    expect(output).toEqual('\n' + contents);
+  });
   test('when the tx has the minimum allowed values', () => {
     const tx: Transaction = {
       type: 'tx',
