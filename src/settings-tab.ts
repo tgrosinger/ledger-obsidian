@@ -53,20 +53,6 @@ export class SettingsTab extends PluginSettingTab {
         };
       });
 
-    new Setting(containerEl)
-      .setName('Include final line amount')
-      .setDesc(
-        'Include the dollar amount on the final line of a transaction. This value is optional, and is alway equal to the sum of the previous lines * -1.',
-      )
-      .addToggle((toggle) => {
-        toggle
-          .setValue(this.plugin.settings.includeFinalLineAmount)
-          .onChange((value) => {
-            this.plugin.settings.includeFinalLineAmount = value;
-            this.plugin.saveData(this.plugin.settings);
-          });
-      });
-
     containerEl.createEl('h3', 'Transaction Account Prefixes');
 
     containerEl.createEl('p', {

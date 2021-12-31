@@ -8,7 +8,6 @@ import {
   getTotal,
 } from '../transaction-utils';
 import { Moment } from 'moment';
-import { Notice } from 'obsidian';
 import React from 'react';
 import { Column, useFilters, useSortBy, useTable } from 'react-table';
 import styled from 'styled-components';
@@ -111,7 +110,7 @@ const buildTableRows = (
     <>
       <svg
         onClick={() => {
-          new Notice('Editing transactions is not yet supported. Coming soon!');
+          updater.openExpenseModal('modify', tx);
         }}
         width="16"
         height="16"
@@ -126,7 +125,7 @@ const buildTableRows = (
       </svg>
       <svg
         onClick={() => {
-          new Notice('Cloning transactions is not yet supported. Coming soon!');
+          updater.openExpenseModal('clone', tx);
         }}
         width="16"
         height="16"

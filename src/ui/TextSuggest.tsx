@@ -4,24 +4,22 @@ import { take } from 'lodash';
 import React from 'react';
 import { usePopper } from 'react-popper';
 
+export interface TextSuggestInput {
+  value: string;
+  suggestions: string[];
+}
+
 export const TextSuggest: React.FC<{
   placeholder: string;
   displayCount: number;
-  suggestions: string[];
-  value: string;
-  setValue: React.Dispatch<React.SetStateAction<string>>;
-}> = ({
-  placeholder,
-  displayCount,
-  suggestions,
-  value,
-  setValue,
-}): JSX.Element => {
+  input: TextSuggestInput;
+  setValue: (newValue: string) => void;
+}> = ({ placeholder, displayCount, input, setValue }): JSX.Element => {
   const [currentSuggestions, setCurrentSuggestions] = React.useState(
-    take(suggestions, displayCount),
+    take(input.suggestions, displayCount),
   );
   const [fuse, setFuse] = React.useState(
-    new Fuse(suggestions, { threshold: 0.5 }),
+    new Fuse(input.suggestions, { threshold: 0.5 }),
   );
 
   const [selectedIndex, setSelectedIndex] = React.useState(0);
@@ -36,7 +34,7 @@ export const TextSuggest: React.FC<{
   const updateCurrentSuggestions = (newValue: string): void => {
     const newSuggestions =
       newValue === ''
-        ? take(suggestions, displayCount)
+        ? take(input.suggestions, displayCount)
         : take(
             fuse.search(newValue).map((result) => result.item),
             displayCount,
@@ -54,16 +52,16 @@ export const TextSuggest: React.FC<{
   // The Fuse object will not be automatically replaced when the suggestions are
   // changed so we need to detect and update manually.
   React.useEffect(() => {
-    setFuse(new Fuse(suggestions, { threshold: 0.5 }));
-    updateCurrentSuggestions(value);
-  }, [suggestions]);
+    setFuse(new Fuse(input.suggestions, { threshold: 0.5 }));
+    updateCurrentSuggestions(input.value);
+  }, [input]);
 
   return (
     <div>
       <WideInput
         ref={setReferenceElement}
         type="text"
-        value={value}
+        value={input.value}
         placeholder={placeholder}
         onChange={(e) => updateValue(e.target.value)}
         onFocus={() => {

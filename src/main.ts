@@ -1,31 +1,21 @@
-import {
-  appendLedger,
-  formatExpense,
-  getTransactionCache,
-} from './file-interface';
+import { getTransactionCache, LedgerModifier } from './file-interface';
 import { billIcon } from './graphics';
 import { LedgerView, LedgerViewType } from './ledgerview';
-import type { Transaction, TransactionCache } from './parser';
+import type { TransactionCache } from './parser';
 import { ISettings, settingsWithDefaults } from './settings';
 import { SettingsTab } from './settings-tab';
-import { CreateLedgerEntry } from './ui/CreateLedgerEntry';
 import type { default as MomentType } from 'moment';
 import { around } from 'monkey-around';
 import {
   addIcon,
   MarkdownView,
   Menu,
-  MenuItem,
-  Modal,
   ObsidianProtocolData,
   Plugin,
   TAbstractFile,
   TFile,
   ViewState,
-  WorkspaceLeaf,
 } from 'obsidian';
-import React from 'react';
-import ReactDOM from 'react-dom';
 
 declare global {
   interface Window {
@@ -49,8 +39,8 @@ export default class LedgerPlugin extends Plugin {
 
     addIcon('ledger', billIcon);
     this.addRibbonIcon('ledger', 'Add to Ledger', async () => {
-      await this.createLedgerFileIfMissing();
-      new AddExpenseModal(this).open();
+      const ledgerFile = await this.createLedgerFileIfMissing();
+      new LedgerModifier(this, ledgerFile).openExpenseModal('new');
     });
 
     this.registerObsidianProtocolHandler('ledger', this.handleProtocolAction);
@@ -120,8 +110,8 @@ export default class LedgerPlugin extends Plugin {
       name: 'Add to Ledger',
       icon: 'ledger',
       callback: async () => {
-        await this.createLedgerFileIfMissing();
-        new AddExpenseModal(this).open();
+        const ledgerFile = await this.createLedgerFileIfMissing();
+        new LedgerModifier(this, ledgerFile).openExpenseModal('new');
       },
     });
 
@@ -168,6 +158,20 @@ export default class LedgerPlugin extends Plugin {
     this.txCacheSubscriptions.remove(fn);
   };
 
+  public readonly createLedgerFileIfMissing = async (): Promise<TFile> => {
+    let ledgerTFile = this.app.vault
+      .getFiles()
+      .find((file) => file.path === this.settings.ledgerFile);
+    if (!ledgerTFile) {
+      ledgerTFile = await this.app.vault.create(
+        this.settings.ledgerFile,
+        this.generateLedgerFileExampleContent(),
+      );
+      await this.updateTransactionCache();
+    }
+    return ledgerTFile;
+  };
+
   private async loadSettings(): Promise<void> {
     this.settings = settingsWithDefaults(await this.loadData());
     this.saveData(this.settings);
@@ -181,20 +185,6 @@ export default class LedgerPlugin extends Plugin {
 
     const ledgerTFile = await this.createLedgerFileIfMissing();
     leaf.openFile(ledgerTFile);
-  };
-
-  private readonly createLedgerFileIfMissing = async (): Promise<TFile> => {
-    let ledgerTFile = this.app.vault
-      .getFiles()
-      .find((file) => file.path === this.settings.ledgerFile);
-    if (!ledgerTFile) {
-      ledgerTFile = await this.app.vault.create(
-        this.settings.ledgerFile,
-        this.generateLedgerFileExampleContent(),
-      );
-      await this.updateTransactionCache();
-    }
-    return ledgerTFile;
   };
 
   private readonly generateLedgerFileExampleContent = (): string =>
@@ -262,47 +252,12 @@ ${window.moment().format('YYYY-MM-DD')} Starting Balances
     this.txCacheSubscriptions.forEach((fn) => fn(this.txCache));
   };
 
-  private readonly handleProtocolAction = (
+  private readonly handleProtocolAction = async (
     params: ObsidianProtocolData,
-  ): void => {
+  ): Promise<void> => {
     // TODO: Support pre-populating fields, or even completely skipping the form
     // by passing the correct data here.
-    new AddExpenseModal(this).open();
-  };
-}
-
-class AddExpenseModal extends Modal {
-  private readonly plugin: LedgerPlugin;
-
-  constructor(plugin: LedgerPlugin) {
-    super(plugin.app);
-    this.plugin = plugin;
-  }
-
-  public onOpen = (): void => {
-    ReactDOM.render(
-      React.createElement(CreateLedgerEntry, {
-        displayFileWarning:
-          !this.plugin.settings.ledgerFile.endsWith('.ledger'),
-        currencySymbol: this.plugin.settings.currencySymbol,
-        saveFn: async (tx: Transaction): Promise<void> => {
-          const formatted = formatExpense(tx, this.plugin.settings);
-          await appendLedger(
-            this.app.metadataCache,
-            this.app.vault,
-            this.plugin.settings,
-            formatted,
-          );
-        },
-        txCache: this.plugin.txCache,
-        close: () => this.close(),
-      }),
-      this.contentEl,
-    );
-  };
-
-  public onClose = (): void => {
-    ReactDOM.unmountComponentAtNode(this.contentEl);
-    this.contentEl.empty();
+    const ledgerFile = await this.createLedgerFileIfMissing();
+    new LedgerModifier(this, ledgerFile).openExpenseModal('new');
   };
 }

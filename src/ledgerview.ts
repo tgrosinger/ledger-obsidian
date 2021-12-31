@@ -23,7 +23,7 @@ export class LedgerView extends TextFileView {
       plugin.settings.ledgerFile,
       '',
     );
-    this.updateInterface = new LedgerModifier(plugin.app.vault, file);
+    this.updateInterface = new LedgerModifier(plugin, file);
 
     this.addAction('pencil', 'Switch to Markdown View', () => {
       const state = leaf.view.getState();

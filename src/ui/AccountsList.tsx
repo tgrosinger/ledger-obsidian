@@ -1,4 +1,5 @@
 import type { TransactionCache } from '../parser';
+import { ISettings } from '../settings';
 import {
   dealiasAccount,
   makeAccountTree,
@@ -6,8 +7,6 @@ import {
   sortAccountTree,
 } from '../transaction-utils';
 import React from 'react';
-import { Row, useExpanded, useRowSelect, useTable } from 'react-table';
-import { ISettings } from 'src/settings';
 import styled from 'styled-components';
 
 const TreeRow = styled.div`

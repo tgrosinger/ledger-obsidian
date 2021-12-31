@@ -1,13 +1,13 @@
+import {
+  makeBalanceData,
+  makeDeltaData,
+  removeDuplicateAccounts,
+} from '../balance-utils';
 import { Interval, makeBucketNames } from '../date-utils';
 import { IBarChartOptions, ILineChartOptions } from 'chartist';
 import { Moment } from 'moment';
 import React from 'react';
 import ChartistGraph from 'react-chartist';
-import {
-  makeBalanceData,
-  makeDeltaData,
-  removeDuplicateAccounts,
-} from 'src/balance-utils';
 import styled from 'styled-components';
 
 const ChartHeader = styled.div`

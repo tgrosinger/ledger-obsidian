@@ -5,6 +5,27 @@ import { Moment } from 'moment';
 import { err, ok, Result } from 'neverthrow';
 
 /**
+ * formatTransaction converts a transaction object into the string
+ * representation which can be stored in the Ledger file.
+ */
+export const formatTransaction = (
+  tx: Transaction,
+  currencySymbol: string,
+): string => {
+  // TODO: Include the comment in the output
+  // TODO: Use the currency symbol in the expense line if there is one
+  // TODO: Don't lose the reconciliation symbol
+  const joinedLines = tx.value.expenselines
+    .map(({ account, amount }, i) =>
+      i !== tx.value.expenselines.length - 1
+        ? `    ${account}    ${currencySymbol}${amount.toFixed(2)}`
+        : `    ${account}`,
+    )
+    .join('\n');
+  return `\n${tx.value.date} ${tx.value.payee}\n${joinedLines}`;
+};
+
+/**
  * getTotal returns the total value of the transaction. It assumes that all
  * lines use the same currency. In a transaction, any 1 line may be left empty
  * and can be inferred from the remainder. If muliple lines are empty, it will

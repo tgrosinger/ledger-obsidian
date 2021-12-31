@@ -1,9 +1,11 @@
-import { Transaction, TransactionCache } from '../parser';
+import { LedgerModifier } from '../file-interface';
+import { Operation } from '../modals';
+import { Expenseline, Transaction, TransactionCache } from '../parser';
+import { formatTransaction, getTotalAsNum } from '../transaction-utils';
 import { CurrencyInput } from './CurrencyInput';
 import { WideDatePicker, WideSelect } from './SharedStyles';
-import { TextSuggest } from './TextSuggest';
+import { TextSuggest, TextSuggestInput } from './TextSuggest';
 import { union } from 'lodash';
-import moment from 'moment';
 import { Notice, Platform } from 'obsidian';
 import React from 'react';
 import styled from 'styled-components';
@@ -25,76 +27,132 @@ const Warning = styled.div`
   padding: 10px 15px;
 `;
 
+type TXType = 'expense' | 'income' | 'transfer' | 'unknown';
+
 export const CreateLedgerEntry: React.FC<{
   displayFileWarning: boolean;
   currencySymbol: string;
-  // TODO: Pass in a transaction to use as the starting point for editing or cloning a transaction.
-  saveFn: (tx: Transaction) => Promise<void>;
+  initialState: Transaction;
+  operation: Operation;
+  updater: LedgerModifier;
   txCache: TransactionCache;
   close: () => void;
 }> = ({
   displayFileWarning,
   currencySymbol,
-  saveFn,
+  initialState,
+  operation,
+  updater,
   txCache,
   close,
 }): JSX.Element => {
-  const [payee, setPayee] = React.useState('');
-  const [txType, setTxType] = React.useState('expense');
-  const [total, setTotal] = React.useState<string>('');
-  const [date, setDate] = React.useState(moment().format('YYYY-MM-DD'));
+  const isNew = operation === 'new';
+  const [payee, setPayee] = React.useState(
+    isNew ? '' : initialState.value.payee,
+  );
+  const [txType, setTxType] = React.useState(isNew ? 'expense' : 'unknown');
+  const [total, setTotal] = React.useState<string>(
+    isNew ? '' : getTotalAsNum(initialState).toString(),
+  );
+  const [date, setDate] = React.useState(
+    isNew
+      ? window.moment().format('YYYY-MM-DD')
+      : window.moment(initialState.value.date).format('YYYY-MM-DD'),
+  );
 
   const assetsAndLiabilities = union(
     txCache.assetAccounts,
     txCache.liabilityAccounts,
   );
 
-  // TODO: Combine some related state into objects
-  const [account1, setAccount1] = React.useState('');
-  const [account1Suggestions, setAccount1Suggestions] = React.useState(
-    txCache.expenseAccounts,
+  const [accounts, setAccounts] = React.useState<TextSuggestInput[]>(
+    isNew
+      ? [
+          {
+            value: '',
+            suggestions: txCache.expenseAccounts,
+          },
+          {
+            value: '',
+            suggestions: assetsAndLiabilities,
+          },
+        ]
+      : initialState.value.expenselines.map((line) => ({
+          value: line.account,
+          suggestions: txCache.accounts,
+        })),
   );
-  const [account2, setAccount2] = React.useState('');
-  const [account2Suggestions, setAccount2Suggestions] =
-    React.useState(assetsAndLiabilities);
 
   const suggestionCount = Platform.isMobile ? 5 : 15;
 
-  const getAccountName = (c: 1 | 2): string => {
+  const getAccountName = (i: number): string => {
+    const lastI = accounts.length - 1;
     switch (txType) {
       case 'expense':
-        return c === 1 ? 'Expense' : 'Asset';
+        return i !== lastI ? 'Expense' : 'Asset';
       case 'income':
-        return c === 1 ? 'Asset' : 'Expense';
+        return i !== lastI ? 'Asset' : 'Expense';
       case 'transfer':
-        return c === 1 ? 'To' : 'From';
+        return i !== lastI ? 'To' : 'From';
+      case 'unknown':
+        return '';
     }
   };
 
   const changeTxType = (newTxType: string): void => {
-    switch (newTxType) {
-      case 'expense':
-        setAccount1Suggestions(txCache.expenseAccounts);
-        setAccount2Suggestions(assetsAndLiabilities);
-        break;
-      case 'income':
-        setAccount1Suggestions(assetsAndLiabilities);
-        setAccount2Suggestions(txCache.incomeAccounts);
-        break;
-      case 'transfer':
-        setAccount1Suggestions(assetsAndLiabilities);
-        setAccount2Suggestions(assetsAndLiabilities);
-        break;
-    }
-
     setTxType(newTxType);
+    const lastI = accounts.length - 1;
+    setAccounts(
+      accounts.map((account, i): TextSuggestInput => {
+        switch (newTxType) {
+          case 'expense':
+            return {
+              value: account.value,
+              suggestions:
+                i !== lastI ? txCache.expenseAccounts : assetsAndLiabilities,
+            };
+          case 'income':
+            return {
+              value: account.value,
+              suggestions:
+                i !== lastI ? assetsAndLiabilities : txCache.expenseAccounts,
+            };
+          case 'transfer':
+            return {
+              value: account.value,
+              suggestions:
+                i !== lastI ? assetsAndLiabilities : assetsAndLiabilities,
+            };
+          case 'unknown':
+            return {
+              value: account.value,
+              suggestions: i !== lastI ? txCache.accounts : txCache.accounts,
+            };
+        }
+      }),
+    );
   };
 
+  const makeUpdateAccount =
+    (i: number): ((newValue: string) => void) =>
+    (newValue: string): void => {
+      setAccounts(
+        accounts.map((account, j) => {
+          if (j === i) {
+            account.value = newValue;
+          }
+          return account;
+        }),
+      );
+    };
+
   const save = async (): Promise<void> => {
+    // TODO: Consider using Formik for better validation
+
     let localPayee = payee;
     if (txType === 'transfer') {
-      const to = account1.split(':').last();
-      const from = account2.split(':').last();
+      const to = accounts[0].value.split(':').last();
+      const from = accounts[1].value.split(':').last();
       localPayee = `${from} to ${to}`;
     }
 
@@ -107,13 +165,25 @@ export const CreateLedgerEntry: React.FC<{
     } else if (total === '' || Number.isNaN(parseFloat(total))) {
       new Notice('Must specify an amount');
       return;
-    } else if (account1 === '') {
-      new Notice(`${getAccountName(1)} account must not be empty`);
-      return;
-    } else if (account2 === '') {
-      new Notice(`${getAccountName(2)} account must not be empty`);
+    } else if (accounts.find(({ value }) => value === '')) {
+      new Notice('Transaction accounts must not be empty');
       return;
     }
+
+    const lastI = accounts.length - 1;
+    const expenseLines = accounts.map((account, i): Expenseline => {
+      if (i === lastI) {
+        return {
+          account: account.value,
+        };
+      }
+
+      return {
+        account: account.value,
+        amount: parseFloat(total),
+        currency: currencySymbol,
+      };
+    });
 
     // TODO: This is not a ISO8601. Once reconciliation is added, remove this and reformat file.
     const formattedDate = date.replace(/-/g, '/');
@@ -122,20 +192,21 @@ export const CreateLedgerEntry: React.FC<{
       value: {
         date: formattedDate,
         payee: localPayee,
-        expenselines: [
-          {
-            account: account1,
-            amount: parseFloat(total),
-            currency: currencySymbol,
-          },
-          {
-            account: account2,
-          },
-        ],
+        expenselines: expenseLines,
       },
     };
 
-    await saveFn(tx);
+    const txStr = formatTransaction(tx, currencySymbol);
+    switch (operation) {
+      case 'new':
+      case 'clone':
+        await updater.appendLedger(txStr);
+        break;
+      case 'modify':
+        await updater.updateTransaction(initialState, txStr);
+        break;
+    }
+
     close();
   };
 
@@ -196,8 +267,10 @@ export const CreateLedgerEntry: React.FC<{
           <TextSuggest
             placeholder="Payee (e.g. Obsidian.md)"
             displayCount={suggestionCount}
-            suggestions={txCache.payees}
-            value={payee}
+            input={{
+              value: payee,
+              suggestions: txCache.payees,
+            }}
             setValue={setPayee}
           />
         </Margin>
@@ -205,20 +278,18 @@ export const CreateLedgerEntry: React.FC<{
 
       <Margin>
         <TextSuggest
-          placeholder={`${getAccountName(1)} Account`}
+          placeholder={`${getAccountName(0)} Account`}
           displayCount={suggestionCount}
-          suggestions={account1Suggestions}
-          value={account1}
-          setValue={setAccount1}
+          input={accounts[0]}
+          setValue={makeUpdateAccount(0)}
         />
       </Margin>
       <Margin>
         <TextSuggest
-          placeholder={`${getAccountName(2)} Account`}
+          placeholder={`${getAccountName(1)} Account`}
           displayCount={suggestionCount}
-          suggestions={account2Suggestions}
-          value={account2}
-          setValue={setAccount2}
+          input={accounts[1]}
+          setValue={makeUpdateAccount(1)}
         />
       </Margin>
 

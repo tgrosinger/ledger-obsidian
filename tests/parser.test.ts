@@ -1,7 +1,7 @@
+import { ParseError } from '../src/error';
 import { Alias, parse, splitIntoBlocks, Transaction } from '../src/parser';
 import { settingsWithDefaults } from '../src/settings';
 import * as moment from 'moment';
-import { ParseError } from 'src/error';
 
 window.moment = moment;
 const settings = settingsWithDefaults({});

@@ -1,6 +1,6 @@
+import { Error } from '../error';
+import { TransactionCache } from '../parser';
 import React from 'react';
-import { Error } from 'src/error';
-import { TransactionCache } from 'src/parser';
 import styled from 'styled-components';
 
 const ErrorDiv = styled.div`
