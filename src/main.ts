@@ -215,8 +215,8 @@ alias i=${this.settings.incomeAccountsPrefix}
 ; If the last line is left empty, it will automatically balance the transaction.
 ; 
 ; 2021-12-25 Starbucks Coffee
-;     e:Food:Treats     $5.25
-;     c:Chase
+;     e:Food:Treats     $5.25   ; To this account
+;     c:Chase                           ; From this account
 
 ; Use this transaction to fill in the balances from your bank accounts.
 ; This only needs to be done once, and enables you to reconcile your
@@ -224,9 +224,13 @@ alias i=${this.settings.incomeAccountsPrefix}
 
 ${window.moment().format('YYYY-MM-DD')} Starting Balances
     ; Add a line for each bank account or credit card
-    c:Chase            $-250.45
+    c:Chase                   $-250.45
     b:BankOfAmerica    $450.27
-    StartingBalance    ; Leave this line alone
+    StartingBalance      ; Leave this line alone
+
+; I highly recommend reading through the Ledger documentation about the basics
+; of accounting with Ledger
+;     https://www.ledger-cli.org/3.0/doc/ledger3.html#Principles-of-Accounting-with-Ledger
 
 ; Lots more information about this format can be found on the
 ; Ledger CLI homepage. Please note however that not quite all
