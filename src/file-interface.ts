@@ -1,6 +1,6 @@
 import { parse, Transaction, TransactionCache } from './parser';
 import type { ISettings } from './settings';
-import type { MetadataCache, Vault } from 'obsidian';
+import type { MetadataCache, TFile, Vault } from 'obsidian';
 
 export const formatExpense = (tx: Transaction, settings: ISettings): string => {
   const symb = settings.currencySymbol;
@@ -41,6 +41,30 @@ export const appendLedger = async (
     await vault.create(settings.ledgerFile, newExpense);
   }
 };
+
+export class LedgerModifier {
+  private readonly vault: Vault;
+  private ledgerFile: TFile;
+
+  constructor(vault: Vault, ledgerFile: TFile) {
+    this.vault = vault;
+    this.ledgerFile = ledgerFile;
+  }
+
+  public setLedgerFile(ledgerFile: TFile): void {
+    this.ledgerFile = ledgerFile;
+  }
+
+  public async deleteTransaction(tx: Transaction): Promise<void> {
+    const fileContents = await this.vault.cachedRead(this.ledgerFile);
+    const lines = fileContents.split('\n');
+    lines.splice(
+      tx.block.firstLine,
+      tx.block.lastLine - tx.block.firstLine + 1,
+    );
+    return this.vault.modify(this.ledgerFile, lines.join('\n'));
+  }
+}
 
 export const getTransactionCache = async (
   cache: MetadataCache,

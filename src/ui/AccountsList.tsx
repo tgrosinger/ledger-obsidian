@@ -126,7 +126,6 @@ export const AccountsList: React.FC<{
 }> = (props): JSX.Element => {
   const data = React.useMemo(() => {
     const nodes: Node[] = [];
-    console.log(props.txCache.accounts);
     props.txCache.accounts.forEach((account: string) => {
       makeAccountTree(nodes, dealiasAccount(account, props.txCache.aliases));
     });

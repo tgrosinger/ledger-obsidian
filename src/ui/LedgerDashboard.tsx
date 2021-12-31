@@ -1,5 +1,11 @@
+import {
+  makeDailyAccountBalanceChangeMap,
+  makeDailyBalanceMap,
+} from '../balance-utils';
 import { Interval } from '../date-utils';
+import { LedgerModifier } from '../file-interface';
 import type { TransactionCache } from '../parser';
+import { ISettings } from '../settings';
 import { AccountsList } from './AccountsList';
 import { AccountVisualization } from './AccountVisualization';
 import { DateRangeSelector } from './DateRangeSelector';
@@ -15,11 +21,6 @@ import { RecentTransactionList, TransactionList } from './TransactionList';
 import { Step, Steps } from 'intro.js-react';
 import { Platform } from 'obsidian';
 import React from 'react';
-import {
-  makeDailyAccountBalanceChangeMap,
-  makeDailyBalanceMap,
-} from 'src/balance-utils';
-import { ISettings } from 'src/settings';
 import styled from 'styled-components';
 
 const FlexSidebar = styled(FlexShrink)`
@@ -31,6 +32,7 @@ export const LedgerDashboard: React.FC<{
   setTutorialIndex: (index: number) => void;
   settings: ISettings;
   txCache: TransactionCache;
+  updater: LedgerModifier;
 }> = (props): JSX.Element => {
   if (!props.txCache) {
     return <p>Loading...</p>;
@@ -50,6 +52,7 @@ export const LedgerDashboard: React.FC<{
       setTutorialIndex={setTutorialIndexWrapper}
       settings={props.settings}
       txCache={props.txCache}
+      updater={props.updater}
     />
   );
 };
@@ -87,6 +90,7 @@ const DesktopDashboard: React.FC<{
   setTutorialIndex: (index: number) => void;
   settings: ISettings;
   txCache: TransactionCache;
+  updater: LedgerModifier;
 }> = (props): JSX.Element => {
   const dailyAccountBalanceMap = React.useMemo(() => {
     console.time('daily-balance-map');
@@ -158,6 +162,7 @@ const DesktopDashboard: React.FC<{
               <RecentTransactionList
                 currencySymbol={props.settings.currencySymbol}
                 txCache={props.txCache}
+                updater={props.updater}
                 startDate={startDate}
                 endDate={endDate}
               />
@@ -175,6 +180,7 @@ const DesktopDashboard: React.FC<{
               <TransactionList
                 currencySymbol={props.settings.currencySymbol}
                 txCache={props.txCache}
+                updater={props.updater}
                 selectedAccounts={selectedAccounts}
                 setSelectedAccount={(account: string) =>
                   setSelectedAccounts([account])

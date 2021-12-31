@@ -1,4 +1,4 @@
-import { getTransactionCache } from './file-interface';
+import { getTransactionCache, LedgerModifier } from './file-interface';
 import type LedgerPlugin from './main';
 import { TransactionCache } from './parser';
 import { LedgerDashboard } from './ui/LedgerDashboard';
@@ -12,11 +12,18 @@ export class LedgerView extends TextFileView {
   private readonly plugin: LedgerPlugin;
   private txCache: TransactionCache;
   private currentFilePath: string;
+  private readonly updateInterface: LedgerModifier;
 
   constructor(leaf: WorkspaceLeaf, plugin: LedgerPlugin) {
     super(leaf);
     this.plugin = plugin;
     this.txCache = plugin.txCache;
+
+    const file = plugin.app.metadataCache.getFirstLinkpathDest(
+      plugin.settings.ledgerFile,
+      '',
+    );
+    this.updateInterface = new LedgerModifier(plugin.app.vault, file);
 
     this.addAction('pencil', 'Switch to Markdown View', () => {
       const state = leaf.view.getState();
@@ -95,6 +102,9 @@ export class LedgerView extends TextFileView {
 
     if (this.currentFilePath !== file.path) {
       this.currentFilePath = file.path;
+      this.updateInterface.setLedgerFile(
+        this.plugin.app.metadataCache.getFirstLinkpathDest(file.path, ''),
+      );
       this.redraw();
     }
   }
@@ -115,6 +125,7 @@ export class LedgerView extends TextFileView {
         setTutorialIndex: this.setTutorialIndex,
         settings: this.plugin.settings,
         txCache: this.txCache,
+        updater: this.updateInterface,
       }),
       this.contentEl,
     );
@@ -127,6 +138,7 @@ export class LedgerView extends TextFileView {
 
   private readonly handleTxCacheUpdate = (txCache: TransactionCache): void => {
     console.debug('Ledger: received an updated txCache for dashboard');
+    this.txCache = txCache;
 
     // The plugin only monitors the ledger file for changes, so we will only be
     // notified for that file. If we are viewing a different file currently then
