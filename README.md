@@ -16,6 +16,8 @@ safely in your Obsidian Vault instead.
 - [ ] Reporting (In progress!)
 - [ ] Account reconciliation (planned soon!)
 
+![Demo](https://raw.githubusercontent.com/tgrosinger/ledger-obsidian/main/resources/screenshots/demo.gif)
+
 ## More Info
 
 For more information about Ledger, see the following resources:
