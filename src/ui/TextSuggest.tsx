@@ -25,8 +25,11 @@ export const TextSuggest: React.FC<{
   const [selectedIndex, setSelectedIndex] = React.useState(0);
 
   const [visible, setVisibility] = React.useState(false);
-  const [referenceElement, setReferenceElement] = React.useState(null);
-  const [popperElement, setPopperElement] = React.useState(null);
+  const [referenceElement, setReferenceElement] =
+    React.useState<HTMLElement | null>(null);
+  const [popperElement, setPopperElement] = React.useState<HTMLElement | null>(
+    null,
+  );
   const { styles, attributes } = usePopper(referenceElement, popperElement, {
     placement: 'bottom-start',
   });

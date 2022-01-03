@@ -99,7 +99,7 @@ const Tree: React.FC<{
           {props.data.account}
         </AccountName>
       </TreeRow>
-      {hasChildren && expanded
+      {hasChildren && expanded && subRows
         ? subRows.map((child) => (
             <Tree
               txCache={props.txCache}
@@ -161,11 +161,6 @@ const deselectRowsWithoutPrefix = (
   selectedAccounts: string[],
   prefixes: string[],
 ): string[] =>
-  selectedAccounts.filter((account) => {
-    for (let i = 0; i < prefixes.length; i++) {
-      if (account.startsWith(prefixes[i])) {
-        return true;
-      }
-    }
-    return false;
-  });
+  selectedAccounts.filter((account) =>
+    prefixes.some((prefix) => account.startsWith(prefix)),
+  );

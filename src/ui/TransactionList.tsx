@@ -53,7 +53,7 @@ export const MobileTransactionEntry: React.FC<{
   return (
     <div>
       <h3>{props.tx.value.payee}</h3>
-      <div>From: {nonCommentLines[-1].account}</div>
+      <div>From: {(nonCommentLines.last() as EnhancedExpenseLine).account}</div>
       <div>Amount: {getTotal(props.tx, props.currencySymbol)}</div>
     </div>
   );
@@ -189,7 +189,7 @@ const buildTableRows = (
       date: tx.value.date,
       payee: tx.value.payee,
       total: getTotal(tx, currencySymbol),
-      from: nonCommentLines.last().account,
+      from: nonCommentLines[nonCommentLines.length - 1].account,
       to: <i>Multiple</i>,
       actions: makeClone(tx),
     };

@@ -9,6 +9,7 @@ import {
   TransactionWithBlock,
 } from '../src/parser';
 import { settingsWithDefaults } from '../src/settings';
+import { assert } from 'console';
 import * as moment from 'moment';
 
 window.moment = moment;
@@ -26,6 +27,10 @@ describe('splitIntoBlocks()', () => {
     const input = ['line1', 'line2', 'line3'].join('\n');
     const result = splitIntoBlocks(input);
     expect(result).toHaveLength(1);
+    if (!result[0]) {
+      assert(false);
+      return; // Appease the type checker
+    }
     expect(result[0].firstLine).toEqual(0);
     expect(result[0].lastLine).toEqual(2);
     expect(result[0].block).toEqual('line1\nline2\nline3');
@@ -34,6 +39,10 @@ describe('splitIntoBlocks()', () => {
     const input = ['line1', 'line2', 'line3', ''].join('\n');
     const result = splitIntoBlocks(input);
     expect(result).toHaveLength(1);
+    if (!result[0]) {
+      assert(false);
+      return; // Appease the type checker
+    }
     expect(result[0].firstLine).toEqual(0);
     expect(result[0].lastLine).toEqual(2);
     expect(result[0].block).toEqual('line1\nline2\nline3');
@@ -42,6 +51,10 @@ describe('splitIntoBlocks()', () => {
     const input = ['line1', 'line2', 'line3', '', 'line4', 'line5'].join('\n');
     const result = splitIntoBlocks(input);
     expect(result).toHaveLength(2);
+    if (!result[0] || !result[1]) {
+      assert(false);
+      return; // Appease the type checker
+    }
     expect(result[0].firstLine).toEqual(0);
     expect(result[0].lastLine).toEqual(2);
     expect(result[0].block).toEqual('line1\nline2\nline3');
@@ -55,6 +68,10 @@ describe('splitIntoBlocks()', () => {
     );
     const result = splitIntoBlocks(input);
     expect(result).toHaveLength(2);
+    if (!result[0] || !result[1]) {
+      assert(false);
+      return; // Appease the type checker
+    }
     expect(result[0].firstLine).toEqual(0);
     expect(result[0].lastLine).toEqual(2);
     expect(result[0].block).toEqual('line1\nline2\nline3');
@@ -68,6 +85,10 @@ describe('splitIntoBlocks()', () => {
     );
     const result = splitIntoBlocks(input);
     expect(result).toHaveLength(2);
+    if (!result[0] || !result[1]) {
+      assert(false);
+      return; // Appease the type checker
+    }
     expect(result[0].firstLine).toEqual(0);
     expect(result[0].lastLine).toEqual(2);
     expect(result[0].block).toEqual('line1\nline2\nline3');
@@ -81,6 +102,10 @@ describe('splitIntoBlocks()', () => {
     );
     const result = splitIntoBlocks(input);
     expect(result).toHaveLength(2);
+    if (!result[0] || !result[1]) {
+      assert(false);
+      return; // Appease the type checker
+    }
     expect(result[0].firstLine).toEqual(0);
     expect(result[0].lastLine).toEqual(2);
     expect(result[0].block).toEqual('line1\nline2\nline3');
@@ -543,6 +568,10 @@ describe('parsing a ledger file', () => {
         },
       };
       expect(txCache.parsingErrors.length).toEqual(1);
+      if (!txCache.parsingErrors[0]) {
+        assert(false);
+        return; // Appease the type checker
+      }
       expect(txCache.parsingErrors[0].message).toEqual(
         'Failed to parse block in ledger file',
       );
@@ -668,6 +697,11 @@ alias b=Banking
 2021/04/20 Obsidian
       e:Spending Money    $20.00
       b:CreditUnion`;
+      const contentLines = contents.split('\n');
+      if (!contentLines[0] || !contentLines[1]) {
+        assert(false);
+        return; // Appease the type checker
+      }
       const txCache = parse(contents, settings);
       const expected: EnhancedTransaction = {
         type: 'tx',
@@ -704,7 +738,7 @@ alias b=Banking
         block: {
           firstLine: 0,
           lastLine: 0,
-          block: contents.split('\n')[0],
+          block: contentLines[0],
         },
         value: {
           left: 'e',
@@ -717,7 +751,7 @@ alias b=Banking
         block: {
           firstLine: 1,
           lastLine: 1,
-          block: contents.split('\n')[1],
+          block: contentLines[1],
         },
         value: {
           left: 'b',
@@ -736,6 +770,11 @@ alias b=Banking
 2021/04/20 Obsidian
       e:Spending Money    $20.00
       b:CreditUnion`;
+      const contentLines = contents.split('\n');
+      if (!contentLines[0]) {
+        assert(false);
+        return; // Appease the type checker
+      }
       const txCache = parse(contents, settings);
       const expected: EnhancedTransaction = {
         type: 'tx',
@@ -772,7 +811,7 @@ alias b=Banking
         block: {
           firstLine: 0,
           lastLine: 0,
-          block: contents.split('\n')[0],
+          block: contentLines[0],
         },
         value: {
           left: 'e',

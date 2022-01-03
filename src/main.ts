@@ -10,6 +10,7 @@ import {
   addIcon,
   MarkdownView,
   Menu,
+  Notice,
   ObsidianProtocolData,
   Plugin,
   TAbstractFile,
@@ -24,9 +25,16 @@ declare global {
 }
 
 export default class LedgerPlugin extends Plugin {
+  // @ts-ignore  - Not initialized in the constructor due to how Obsidian
+  // plugins are initialized.
   public settings: ISettings;
 
+  // @ts-ignore  - Not initialized in the constructor due to how Obsidian
+  // plugins are initialized.
   public txCache: TransactionCache;
+
+  // @ts-ignore  - Not initialized in the constructor due to how Obsidian
+  // plugins are initialized.
   private txCacheSubscriptions: ((txCache: TransactionCache) => void)[];
 
   public async onload(): Promise<void> {
@@ -81,7 +89,7 @@ export default class LedgerPlugin extends Plugin {
     this.register(
       around(MarkdownView.prototype, {
         onMoreOptionsMenu(next) {
-          return function (menu: Menu) {
+          return function (this: MarkdownView, menu: Menu) {
             if (this.file.path === self.settings.ledgerFile) {
               menu
                 .addItem((item) => {
@@ -179,6 +187,11 @@ export default class LedgerPlugin extends Plugin {
 
   private readonly openLedgerDashboard = async (): Promise<void> => {
     let leaf = this.app.workspace.activeLeaf;
+    if (!leaf) {
+      new Notice('Unable to find active leaf');
+      return;
+    }
+
     if (leaf.getViewState().pinned) {
       leaf = this.app.workspace.splitActiveLeaf('horizontal');
     }

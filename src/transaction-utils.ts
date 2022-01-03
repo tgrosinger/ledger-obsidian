@@ -108,7 +108,7 @@ export const valueForAccount = (
     }
     if (line.account === account || line.dealiasedAccount === account) {
       return i + 1 === tx.value.expenselines.length
-        ? -1 * getTotalAsNum(tx) // On the last line
+        ? -1 * line.amount // On the last line
         : line.amount;
     }
   }

@@ -1,4 +1,4 @@
-import { EnhancedTransaction, FileBlock,parse } from '../src/parser';
+import { EnhancedTransaction, FileBlock, parse } from '../src/parser';
 import { settingsWithDefaults } from '../src/settings';
 import {
   filterByAccount,
@@ -11,6 +11,7 @@ import {
   Node,
   sortAccountTree,
 } from '../src/transaction-utils';
+import { assert } from 'console';
 import * as moment from 'moment';
 
 window.moment = moment;
@@ -29,6 +30,10 @@ describe('formatting a transaction into ledger', () => {
     b:CreditUnion`;
     const txCache = parse(contents, settingsWithDefaults({}));
     expect(txCache.parsingErrors).toEqual([]);
+    if (txCache.transactions.length !== 1 || !txCache.transactions[0]) {
+      assert(false);
+      return; // Appease the type checker
+    }
     const output = formatTransaction(txCache.transactions[0], '$');
     expect(output).toEqual('\n' + contents);
   });
@@ -38,6 +43,10 @@ describe('formatting a transaction into ledger', () => {
   ! b:CreditUnion`;
     const txCache = parse(contents, settingsWithDefaults({}));
     expect(txCache.parsingErrors).toEqual([]);
+    if (txCache.transactions.length !== 1 || !txCache.transactions[0]) {
+      assert(false);
+      return; // Appease the type checker
+    }
     const output = formatTransaction(txCache.transactions[0], '$');
     expect(output).toEqual('\n' + contents);
   });

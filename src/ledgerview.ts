@@ -11,19 +11,16 @@ export const LedgerViewType = 'ledger';
 export class LedgerView extends TextFileView {
   private readonly plugin: LedgerPlugin;
   private txCache: TransactionCache;
-  private currentFilePath: string;
-  private readonly updateInterface: LedgerModifier;
+  private currentFilePath: string | null;
+  private updateInterface: LedgerModifier | null;
 
   constructor(leaf: WorkspaceLeaf, plugin: LedgerPlugin) {
     super(leaf);
     this.plugin = plugin;
     this.txCache = plugin.txCache;
 
-    const file = plugin.app.metadataCache.getFirstLinkpathDest(
-      plugin.settings.ledgerFile,
-      '',
-    );
-    this.updateInterface = new LedgerModifier(plugin, file);
+    this.currentFilePath = null;
+    this.updateInterface = null;
 
     this.addAction('pencil', 'Switch to Markdown View', () => {
       const state = leaf.view.getState();
@@ -102,9 +99,7 @@ export class LedgerView extends TextFileView {
 
     if (this.currentFilePath !== file.path) {
       this.currentFilePath = file.path;
-      this.updateInterface.setLedgerFile(
-        this.plugin.app.metadataCache.getFirstLinkpathDest(file.path, ''),
-      );
+      this.updateInterface = new LedgerModifier(this.plugin, file);
       this.redraw();
     }
   }
@@ -119,16 +114,23 @@ export class LedgerView extends TextFileView {
     console.debug('Ledger: Creating dashboard view');
 
     const contentEl = this.containerEl.children[1];
-    ReactDOM.render(
-      React.createElement(LedgerDashboard, {
-        tutorialIndex: this.plugin.settings.tutorialIndex,
-        setTutorialIndex: this.setTutorialIndex,
-        settings: this.plugin.settings,
-        txCache: this.txCache,
-        updater: this.updateInterface,
-      }),
-      this.contentEl,
-    );
+
+    if (this.currentFilePath && this.updateInterface) {
+      ReactDOM.render(
+        React.createElement(LedgerDashboard, {
+          tutorialIndex: this.plugin.settings.tutorialIndex,
+          setTutorialIndex: this.setTutorialIndex,
+          settings: this.plugin.settings,
+          txCache: this.txCache,
+          updater: this.updateInterface,
+        }),
+        this.contentEl,
+      );
+    } else {
+      contentEl.empty();
+      const span = contentEl.createSpan();
+      span.setText('Loading...');
+    }
   };
 
   private readonly setTutorialIndex = (index: number): void => {

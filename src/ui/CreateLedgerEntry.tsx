@@ -181,12 +181,13 @@ export const CreateLedgerEntry: React.FC<{
 
     // TODO: This is not a ISO8601. Once reconciliation is added, remove this and reformat file.
     const formattedDate = date.replace(/-/g, '/');
+    const formattedTotal = currencySymbol + parseFloat(total).toFixed(2);
     const lastI = accounts.length - 1;
     const expenseLines = accounts
       .map((account, i) =>
         i === lastI
           ? `    ${account.value}`
-          : `    ${account.value}    ${currencySymbol}${parseFloat(total)}`,
+          : `    ${account.value}    ${formattedTotal}`,
       )
       .join('\n');
     const txStr = `\n${formattedDate} ${localPayee}\n${expenseLines}`;

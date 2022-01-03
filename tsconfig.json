@@ -1,6 +1,7 @@
 {
   "include": [ "src/**/*", "tests/**/*" ],
   "compilerOptions": {
+    "strict": true,
     "baseUrl": ".",
     "allowSyntheticDefaultImports": true,
     "inlineSources": true,
