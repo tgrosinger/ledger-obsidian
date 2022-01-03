@@ -1,6 +1,12 @@
 import { LedgerModifier } from '../file-interface';
 import { Operation } from '../modals';
-import { Expenseline, Transaction, TransactionCache } from '../parser';
+import {
+  EnhancedExpenseLine,
+  EnhancedTransaction,
+  Expenseline,
+  Transaction,
+  TransactionCache,
+} from '../parser';
 import { formatTransaction, getTotalAsNum } from '../transaction-utils';
 import { CurrencyInput } from './CurrencyInput';
 import { WideDatePicker, WideSelect } from './SharedStyles';
@@ -32,7 +38,7 @@ type TXType = 'expense' | 'income' | 'transfer' | 'unknown';
 export const CreateLedgerEntry: React.FC<{
   displayFileWarning: boolean;
   currencySymbol: string;
-  initialState: Transaction;
+  initialState: EnhancedTransaction;
   operation: Operation;
   updater: LedgerModifier;
   txCache: TransactionCache;
@@ -77,10 +83,12 @@ export const CreateLedgerEntry: React.FC<{
             suggestions: assetsAndLiabilities,
           },
         ]
-      : initialState.value.expenselines.map((line) => ({
-          value: line.account,
-          suggestions: txCache.accounts,
-        })),
+      : initialState.value.expenselines
+          .filter((line): line is EnhancedExpenseLine => 'account' in line)
+          .map((line) => ({
+            value: line.account,
+            suggestions: txCache.accounts,
+          })),
   );
 
   const suggestionCount = Platform.isMobile ? 5 : 15;
@@ -94,9 +102,8 @@ export const CreateLedgerEntry: React.FC<{
         return i !== lastI ? 'Asset' : 'Expense';
       case 'transfer':
         return i !== lastI ? 'To' : 'From';
-      case 'unknown':
-        return '';
     }
+    return '';
   };
 
   const changeTxType = (newTxType: string): void => {
@@ -123,12 +130,11 @@ export const CreateLedgerEntry: React.FC<{
               suggestions:
                 i !== lastI ? assetsAndLiabilities : assetsAndLiabilities,
             };
-          case 'unknown':
-            return {
-              value: account.value,
-              suggestions: i !== lastI ? txCache.accounts : txCache.accounts,
-            };
         }
+        return {
+          value: account.value,
+          suggestions: i !== lastI ? txCache.accounts : txCache.accounts,
+        };
       }),
     );
   };
@@ -170,33 +176,21 @@ export const CreateLedgerEntry: React.FC<{
       return;
     }
 
-    const lastI = accounts.length - 1;
-    const expenseLines = accounts.map((account, i): Expenseline => {
-      if (i === lastI) {
-        return {
-          account: account.value,
-        };
-      }
-
-      return {
-        account: account.value,
-        amount: parseFloat(total),
-        currency: currencySymbol,
-      };
-    });
+    // TODO: This needs a more robust formatter which does not lose data from the input transaction.
+    // Maybe the input transaction can actually be the state used by Formik somehow?
 
     // TODO: This is not a ISO8601. Once reconciliation is added, remove this and reformat file.
     const formattedDate = date.replace(/-/g, '/');
-    const tx: Transaction = {
-      type: 'tx',
-      value: {
-        date: formattedDate,
-        payee: localPayee,
-        expenselines: expenseLines,
-      },
-    };
+    const lastI = accounts.length - 1;
+    const expenseLines = accounts
+      .map((account, i) =>
+        i === lastI
+          ? `    ${account.value}`
+          : `    ${account.value}    ${currencySymbol}${parseFloat(total)}`,
+      )
+      .join('\n');
+    const txStr = `\n${formattedDate} ${localPayee}\n${expenseLines}`;
 
-    const txStr = formatTransaction(tx, currencySymbol);
     switch (operation) {
       case 'new':
       case 'clone':

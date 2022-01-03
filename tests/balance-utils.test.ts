@@ -7,68 +7,15 @@ import {
   makeDeltaData,
   removeDuplicateAccounts,
 } from '../src/balance-utils';
-import { Transaction } from '../src/parser';
-import { fillMissingAmount } from '../src/transaction-utils';
+import { EnhancedTransaction, FileBlock } from '../src/parser';
 import * as moment from 'moment';
 
 window.moment = moment;
 
-const tx1: Transaction = {
-  type: 'tx',
-  value: {
-    date: '2021-12-31',
-    payee: 'Costco',
-    expenselines: [
-      {
-        account: 'e:Spending Money',
-        dealiasedAccount: 'Expenses:Spending Money',
-        amount: 100,
-        currency: '$',
-      },
-      {
-        account: 'c:Citi',
-        dealiasedAccount: 'Credit:Citi',
-      },
-    ],
-  },
-};
-const tx2: Transaction = {
-  type: 'tx',
-  value: {
-    date: '2021-12-15',
-    payee: "Trader Joe's",
-    expenselines: [
-      {
-        account: 'e:Food:Grocery',
-        dealiasedAccount: 'Expenses:Food:Grocery',
-        amount: 120,
-        currency: '$',
-      },
-      {
-        account: 'c:Citi',
-        dealiasedAccount: 'Credit:Citi',
-      },
-    ],
-  },
-};
-const tx3: Transaction = {
-  type: 'tx',
-  value: {
-    date: '2021-11-29',
-    payee: 'PCC',
-    expenselines: [
-      {
-        account: 'e:Food:Grocery',
-        dealiasedAccount: 'Expenses:Food:Grocery',
-        amount: 20,
-        currency: '$',
-      },
-      {
-        account: 'c:Citi',
-        dealiasedAccount: 'Credit:Citi',
-      },
-    ],
-  },
+const emptyBlock: FileBlock = {
+  firstLine: -1,
+  lastLine: -1,
+  block: '',
 };
 
 describe('removeDuplicateAccounts()', () => {
@@ -149,8 +96,10 @@ describe('removeDuplicateAccounts()', () => {
 });
 
 describe('Balance maps', () => {
-  const tx4: Transaction = {
+  const tx4: EnhancedTransaction = {
     type: 'tx',
+    blockLine: 0,
+    block: emptyBlock,
     value: {
       date: '2021-12-16',
       payee: 'Costco',
@@ -160,16 +109,21 @@ describe('Balance maps', () => {
           dealiasedAccount: 'Expenses:Spending Money',
           amount: 100,
           currency: '$',
+          reconcile: '',
         },
         {
           account: 'c:Citi',
           dealiasedAccount: 'Credit:Citi',
+          reconcile: '',
+          amount: -100,
         },
       ],
     },
   };
-  const tx5: Transaction = {
+  const tx5: EnhancedTransaction = {
     type: 'tx',
+    blockLine: 0,
+    block: emptyBlock,
     value: {
       date: '2021-12-15',
       payee: "Trader Joe's",
@@ -179,16 +133,21 @@ describe('Balance maps', () => {
           dealiasedAccount: 'Expenses:Food:Grocery',
           amount: 120,
           currency: '$',
+          reconcile: '',
         },
         {
           account: 'c:Citi',
           dealiasedAccount: 'Credit:Citi',
+          amount: -120,
+          reconcile: '',
         },
       ],
     },
   };
-  const tx6: Transaction = {
+  const tx6: EnhancedTransaction = {
     type: 'tx',
+    blockLine: 0,
+    block: emptyBlock,
     value: {
       date: '2021-12-10',
       payee: 'PCC',
@@ -198,18 +157,17 @@ describe('Balance maps', () => {
           dealiasedAccount: 'Expenses:Food:Grocery',
           amount: 20,
           currency: '$',
+          reconcile: '',
         },
         {
           account: 'c:Citi',
           dealiasedAccount: 'Credit:Citi',
+          reconcile: '',
+          amount: -20,
         },
       ],
     },
   };
-
-  fillMissingAmount(tx4);
-  fillMissingAmount(tx5);
-  fillMissingAmount(tx6);
 
   const expectedDailyAccountBalanceChangeMap: DailyAccountBalanceChangeMap =
     new Map([

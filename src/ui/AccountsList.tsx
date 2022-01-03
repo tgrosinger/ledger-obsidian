@@ -44,7 +44,8 @@ const Tree: React.FC<{
   setSelectedAccounts: React.Dispatch<React.SetStateAction<string[]>>;
 }> = (props): JSX.Element => {
   const [expanded, setExpanded] = React.useState(props.data.expanded || false);
-  const hasChildren = props.data.subRows && props.data.subRows.length > 0;
+  const subRows = props.data.subRows;
+  const hasChildren = subRows !== undefined && subRows.length > 0;
 
   const id = props.data.id;
   const selected = props.selectedAccounts.contains(id);
@@ -81,8 +82,6 @@ const Tree: React.FC<{
     }
   };
 
-  // TODO: Figure out why the `i` and `e` rows exist
-
   return (
     <>
       <TreeRow style={{ paddingLeft: `${props.depth}rem` }}>
@@ -101,7 +100,7 @@ const Tree: React.FC<{
         </AccountName>
       </TreeRow>
       {hasChildren && expanded
-        ? props.data.subRows.map((child) => (
+        ? subRows.map((child) => (
             <Tree
               txCache={props.txCache}
               settings={props.settings}

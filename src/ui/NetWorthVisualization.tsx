@@ -9,7 +9,7 @@ import styled from 'styled-components';
 
 const Chart = styled.div`
   .ct-label {
-    color: white;
+    color: var(--text-muted);
   }
 `;
 

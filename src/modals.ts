@@ -1,6 +1,7 @@
 import { LedgerModifier } from './file-interface';
 import LedgerPlugin from './main';
-import { Transaction } from './parser';
+import { EnhancedTransaction } from './parser';
+import { emptyTransaction } from './transaction-utils';
 import { CreateLedgerEntry } from './ui/CreateLedgerEntry';
 import { Modal } from 'obsidian';
 import React from 'react';
@@ -12,19 +13,19 @@ export class AddExpenseModal extends Modal {
   private readonly plugin: LedgerPlugin;
   private readonly updater: LedgerModifier;
   private readonly operation: Operation;
-  private readonly initialState: Transaction;
+  private readonly initialState: EnhancedTransaction;
 
   constructor(
     plugin: LedgerPlugin,
     updater: LedgerModifier,
     operation: Operation,
-    initialState?: Transaction,
+    initialState?: EnhancedTransaction,
   ) {
     super(plugin.app);
     this.plugin = plugin;
     this.updater = updater;
     this.operation = operation;
-    this.initialState = initialState || null;
+    this.initialState = initialState || emptyTransaction;
   }
 
   public onOpen = (): void => {

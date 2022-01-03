@@ -1,9 +1,24 @@
 import { ParseError } from '../src/error';
-import { Alias, parse, splitIntoBlocks, Transaction } from '../src/parser';
+import {
+  AliasWithBlock,
+  EnhancedTransaction,
+  FileBlock,
+  fillMissingAmount,
+  parse,
+  splitIntoBlocks,
+  TransactionWithBlock,
+} from '../src/parser';
 import { settingsWithDefaults } from '../src/settings';
 import * as moment from 'moment';
 
 window.moment = moment;
+
+const emptyBlock: FileBlock = {
+  firstLine: -1,
+  lastLine: -1,
+  block: '',
+};
+
 const settings = settingsWithDefaults({});
 
 describe('splitIntoBlocks()', () => {
@@ -87,7 +102,7 @@ describe('parsing a ledger file', () => {
       e:Spending Money    $20.00
       b:CreditUnion`;
       const txCache = parse(contents, settings);
-      const expected: Transaction = {
+      const expected: EnhancedTransaction = {
         type: 'tx',
         blockLine: 1,
         block: {
@@ -101,13 +116,16 @@ describe('parsing a ledger file', () => {
           expenselines: [
             {
               account: 'e:Spending Money',
+              dealiasedAccount: 'e:Spending Money',
               amount: 20,
               currency: '$',
               reconcile: '',
             },
             {
               account: 'b:CreditUnion',
+              dealiasedAccount: 'b:CreditUnion',
               amount: -20,
+              currency: '$',
               reconcile: '',
             },
           ],
@@ -122,7 +140,7 @@ describe('parsing a ledger file', () => {
       e:Spending Money    $20.00
       b:CreditUnion       $-20.00`;
       const txCache = parse(contents, settings);
-      const expected: Transaction = {
+      const expected: EnhancedTransaction = {
         type: 'tx',
         blockLine: 1,
         block: {
@@ -136,12 +154,14 @@ describe('parsing a ledger file', () => {
           expenselines: [
             {
               account: 'e:Spending Money',
+              dealiasedAccount: 'e:Spending Money',
               amount: 20,
               currency: '$',
               reconcile: '',
             },
             {
               account: 'b:CreditUnion',
+              dealiasedAccount: 'b:CreditUnion',
               amount: -20,
               currency: '$',
               reconcile: '',
@@ -152,13 +172,13 @@ describe('parsing a ledger file', () => {
       expect(txCache.transactions).toHaveLength(1);
       expect(txCache.transactions[0]).toEqual(expected);
     });
-    test('when there are multiple expense lines', () => {
+    test('when the middle expense has no amount', () => {
       const contents = `2021/04/20 Obsidian
       e:Spending Money    $20.00
-      e:Household Goods   $5.00
-      b:CreditUnion       $-25.00`;
+      e:Food:Grocery
+      b:CreditUnion       $-30.00`;
       const txCache = parse(contents, settings);
-      const expected: Transaction = {
+      const expected: EnhancedTransaction = {
         type: 'tx',
         blockLine: 1,
         block: {
@@ -172,18 +192,75 @@ describe('parsing a ledger file', () => {
           expenselines: [
             {
               account: 'e:Spending Money',
+              dealiasedAccount: 'e:Spending Money',
+              amount: 20,
+              currency: '$',
+              reconcile: '',
+            },
+            {
+              account: 'e:Food:Grocery',
+              dealiasedAccount: 'e:Food:Grocery',
+              amount: 10,
+              currency: '$',
+              reconcile: '',
+            },
+            {
+              account: 'b:CreditUnion',
+              dealiasedAccount: 'b:CreditUnion',
+              amount: -30,
+              currency: '$',
+              reconcile: '',
+            },
+          ],
+        },
+      };
+      expect(txCache.transactions).toHaveLength(1);
+      expect(txCache.transactions[0]).toEqual(expected);
+    });
+    test('when there are not enough amounts', () => {
+      const contents = `2021/04/20 Obsidian
+      e:Spending Money
+      e:Food:Grocery
+      b:CreditUnion       $-30.00`;
+      const txCache = parse(contents, settings);
+      expect(txCache.parsingErrors).toHaveLength(1);
+      expect(txCache.transactions).toHaveLength(0);
+    });
+    test('when there are multiple expense lines', () => {
+      const contents = `2021/04/20 Obsidian
+      e:Spending Money    $20.00
+      e:Household Goods   $5.00
+      b:CreditUnion       $-25.00`;
+      const txCache = parse(contents, settings);
+      const expected: EnhancedTransaction = {
+        type: 'tx',
+        blockLine: 1,
+        block: {
+          firstLine: 0,
+          lastLine: 3,
+          block: contents,
+        },
+        value: {
+          date: '2021/04/20',
+          payee: 'Obsidian',
+          expenselines: [
+            {
+              account: 'e:Spending Money',
+              dealiasedAccount: 'e:Spending Money',
               amount: 20,
               currency: '$',
               reconcile: '',
             },
             {
               account: 'e:Household Goods',
+              dealiasedAccount: 'e:Household Goods',
               amount: 5,
               currency: '$',
               reconcile: '',
             },
             {
               account: 'b:CreditUnion',
+              dealiasedAccount: 'b:CreditUnion',
               amount: -25,
               currency: '$',
               reconcile: '',
@@ -203,7 +280,7 @@ describe('parsing a ledger file', () => {
       e:Food:Groceries    $45.00
       b:CreditUnion       $-45.00`;
       const txCache = parse(contents, settings);
-      const expected1: Transaction = {
+      const expected1: EnhancedTransaction = {
         type: 'tx',
         blockLine: 1,
         block: {
@@ -217,12 +294,14 @@ describe('parsing a ledger file', () => {
           expenselines: [
             {
               account: 'e:Spending Money',
+              dealiasedAccount: 'e:Spending Money',
               amount: 20,
               currency: '$',
               reconcile: '',
             },
             {
               account: 'b:CreditUnion',
+              dealiasedAccount: 'b:CreditUnion',
               amount: -20,
               currency: '$',
               reconcile: '',
@@ -230,7 +309,7 @@ describe('parsing a ledger file', () => {
           ],
         },
       };
-      const expected2: Transaction = {
+      const expected2: EnhancedTransaction = {
         type: 'tx',
         blockLine: 1,
         block: {
@@ -244,12 +323,14 @@ describe('parsing a ledger file', () => {
           expenselines: [
             {
               account: 'e:Food:Groceries',
+              dealiasedAccount: 'e:Food:Groceries',
               amount: 45,
               currency: '$',
               reconcile: '',
             },
             {
               account: 'b:CreditUnion',
+              dealiasedAccount: 'b:CreditUnion',
               amount: -45,
               currency: '$',
               reconcile: '',
@@ -268,7 +349,7 @@ describe('parsing a ledger file', () => {
     * e:Household Goods   $5.00
       b:CreditUnion       $-25.00`;
       const txCache = parse(contents, settings);
-      const expected: Transaction = {
+      const expected: EnhancedTransaction = {
         type: 'tx',
         blockLine: 1,
         block: {
@@ -282,18 +363,21 @@ describe('parsing a ledger file', () => {
           expenselines: [
             {
               account: 'e:Spending Money',
+              dealiasedAccount: 'e:Spending Money',
               amount: 20,
               currency: '$',
               reconcile: '!',
             },
             {
               account: 'e:Household Goods',
+              dealiasedAccount: 'e:Household Goods',
               amount: 5,
               currency: '$',
               reconcile: '*',
             },
             {
               account: 'b:CreditUnion',
+              dealiasedAccount: 'b:CreditUnion',
               amount: -25,
               currency: '$',
               reconcile: '',
@@ -310,7 +394,7 @@ describe('parsing a ledger file', () => {
       e:Household Goods   $5.00
       b:CreditUnion       $-25.00`;
       const txCache = parse(contents, settings);
-      const expected: Transaction = {
+      const expected: EnhancedTransaction = {
         type: 'tx',
         blockLine: 1,
         block: {
@@ -325,6 +409,7 @@ describe('parsing a ledger file', () => {
           expenselines: [
             {
               account: 'e:Spending Money',
+              dealiasedAccount: 'e:Spending Money',
               amount: 20,
               currency: '$',
               comment: 'a comment',
@@ -332,12 +417,14 @@ describe('parsing a ledger file', () => {
             },
             {
               account: 'e:Household Goods',
+              dealiasedAccount: 'e:Household Goods',
               amount: 5,
               currency: '$',
               reconcile: '',
             },
             {
               account: 'b:CreditUnion',
+              dealiasedAccount: 'b:CreditUnion',
               amount: -25,
               currency: '$',
               reconcile: '',
@@ -353,7 +440,7 @@ describe('parsing a ledger file', () => {
       счет:наличка:черныйКошель  Р2000.00
       приработок:урлапов`;
       const txCache = parse(contents, settings);
-      const expected: Transaction = {
+      const expected: EnhancedTransaction = {
         type: 'tx',
         blockLine: 1,
         block: {
@@ -367,13 +454,16 @@ describe('parsing a ledger file', () => {
           expenselines: [
             {
               account: 'счет:наличка:черныйКошель',
+              dealiasedAccount: 'счет:наличка:черныйКошель',
               amount: 2000,
               currency: 'Р',
               reconcile: '',
             },
             {
               account: 'приработок:урлапов',
+              dealiasedAccount: 'приработок:урлапов',
               amount: -2000,
+              currency: 'Р',
               reconcile: '',
             },
           ],
@@ -394,7 +484,7 @@ describe('parsing a ledger file', () => {
       e:Food:Groceries    $45.00
       b:CreditUnion       $-45.00`;
       const txCache = parse(contents, settings);
-      const expected1: Transaction = {
+      const expected1: EnhancedTransaction = {
         type: 'tx',
         blockLine: 1,
         block: {
@@ -408,12 +498,14 @@ describe('parsing a ledger file', () => {
           expenselines: [
             {
               account: 'e:Spending Money',
+              dealiasedAccount: 'e:Spending Money',
               amount: 20,
               currency: '$',
               reconcile: '',
             },
             {
               account: 'b:CreditUnion',
+              dealiasedAccount: 'b:CreditUnion',
               amount: -20,
               currency: '$',
               reconcile: '',
@@ -421,7 +513,7 @@ describe('parsing a ledger file', () => {
           ],
         },
       };
-      const expected2: Transaction = {
+      const expected2: EnhancedTransaction = {
         type: 'tx',
         blockLine: 1,
         block: {
@@ -435,12 +527,14 @@ describe('parsing a ledger file', () => {
           expenselines: [
             {
               account: 'e:Food:Groceries',
+              dealiasedAccount: 'e:Food:Groceries',
               amount: 45,
               currency: '$',
               reconcile: '',
             },
             {
               account: 'b:CreditUnion',
+              dealiasedAccount: 'b:CreditUnion',
               amount: -45,
               currency: '$',
               reconcile: '',
@@ -575,7 +669,7 @@ alias b=Banking
       e:Spending Money    $20.00
       b:CreditUnion`;
       const txCache = parse(contents, settings);
-      const expected: Transaction = {
+      const expected: EnhancedTransaction = {
         type: 'tx',
         blockLine: 3,
         block: {
@@ -598,12 +692,13 @@ alias b=Banking
               account: 'b:CreditUnion',
               dealiasedAccount: 'Banking:CreditUnion',
               amount: -20,
+              currency: '$',
               reconcile: '',
             },
           ],
         },
       };
-      const expectedAlias1: Alias = {
+      const expectedAlias1: AliasWithBlock = {
         type: 'alias',
         blockLine: 1,
         block: {
@@ -616,7 +711,7 @@ alias b=Banking
           right: 'Expenses',
         },
       };
-      const expectedAlias2: Alias = {
+      const expectedAlias2: AliasWithBlock = {
         type: 'alias',
         blockLine: 2,
         block: {
@@ -642,7 +737,7 @@ alias b=Banking
       e:Spending Money    $20.00
       b:CreditUnion`;
       const txCache = parse(contents, settings);
-      const expected: Transaction = {
+      const expected: EnhancedTransaction = {
         type: 'tx',
         blockLine: 2,
         block: {
@@ -663,13 +758,15 @@ alias b=Banking
             },
             {
               account: 'b:CreditUnion',
+              dealiasedAccount: 'b:CreditUnion',
               amount: -20,
+              currency: '$',
               reconcile: '',
             },
           ],
         },
       };
-      const expectedAlias: Alias = {
+      const expectedAlias: AliasWithBlock = {
         type: 'alias',
         blockLine: 1,
         block: {
@@ -691,36 +788,39 @@ alias b=Banking
   });
 
   test('complicated example transaction', () => {
-    const contents = `2019/09/16 Costco
+    const contents = `alias e=Expenses
+alias c=Credit
+2019/09/16 Costco
     ;Needs more splits
     e:Food:Grocery                              $236.58
     e:Spending Money                         $30.00  ;  Coat
   * c:Citi                  $-266.58`;
     const txCache = parse(contents, settings);
-    const expected: Transaction = {
+    const expected: EnhancedTransaction = {
       type: 'tx',
-      blockLine: 1,
+      blockLine: 3,
       block: {
-        firstLine: 0,
-        lastLine: 4,
-        block: contents,
+        firstLine: 2,
+        lastLine: 6,
+        block: contents.split('\n').slice(2).join('\n'),
       },
       value: {
         date: '2019/09/16',
         payee: 'Costco',
         expenselines: [
           {
-            account: undefined,
             comment: 'Needs more splits',
           },
           {
             account: 'e:Food:Grocery',
+            dealiasedAccount: 'Expenses:Food:Grocery',
             amount: 236.58,
             reconcile: '',
             currency: '$',
           },
           {
             account: 'e:Spending Money',
+            dealiasedAccount: 'Expenses:Spending Money',
             amount: 30,
             reconcile: '',
             currency: '$',
@@ -728,6 +828,7 @@ alias b=Banking
           },
           {
             account: 'c:Citi',
+            dealiasedAccount: 'Credit:Citi',
             amount: -266.58,
             reconcile: '*',
             currency: '$',
@@ -739,8 +840,403 @@ alias b=Banking
     expect(txCache.transactions[0]).toEqual(expected);
     expect(txCache.payees).toEqual(['Costco']);
     expect(txCache.accounts).toHaveLength(3);
-    expect(txCache.accounts[0]).toEqual('c:Citi');
-    expect(txCache.accounts[1]).toEqual('e:Food:Grocery');
-    expect(txCache.accounts[2]).toEqual('e:Spending Money');
+    expect(txCache.accounts[0]).toEqual('Credit:Citi');
+    expect(txCache.accounts[1]).toEqual('Expenses:Food:Grocery');
+    expect(txCache.accounts[2]).toEqual('Expenses:Spending Money');
+  });
+});
+
+describe('fillMissingAmount()', () => {
+  describe('When there is a comment line', () => {
+    test('and the comment is the first line', () => {
+      const input: TransactionWithBlock = {
+        type: 'tx',
+        blockLine: -1,
+        block: emptyBlock,
+        value: {
+          date: '2021/12/04',
+          payee: 'Testing',
+          expenselines: [
+            {
+              comment: 'This is a comment',
+            },
+            {
+              account: 'account1',
+              amount: 10.5,
+              reconcile: '',
+            },
+            {
+              account: 'account3',
+              amount: -10.5,
+              reconcile: '',
+            },
+          ],
+        },
+      };
+      const result = fillMissingAmount(input);
+      result.mapErr(fail);
+      expect(input.value.expenselines).toEqual([
+        {
+          comment: 'This is a comment',
+        },
+        {
+          account: 'account1',
+          amount: 10.5,
+          reconcile: '',
+        },
+        {
+          account: 'account3',
+          amount: -10.5,
+          reconcile: '',
+        },
+      ]);
+    });
+    test('and there is a missing amount', () => {
+      const input: TransactionWithBlock = {
+        type: 'tx',
+        blockLine: -1,
+        block: emptyBlock,
+        value: {
+          date: '2021/12/04',
+          payee: 'Testing',
+          expenselines: [
+            {
+              account: 'account1',
+              reconcile: '',
+            },
+            {
+              comment: 'This is a comment',
+            },
+            {
+              account: 'account3',
+              amount: -10.5,
+              reconcile: '',
+            },
+          ],
+        },
+      };
+      const result = fillMissingAmount(input);
+      result.mapErr(fail);
+      expect(input.value.expenselines).toEqual([
+        {
+          account: 'account1',
+          amount: 10.5,
+          reconcile: '',
+        },
+        {
+          comment: 'This is a comment',
+        },
+        {
+          account: 'account3',
+          amount: -10.5,
+          reconcile: '',
+        },
+      ]);
+    });
+    test('and there are no missing amounts', () => {
+      const input: TransactionWithBlock = {
+        type: 'tx',
+        blockLine: -1,
+        block: emptyBlock,
+        value: {
+          date: '2021/12/04',
+          payee: 'Testing',
+          expenselines: [
+            {
+              account: 'account1',
+              amount: 10.5,
+              reconcile: '',
+            },
+            {
+              comment: 'This is a comment',
+            },
+            {
+              account: 'account3',
+              amount: -10.5,
+              reconcile: '',
+            },
+          ],
+        },
+      };
+      const result = fillMissingAmount(input);
+      result.mapErr(fail);
+      expect(input.value.expenselines).toEqual([
+        {
+          account: 'account1',
+          amount: 10.5,
+          reconcile: '',
+        },
+        {
+          comment: 'This is a comment',
+        },
+        {
+          account: 'account3',
+          amount: -10.5,
+          reconcile: '',
+        },
+      ]);
+    });
+    test('and there is an amount that is zero', () => {
+      const input: TransactionWithBlock = {
+        type: 'tx',
+        blockLine: -1,
+        block: emptyBlock,
+        value: {
+          date: '2021/12/04',
+          payee: 'Testing',
+          expenselines: [
+            {
+              account: 'account1',
+              amount: 10.5,
+              reconcile: '',
+            },
+            {
+              account: 'account2',
+              reconcile: '',
+              amount: 0,
+            },
+            {
+              account: 'account3',
+              reconcile: '',
+            },
+          ],
+        },
+      };
+      const result = fillMissingAmount(input);
+      result.mapErr(fail);
+      expect(input.value.expenselines).toEqual([
+        {
+          account: 'account1',
+          amount: 10.5,
+          reconcile: '',
+        },
+        {
+          account: 'account2',
+          reconcile: '',
+          amount: 0,
+        },
+        {
+          account: 'account3',
+          reconcile: '',
+          amount: -10.5,
+        },
+      ]);
+    });
+  });
+  test('and there is more than one missing amount', () => {
+    const input: TransactionWithBlock = {
+      type: 'tx',
+      blockLine: -1,
+      block: emptyBlock,
+      value: {
+        date: '2021/12/04',
+        payee: 'Testing',
+        expenselines: [
+          {
+            account: 'account1',
+            amount: 10.5,
+            reconcile: '',
+          },
+          {
+            account: 'account2',
+            reconcile: '',
+          },
+          {
+            account: 'account3',
+            reconcile: '',
+          },
+        ],
+      },
+    };
+    const result = fillMissingAmount(input);
+    result.match(fail, (e) => {
+      expect(e.message).toEqual(
+        'Transaction has multiple expense lines without an amount. At most one is allowed.',
+      );
+      expect(e.transaction).toEqual(input);
+    });
+    expect(input.value.expenselines).toEqual([
+      {
+        account: 'account1',
+        amount: 10.5,
+        reconcile: '',
+      },
+      {
+        account: 'account2',
+        reconcile: '',
+      },
+      {
+        account: 'account3',
+        reconcile: '',
+      },
+    ]);
+  });
+  describe('When there are only two expense lines', () => {
+    test('and the first line is missing', () => {
+      const input: TransactionWithBlock = {
+        type: 'tx',
+        blockLine: -1,
+        block: emptyBlock,
+        value: {
+          date: '2021/12/04',
+          payee: 'Testing',
+          expenselines: [
+            {
+              account: 'account1',
+              reconcile: '',
+            },
+            {
+              account: 'account3',
+              amount: -10.5,
+              reconcile: '',
+            },
+          ],
+        },
+      };
+      const result = fillMissingAmount(input);
+      result.mapErr(fail);
+      expect(input.value.expenselines).toEqual([
+        {
+          account: 'account1',
+          reconcile: '',
+          amount: 10.5,
+        },
+        {
+          account: 'account3',
+          amount: -10.5,
+          reconcile: '',
+        },
+      ]);
+    });
+    test('and the second line is missing', () => {
+      const input: TransactionWithBlock = {
+        type: 'tx',
+        blockLine: -1,
+        block: emptyBlock,
+        value: {
+          date: '2021/12/04',
+          payee: 'Testing',
+          expenselines: [
+            {
+              account: 'account1',
+              amount: 10.5,
+              reconcile: '',
+            },
+            {
+              account: 'account3',
+              reconcile: '',
+            },
+          ],
+        },
+      };
+      const result = fillMissingAmount(input);
+      result.mapErr(fail);
+      expect(input.value.expenselines).toEqual([
+        {
+          account: 'account1',
+          amount: 10.5,
+          reconcile: '',
+        },
+        {
+          account: 'account3',
+          reconcile: '',
+          amount: -10.5,
+        },
+      ]);
+    });
+  });
+  describe('When there are three expense lines', () => {
+    test('and the last line is missing', () => {
+      const input: TransactionWithBlock = {
+        type: 'tx',
+        blockLine: -1,
+        block: emptyBlock,
+        value: {
+          date: '2021/12/04',
+          payee: 'Testing',
+          expenselines: [
+            {
+              account: 'account1',
+              reconcile: '',
+              amount: 10.5,
+            },
+            {
+              account: 'account1',
+              amount: 5,
+              reconcile: '',
+            },
+            {
+              account: 'account3',
+              reconcile: '',
+            },
+          ],
+        },
+      };
+      const result = fillMissingAmount(input);
+      result.mapErr(fail);
+      expect(input.value.expenselines).toEqual([
+        {
+          account: 'account1',
+          reconcile: '',
+          amount: 10.5,
+        },
+        {
+          account: 'account1',
+          amount: 5,
+          reconcile: '',
+        },
+        {
+          account: 'account3',
+          reconcile: '',
+          amount: -15.5,
+        },
+      ]);
+    });
+    test('and the middle line is missing', () => {
+      const input: TransactionWithBlock = {
+        type: 'tx',
+        blockLine: -1,
+        block: emptyBlock,
+        value: {
+          date: '2021/12/04',
+          payee: 'Testing',
+          expenselines: [
+            {
+              account: 'account1',
+              amount: 10.5,
+              reconcile: '',
+            },
+            {
+              account: 'account1',
+              reconcile: '',
+            },
+            {
+              account: 'account3',
+              amount: -15.5,
+              reconcile: '',
+            },
+          ],
+        },
+      };
+      const result = fillMissingAmount(input);
+      result.mapErr(fail);
+      expect(input.value.expenselines).toEqual([
+        {
+          account: 'account1',
+          amount: 10.5,
+          reconcile: '',
+        },
+        {
+          account: 'account1',
+          amount: 5,
+          reconcile: '',
+        },
+        {
+          account: 'account3',
+          amount: -15.5,
+          reconcile: '',
+        },
+      ]);
+    });
   });
 });

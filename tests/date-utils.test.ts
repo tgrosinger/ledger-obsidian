@@ -1,8 +1,14 @@
 import { bucketTransactions, makeBucketNames } from '../src/date-utils';
-import { Transaction } from '../src/parser';
+import { EnhancedTransaction, FileBlock } from '../src/parser';
 import * as moment from 'moment';
 
 window.moment = moment;
+
+const emptyBlock: FileBlock = {
+  firstLine: -1,
+  lastLine: -1,
+  block: '',
+};
 
 describe('makeBucketNames()', () => {
   describe('week', () => {
@@ -67,24 +73,30 @@ describe('makeBucketNames()', () => {
 });
 
 describe('bucketTransaction()', () => {
-  const tx1: Transaction = {
+  const tx1: EnhancedTransaction = {
     type: 'tx',
+    blockLine: -1,
+    block: emptyBlock,
     value: {
       date: '2021-12-31',
       payee: 'Costco',
       expenselines: [],
     },
   };
-  const tx2: Transaction = {
+  const tx2: EnhancedTransaction = {
     type: 'tx',
+    blockLine: -1,
+    block: emptyBlock,
     value: {
       date: '2021-12-15',
       payee: "Trader Joe's",
       expenselines: [],
     },
   };
-  const tx3: Transaction = {
+  const tx3: EnhancedTransaction = {
     type: 'tx',
+    blockLine: -1,
+    block: emptyBlock,
     value: {
       date: '2021-11-29',
       payee: 'PCC',

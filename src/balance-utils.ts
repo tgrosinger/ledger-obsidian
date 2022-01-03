@@ -1,4 +1,5 @@
-import { Transaction } from './parser';
+import { getWithDefault } from './generic-utils';
+import { EnhancedTransaction } from './parser';
 import { ISettings } from './settings';
 import { Moment } from 'moment';
 
@@ -169,29 +170,32 @@ export type DailyAccountBalanceChangeMap = Map<string, Map<string, number>>;
  * included in the outer map.
  */
 export const makeDailyAccountBalanceChangeMap = (
-  transactions: Transaction[],
+  transactions: EnhancedTransaction[],
 ): DailyAccountBalanceChangeMap => {
   // This map contains a mapping from every day (YYYY-MM-DD) to account names to
   // a list of all balance changes.
   const txDateAccountMap = new Map<string, Map<string, number[]>>();
+  const makeDefaultAccountMap = (): Map<string, number[]> =>
+    new Map<string, number[]>();
+  const makeDefaultBalanceList = (): number[] => [];
   transactions.forEach((tx) => {
     const normalizedDate = window.moment(tx.value.date).format('YYYY-MM-DD');
-    if (!txDateAccountMap.has(normalizedDate)) {
-      txDateAccountMap.set(normalizedDate, new Map<string, number[]>());
-    }
-    const accounts = txDateAccountMap.get(normalizedDate);
+    const accounts = getWithDefault(
+      txDateAccountMap,
+      normalizedDate,
+      makeDefaultAccountMap,
+    );
+
     tx.value.expenselines.forEach((line) => {
-      const currentAccount = line.dealiasedAccount || line.account;
-      if (!currentAccount) {
-        return;
+      if (!('account' in line)) {
+        return; // Must be a comment line
       }
 
-      if (!accounts.has(currentAccount)) {
-        accounts.set(currentAccount, []);
-      }
-
-      // We normalized the expense lines so that all lines with an account have an amount.
-      accounts.get(currentAccount).push(line.amount);
+      getWithDefault(
+        accounts,
+        line.dealiasedAccount,
+        makeDefaultBalanceList,
+      ).push(line.amount);
     });
   });
 
@@ -235,12 +239,12 @@ export const makeDailyBalanceMap = (
   while (currentDate.isSameOrBefore(lastDate)) {
     const currentDateStr = currentDate.format('YYYY-MM-DD');
 
-    if (input.has(currentDateStr)) {
+    const innerInputMap = input.get(currentDateStr);
+    if (innerInputMap) {
       const innerResultMap = new Map<string, number>();
-      const innerInputMap = input.get(currentDateStr);
 
       accounts.forEach((accountName) => {
-        const previousValue = previousData.get(accountName);
+        const previousValue = previousData.get(accountName) || 0;
         const currentValue = innerInputMap.get(accountName) || 0;
         innerResultMap.set(accountName, previousValue + currentValue);
       });

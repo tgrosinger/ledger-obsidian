@@ -1,6 +1,6 @@
 import LedgerPlugin from './main';
 import { AddExpenseModal, Operation } from './modals';
-import { parse, Transaction, TransactionCache } from './parser';
+import { EnhancedTransaction, parse, TransactionCache } from './parser';
 import type { ISettings } from './settings';
 import type { MetadataCache, TFile, Vault } from 'obsidian';
 
@@ -19,13 +19,13 @@ export class LedgerModifier {
 
   public openExpenseModal(
     operation: Operation,
-    initialState?: Transaction,
+    initialState?: EnhancedTransaction,
   ): void {
     new AddExpenseModal(this.plugin, this, operation, initialState).open();
   }
 
   public async updateTransaction(
-    oldTx: Transaction,
+    oldTx: EnhancedTransaction,
     newTx: string,
   ): Promise<void> {
     const vault = this.plugin.app.vault;
@@ -39,7 +39,7 @@ export class LedgerModifier {
     return vault.modify(this.ledgerFile, newLines);
   }
 
-  public async deleteTransaction(tx: Transaction): Promise<void> {
+  public async deleteTransaction(tx: EnhancedTransaction): Promise<void> {
     const vault = this.plugin.app.vault;
     const fileContents = await vault.cachedRead(this.ledgerFile);
     const lines = fileContents.split('\n');
@@ -67,8 +67,7 @@ export const getTransactionCache = async (
 ): Promise<TransactionCache> => {
   const file = cache.getFirstLinkpathDest(ledgerFilePath, '');
   if (!file) {
-    console.debug('Ledger: Unable to find Ledger file to parse');
-    return undefined;
+    throw new Error('Ledger: Unable to find Ledger file to parse');
   }
 
   const fileContents = await vault.read(file);

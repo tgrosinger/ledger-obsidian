@@ -1,5 +1,6 @@
 import {
   makeBalanceData,
+  makeDailyAccountBalanceChangeMap,
   makeDeltaData,
   removeDuplicateAccounts,
 } from '../balance-utils';
@@ -26,7 +27,7 @@ const ChartTypeSelector = styled.div`
 
 const Chart = styled.div`
   .ct-label {
-    color: white;
+    color: var(--text-muted);
   }
 `;
 
@@ -40,6 +41,8 @@ export const AccountVisualization: React.FC<{
 }> = (props): JSX.Element => {
   // TODO: Set the default mode based on the type of account selected
   const [mode, setMode] = React.useState('balance');
+
+  console.log(props.dailyAccountBalanceMap);
 
   const filteredAccounts = removeDuplicateAccounts(props.selectedAccounts);
   const dateBuckets = makeBucketNames(

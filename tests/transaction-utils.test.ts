@@ -1,7 +1,6 @@
-import { parse, Transaction } from '../src/parser';
+import { EnhancedTransaction, FileBlock,parse } from '../src/parser';
 import { settingsWithDefaults } from '../src/settings';
 import {
-  fillMissingAmount,
   filterByAccount,
   filterByPayeeExact,
   filterTransactions,
@@ -15,6 +14,12 @@ import {
 import * as moment from 'moment';
 
 window.moment = moment;
+
+const emptyBlock: FileBlock = {
+  firstLine: -1,
+  lastLine: -1,
+  block: '',
+};
 
 describe('formatting a transaction into ledger', () => {
   test('a transaction with a line comment and reconciliation symbol', () => {
@@ -37,19 +42,27 @@ describe('formatting a transaction into ledger', () => {
     expect(output).toEqual('\n' + contents);
   });
   test('when the tx has the minimum allowed values', () => {
-    const tx: Transaction = {
+    const tx: EnhancedTransaction = {
       type: 'tx',
+      blockLine: -1,
+      block: emptyBlock,
       value: {
         date: '2021/12/31',
         payee: 'test-payee',
         expenselines: [
           {
             account: 'test-account-1',
+            dealiasedAccount: 'test-account-1',
             amount: 10.0,
             currency: '$',
+            reconcile: '',
           },
           {
             account: 'test-account-2',
+            dealiasedAccount: 'test-account-2',
+            amount: -10.0,
+            currency: '$',
+            reconcile: '',
           },
         ],
       },
@@ -68,9 +81,11 @@ describe('formatting a transaction into ledger', () => {
 });
 
 describe('getTotal()', () => {
-  test('When the last line has an amount', () => {
-    const tx: Transaction = {
+  test('simple test', () => {
+    const tx: EnhancedTransaction = {
       type: 'tx',
+      blockLine: -1,
+      block: emptyBlock,
       value: {
         date: '2021/12/04',
         payee: 'Testing',
@@ -79,117 +94,36 @@ describe('getTotal()', () => {
             amount: 40,
             currency: '$',
             account: 'account1',
+            dealiasedAccount: 'account1',
+            reconcile: '',
           },
           {
             account: 'account2',
+            dealiasedAccount: 'account2',
+            amount: 20,
+            reconcile: '',
           },
           {
             amount: -60,
             currency: '$',
             account: 'account3',
+            dealiasedAccount: 'account3',
+            reconcile: '',
           },
         ],
       },
     };
     const result = getTotal(tx, '$');
     expect(result).toEqual('$60.00');
-  });
-  test('When the last line does not have an amount', () => {
-    const tx: Transaction = {
-      type: 'tx',
-      value: {
-        date: '2021/12/04',
-        payee: 'Testing',
-        expenselines: [
-          {
-            amount: 40,
-            currency: '$',
-            account: 'account1',
-          },
-          {
-            amount: 20,
-            currency: '$',
-            account: 'account2',
-          },
-          {
-            account: 'account3',
-          },
-        ],
-      },
-    };
-    const result = getTotal(tx, '$');
-    expect(result).toEqual('$60.00');
-  });
-  test('When there are not enough amounts', () => {
-    const tx: Transaction = {
-      type: 'tx',
-      value: {
-        date: '2021/12/04',
-        payee: 'Testing',
-        expenselines: [
-          {
-            amount: 40,
-            currency: '$',
-            account: 'account1',
-          },
-          {
-            account: 'account2',
-          },
-          {
-            account: 'account3',
-          },
-        ],
-      },
-    };
-    const result = getTotal(tx, '$');
-    expect(result).toEqual('$40.00');
-  });
-  test('When none of the transactions have a currency', () => {
-    const tx: Transaction = {
-      type: 'tx',
-      value: {
-        date: '2021/12/04',
-        payee: 'Testing',
-        expenselines: [
-          {
-            amount: 40,
-            account: 'account1',
-          },
-          {
-            account: 'account3',
-          },
-        ],
-      },
-    };
-    const result = getTotal(tx, '$');
-    expect(result).toEqual('$40.00');
-  });
-  test('When the transaction should be negative', () => {
-    const tx: Transaction = {
-      type: 'tx',
-      value: {
-        date: '2021/12/04',
-        payee: 'Testing',
-        expenselines: [
-          {
-            account: 'account1',
-          },
-          {
-            amount: 40,
-            account: 'account3',
-          },
-        ],
-      },
-    };
-    const result = getTotal(tx, '$');
-    expect(result).toEqual('$-40.00');
   });
 });
 
 describe('getCurrency()', () => {
   test('When the first expense line has a currency', () => {
-    const tx: Transaction = {
+    const tx: EnhancedTransaction = {
       type: 'tx',
+      blockLine: -1,
+      block: emptyBlock,
       value: {
         date: '2021/12/04',
         payee: 'Testing',
@@ -198,9 +132,14 @@ describe('getCurrency()', () => {
             amount: 40,
             currency: 'L',
             account: 'account1',
+            dealiasedAccount: 'account1',
+            reconcile: '',
           },
           {
+            amount: -40,
             account: 'account3',
+            dealiasedAccount: 'account3',
+            reconcile: '',
           },
         ],
       },
@@ -209,19 +148,26 @@ describe('getCurrency()', () => {
     expect(result).toEqual('L');
   });
   test('When the second expense line has a currency', () => {
-    const tx: Transaction = {
+    const tx: EnhancedTransaction = {
       type: 'tx',
+      blockLine: -1,
+      block: emptyBlock,
       value: {
         date: '2021/12/04',
         payee: 'Testing',
         expenselines: [
           {
+            amount: -40,
             account: 'account1',
+            dealiasedAccount: 'account1',
+            reconcile: '',
           },
           {
             amount: 40,
             currency: 'L',
             account: 'account3',
+            dealiasedAccount: 'account3',
+            reconcile: '',
           },
         ],
       },
@@ -230,8 +176,10 @@ describe('getCurrency()', () => {
     expect(result).toEqual('L');
   });
   test('When the transaction does not specify a currency', () => {
-    const tx: Transaction = {
+    const tx: EnhancedTransaction = {
       type: 'tx',
+      blockLine: -1,
+      block: emptyBlock,
       value: {
         date: '2021/12/04',
         payee: 'Testing',
@@ -239,255 +187,20 @@ describe('getCurrency()', () => {
           {
             amount: 40,
             account: 'account1',
+            dealiasedAccount: 'account1',
+            reconcile: '',
           },
           {
+            amount: -40,
             account: 'account3',
+            dealiasedAccount: 'account3',
+            reconcile: '',
           },
         ],
       },
     };
     const result = getCurrency(tx, '$');
     expect(result).toEqual('$');
-  });
-});
-
-describe('fillMissingAmount()', () => {
-  describe('When there is a comment line', () => {
-    test('and the comment is the first line', () => {
-      const input: Transaction = {
-        type: 'tx',
-        value: {
-          date: '2021/12/04',
-          payee: 'Testing',
-          expenselines: [
-            {
-              account: '',
-              comment: 'This is a comment',
-            },
-            {
-              account: 'account1',
-              amount: 10.5,
-            },
-            {
-              account: 'account3',
-              amount: -10.5,
-            },
-          ],
-        },
-      };
-      const result = fillMissingAmount(input);
-      result.mapErr(fail);
-      expect(input.value.expenselines[0].amount).toBeUndefined();
-      expect(input.value.expenselines[1].amount).toEqual(10.5);
-      expect(input.value.expenselines[2].amount).toEqual(-10.5);
-    });
-    test('and there is a missing amount', () => {
-      const input: Transaction = {
-        type: 'tx',
-        value: {
-          date: '2021/12/04',
-          payee: 'Testing',
-          expenselines: [
-            {
-              account: 'account1',
-            },
-            {
-              account: '',
-              comment: 'This is a comment',
-            },
-            {
-              account: 'account3',
-              amount: -10.5,
-            },
-          ],
-        },
-      };
-      const result = fillMissingAmount(input);
-      result.mapErr(fail);
-      expect(input.value.expenselines[0].amount).toEqual(10.5);
-      expect(input.value.expenselines[1].amount).toBeUndefined();
-    });
-    test('and there are no missing amounts', () => {
-      const input: Transaction = {
-        type: 'tx',
-        value: {
-          date: '2021/12/04',
-          payee: 'Testing',
-          expenselines: [
-            {
-              account: 'account1',
-              amount: 10.5,
-            },
-            {
-              account: '',
-              comment: 'This is a comment',
-            },
-            {
-              account: 'account3',
-              amount: -10.5,
-            },
-          ],
-        },
-      };
-      const result = fillMissingAmount(input);
-      result.mapErr(fail);
-      expect(input.value.expenselines[0].amount).toEqual(10.5);
-      expect(input.value.expenselines[1].amount).toBeUndefined();
-    });
-    test('and there is an amount that is zero', () => {
-      const input: Transaction = {
-        type: 'tx',
-        value: {
-          date: '2021/12/04',
-          payee: 'Testing',
-          expenselines: [
-            {
-              account: 'account1',
-              amount: 10.5,
-            },
-            {
-              account: '',
-              amount: 0,
-            },
-            {
-              account: 'account3',
-            },
-          ],
-        },
-      };
-      const result = fillMissingAmount(input);
-      result.mapErr(fail);
-      expect(input.value.expenselines[0].amount).toEqual(10.5);
-      expect(input.value.expenselines[1].amount).toEqual(0);
-      expect(input.value.expenselines[2].amount).toEqual(-10.5);
-    });
-  });
-  test('and there is more than one missing amount', () => {
-    const input: Transaction = {
-      type: 'tx',
-      value: {
-        date: '2021/12/04',
-        payee: 'Testing',
-        expenselines: [
-          {
-            account: 'account1',
-            amount: 10.5,
-          },
-          {
-            account: 'account2',
-          },
-          {
-            account: 'account3',
-          },
-        ],
-      },
-    };
-    const result = fillMissingAmount(input);
-    result.match(fail, (e) => {
-      expect(e.message).toEqual(
-        'Transaction has multiple expense lines without an amount. At most one is allowed.',
-      );
-      expect(e.transaction).toEqual(input);
-    });
-    expect(input.value.expenselines[0].amount).toEqual(10.5);
-    expect(input.value.expenselines[1].amount).toBeUndefined();
-    expect(input.value.expenselines[2].amount).toBeUndefined();
-  });
-  describe('When there are only two expense lines', () => {
-    test('and the first line is missing', () => {
-      const input: Transaction = {
-        type: 'tx',
-        value: {
-          date: '2021/12/04',
-          payee: 'Testing',
-          expenselines: [
-            {
-              account: 'account1',
-            },
-            {
-              account: 'account3',
-              amount: -10.5,
-            },
-          ],
-        },
-      };
-      const result = fillMissingAmount(input);
-      result.mapErr(fail);
-      expect(input.value.expenselines[0].amount).toEqual(10.5);
-    });
-    test('and the second line is missing', () => {
-      const input: Transaction = {
-        type: 'tx',
-        value: {
-          date: '2021/12/04',
-          payee: 'Testing',
-          expenselines: [
-            {
-              account: 'account1',
-              amount: 10.5,
-            },
-            {
-              account: 'account3',
-            },
-          ],
-        },
-      };
-      const result = fillMissingAmount(input);
-      result.mapErr(fail);
-      expect(input.value.expenselines[1].amount).toEqual(-10.5);
-    });
-  });
-  describe('When there are three expense lines', () => {
-    test('and the last line is missing', () => {
-      const input: Transaction = {
-        type: 'tx',
-        value: {
-          date: '2021/12/04',
-          payee: 'Testing',
-          expenselines: [
-            {
-              account: 'account1',
-              amount: 10.5,
-            },
-            {
-              account: 'account1',
-              amount: 5,
-            },
-            {
-              account: 'account3',
-            },
-          ],
-        },
-      };
-      const result = fillMissingAmount(input);
-      result.mapErr(fail);
-      expect(input.value.expenselines[2].amount).toEqual(-15.5);
-    });
-    test('and the middle line is missing', () => {
-      const input: Transaction = {
-        type: 'tx',
-        value: {
-          date: '2021/12/04',
-          payee: 'Testing',
-          expenselines: [
-            {
-              account: 'account1',
-              amount: 10.5,
-            },
-            {
-              account: 'account1',
-            },
-            {
-              account: 'account3',
-              amount: -15.5,
-            },
-          ],
-        },
-      };
-      const result = fillMissingAmount(input);
-      result.mapErr(fail);
-      expect(input.value.expenselines[1].amount).toEqual(5);
-    });
   });
 });
 
@@ -613,8 +326,10 @@ describe('sortAccountTree()', () => {
 });
 
 describe('filterTransactions', () => {
-  const tx1: Transaction = {
+  const tx1: EnhancedTransaction = {
     type: 'tx',
+    blockLine: -1,
+    block: emptyBlock,
     value: {
       date: '2021-12-31',
       payee: 'Costco',
@@ -624,16 +339,21 @@ describe('filterTransactions', () => {
           dealiasedAccount: 'Expenses:Spending Money',
           amount: 100,
           currency: '$',
+          reconcile: '',
         },
         {
           account: 'c:Citi',
           dealiasedAccount: 'Credit:City',
+          amount: -100,
+          reconcile: '',
         },
       ],
     },
   };
-  const tx2: Transaction = {
+  const tx2: EnhancedTransaction = {
     type: 'tx',
+    blockLine: -1,
+    block: emptyBlock,
     value: {
       date: '2021-12-30',
       payee: "Trader Joe's",
@@ -643,16 +363,21 @@ describe('filterTransactions', () => {
           dealiasedAccount: 'Expenses:Food:Grocery',
           amount: 120,
           currency: '$',
+          reconcile: '',
         },
         {
+          amount: -120,
           account: 'c:Citi',
           dealiasedAccount: 'Credit:City',
+          reconcile: '',
         },
       ],
     },
   };
-  const tx3: Transaction = {
+  const tx3: EnhancedTransaction = {
     type: 'tx',
+    blockLine: -1,
+    block: emptyBlock,
     value: {
       date: '2021-12-29',
       payee: 'PCC',
@@ -662,10 +387,13 @@ describe('filterTransactions', () => {
           dealiasedAccount: 'Expenses:Food:Grocery',
           amount: 20,
           currency: '$',
+          reconcile: '',
         },
         {
+          amount: -20,
           account: 'c:Citi',
           dealiasedAccount: 'Credit:City',
+          reconcile: '',
         },
       ],
     },

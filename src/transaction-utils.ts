@@ -1,29 +1,40 @@
-import { TxError } from './error';
-import { Transaction } from './parser';
+import { EnhancedTransaction } from './parser';
 import { some } from 'lodash';
 import { Moment } from 'moment';
-import { err, ok, Result } from 'neverthrow';
+
+export const emptyTransaction: EnhancedTransaction = {
+  type: 'tx',
+  block: { firstLine: -1, lastLine: -1, block: '' },
+  blockLine: -1,
+  value: {
+    date: '',
+    payee: '',
+    expenselines: [],
+  },
+};
 
 /**
  * formatTransaction converts a transaction object into the string
  * representation which can be stored in the Ledger file.
  */
 export const formatTransaction = (
-  tx: Transaction,
+  tx: EnhancedTransaction,
   currencySymbol: string,
 ): string => {
   const joinedLines = tx.value.expenselines
     .map((line, i) => {
+      if (!('account' in line)) {
+        return `    ; ${line.comment}`;
+      }
+
       const currency = line.currency ? line.currency : currencySymbol;
       const symb = line.reconcile ? line.reconcile : ' ';
       const comment = line.comment ? `    ; ${line.comment}` : '';
-      return line.account
-        ? i !== tx.value.expenselines.length - 1
-          ? `  ${symb} ${line.account}    ${currency}${line.amount.toFixed(
-              2,
-            )}${comment}`
-          : `  ${symb} ${line.account}${comment}`
-        : comment;
+      return i !== tx.value.expenselines.length - 1
+        ? `  ${symb} ${line.account}    ${currency}${line.amount.toFixed(
+            2,
+          )}${comment}`
+        : `  ${symb} ${line.account}${comment}`;
     })
     .join('\n');
   return `\n${tx.value.date} ${tx.value.payee}\n${joinedLines}`;
@@ -35,29 +46,27 @@ export const formatTransaction = (
  * and can be inferred from the remainder. If muliple lines are empty, it will
  * return a 0 value.
  */
-export const getTotal = (tx: Transaction, defaultCurrency: string): string => {
+export const getTotal = (
+  tx: EnhancedTransaction,
+  defaultCurrency: string,
+): string => {
   const currency = getCurrency(tx, defaultCurrency);
   const total = getTotalAsNum(tx);
   return currency + total.toFixed(2);
 };
 
-export const getTotalAsNum = (tx: Transaction): number => {
-  const lines = tx.value.expenselines;
-
-  // If the last line has an amount, then the inverse of that is the total
-  if (lines[lines.length - 1].amount) {
-    return -1 * lines[lines.length - 1].amount;
-  }
-
-  // The last line does not have an amount, so the other lines must. We can
-  // simply add them all together.
-  let sum = 0.0;
-  for (let i = 0; i < lines.length - 1; i++) {
-    if (lines[i].amount) {
-      sum += lines[i].amount;
+export const getTotalAsNum = (tx: EnhancedTransaction): number => {
+  // The total of an EnhancedTransaction is -1 * the last line that is not a comment
+  for (let i = tx.value.expenselines.length - 1; i >= 0; i--) {
+    const line = tx.value.expenselines[i];
+    if ('amount' in line) {
+      // This is the last line which is not a comment-only line
+      return -1 * line.amount;
     }
   }
-  return sum;
+
+  // If we got here then there are no expenselines with an amount, which would not happen because of validation in the parser.
+  return 0;
 };
 
 /**
@@ -67,12 +76,12 @@ export const getTotalAsNum = (tx: Transaction): number => {
  * defaultCurrency value will be returned.
  */
 export const getCurrency = (
-  tx: Transaction,
+  tx: EnhancedTransaction,
   defaultCurrency: string,
 ): string => {
   for (let i = 0; i < tx.value.expenselines.length; i++) {
     const line = tx.value.expenselines[i];
-    if (line.currency) {
+    if ('currency' in line && line.currency) {
       return line.currency;
     }
   }
@@ -82,68 +91,22 @@ export const getCurrency = (
 /**
  * firstDate returns the date of the earliest transaction.
  */
-export const firstDate = (txs: Transaction[]): Moment =>
+export const firstDate = (txs: EnhancedTransaction[]): Moment =>
   txs.reduce((prev, tx) => {
     const current = window.moment(tx.value.date);
     return current.isSameOrBefore(prev) ? current : prev;
   }, window.moment());
 
-/**
- * fillMissingAmmount attempts to fill any empty amount fields in the
- * transactions expense lines.
- */
-export const fillMissingAmount = (tx: Transaction): Result<void, TxError> => {
-  const lines = tx.value.expenselines;
-  const commentLines: number[] = [];
-  let missingIndex = -1;
-
-  for (let i = 0; i < lines.length; i++) {
-    // Explicit compare to undefined to avoide accidentally comparing to 0
-    if (lines[i].amount === undefined) {
-      if (!lines[i].account || lines[i].account === '') {
-        commentLines.push(i);
-        continue;
-      }
-      if (missingIndex !== -1) {
-        return err({
-          transaction: tx,
-          message:
-            'Transaction has multiple expense lines without an amount. At most one is allowed.',
-        });
-      }
-      missingIndex = i;
-    }
-  }
-
-  if (missingIndex === -1) {
-    return ok(null);
-  }
-
-  const total = getTotalAsNum(tx);
-  if (missingIndex + 1 === lines.length) {
-    // The last line is missing. It should be the inverse of the rest of the lines.
-    lines[missingIndex].amount = -1 * total;
-  } else {
-    // A non-last line is missing. It should be the total minus the other non-last lines.
-    lines[missingIndex].amount = lines.reduce(
-      (prev, line, i) =>
-        i === missingIndex || i + 1 === lines.length || commentLines.includes(i)
-          ? prev
-          : prev - line.amount,
-      total,
-    );
-  }
-
-  return ok(null);
-};
-
-export const valueForAccount = (tx: Transaction, account: string): number => {
+export const valueForAccount = (
+  tx: EnhancedTransaction,
+  account: string,
+): number => {
   for (let i = 0; i < tx.value.expenselines.length; i++) {
     const line = tx.value.expenselines[i];
-    if (
-      (line.account && line.account === account) ||
-      (line.dealiasedAccount && line.dealiasedAccount === account)
-    ) {
+    if (!('account' in line)) {
+      continue;
+    }
+    if (line.account === account || line.dealiasedAccount === account) {
       return i + 1 === tx.value.expenselines.length
         ? -1 * getTotalAsNum(tx) // On the last line
         : line.amount;
@@ -152,7 +115,7 @@ export const valueForAccount = (tx: Transaction, account: string): number => {
   return 0;
 };
 
-export type Filter = (tx: Transaction) => boolean;
+export type Filter = (tx: EnhancedTransaction) => boolean;
 
 /**
  * filterByAccount accepts an account name and attempts to match to
@@ -160,17 +123,18 @@ export type Filter = (tx: Transaction) => boolean;
  */
 export const filterByAccount =
   (account: string): Filter =>
-  (tx: Transaction): boolean =>
+  (tx: EnhancedTransaction): boolean =>
     some(
       tx.value.expenselines,
       (line) =>
-        (line.account && line.account.startsWith(account)) ||
-        (line.dealiasedAccount && line.dealiasedAccount.startsWith(account)),
+        ('account' in line && line.account.startsWith(account)) ||
+        ('dealiasedAccount' in line &&
+          line.dealiasedAccount.startsWith(account)),
     );
 
 export const filterByPayeeExact =
   (account: string): Filter =>
-  (tx: Transaction): boolean =>
+  (tx: EnhancedTransaction): boolean =>
     tx.value.payee === account;
 
 export const filterByStartDate =
@@ -188,9 +152,9 @@ export const filterByEndDate =
  * filters match. To _and_ filters, apply this function sequentially.
  */
 export const filterTransactions = (
-  txs: Transaction[],
+  txs: EnhancedTransaction[],
   ...filters: Filter[]
-): Transaction[] =>
+): EnhancedTransaction[] =>
   filters.length > 0 ? txs.filter((tx) => some(filters, (fn) => fn(tx))) : txs;
 
 export const dealiasAccount = (
@@ -203,10 +167,8 @@ export const dealiasAccount = (
     if (aliases.has(prefix)) {
       return aliases.get(prefix) + account.substring(firstDelimeter);
     }
-  } else if (aliases.has(account)) {
-    return aliases.get(account);
   }
-  return account;
+  return aliases.get(account) || account;
 };
 
 export interface Node {

@@ -1,4 +1,4 @@
-import { FileBlock, Transaction } from './parser';
+import { FileBlock, TransactionWithBlock } from './parser';
 
 export type Error = TxError | ParseError;
 
@@ -10,5 +10,5 @@ export interface ParseError {
 
 export interface TxError {
   message: string;
-  transaction: Transaction;
+  transaction: TransactionWithBlock;
 }

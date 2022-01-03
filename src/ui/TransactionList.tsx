@@ -1,5 +1,9 @@
 import { LedgerModifier } from '../file-interface';
-import { Transaction, TransactionCache } from '../parser';
+import {
+  EnhancedExpenseLine,
+  EnhancedTransaction,
+  TransactionCache,
+} from '../parser';
 import {
   filterByAccount,
   filterByEndDate,
@@ -23,7 +27,7 @@ export const MobileTransactionList: React.FC<{
       .reverse()
       .slice(0, 10)
       .map(
-        (tx: Transaction, i: number): JSX.Element => (
+        (tx, i): JSX.Element => (
           <MobileTransactionEntry
             key={i}
             tx={tx}
@@ -35,17 +39,24 @@ export const MobileTransactionList: React.FC<{
 );
 
 export const MobileTransactionEntry: React.FC<{
-  tx: Transaction;
+  tx: EnhancedTransaction;
   currencySymbol: string;
 }> = (props): JSX.Element => {
+  const nonCommentLines = props.tx.value.expenselines.filter(
+    (line): line is EnhancedExpenseLine => 'account' in line,
+  );
+  if (nonCommentLines.length < 2) {
+    // This should not make it past the parser, but this is necessary for type checking.
+    throw new Error('Unexpected transaction with fewer than two account lines');
+  }
+
   return (
     <div>
       <h3>{props.tx.value.payee}</h3>
-      <div>From: {props.tx.value.expenselines.last().account}</div>
+      <div>From: {nonCommentLines[-1].account}</div>
       <div>Amount: {getTotal(props.tx, props.currencySymbol)}</div>
     </div>
   );
-  return null;
 };
 
 const TableStyles = styled.div`
@@ -102,11 +113,11 @@ interface TableRow {
 }
 
 const buildTableRows = (
-  transactions: Transaction[],
+  transactions: EnhancedTransaction[],
   currencySymbol: string,
   updater: LedgerModifier,
 ): TableRow[] => {
-  const makeClone = (tx: Transaction): JSX.Element => (
+  const makeClone = (tx: EnhancedTransaction): JSX.Element => (
     <>
       <svg
         onClick={() => {
@@ -150,15 +161,26 @@ const buildTableRows = (
     </>
   );
 
-  const tableRows = transactions.map((tx: Transaction): TableRow => {
-    if (tx.value.expenselines.length === 2) {
+  const tableRows = transactions.map((tx: EnhancedTransaction): TableRow => {
+    const nonCommentLines = tx.value.expenselines.filter(
+      (line): line is EnhancedExpenseLine => 'account' in line,
+    );
+
+    if (nonCommentLines.length < 2) {
+      // This should not make it past the parser, but this is necessary for type checking.
+      throw new Error(
+        'Unexpected transaction with fewer than two account lines',
+      );
+    }
+
+    if (nonCommentLines.length === 2) {
       // If there are only two lines, then this is a simple 'from->to' transaction
       return {
         date: tx.value.date,
         payee: tx.value.payee,
         total: getTotal(tx, currencySymbol),
-        from: tx.value.expenselines[1].account,
-        to: tx.value.expenselines[0].account,
+        from: nonCommentLines[1].account,
+        to: nonCommentLines[0].account,
         actions: makeClone(tx),
       };
     }
@@ -167,7 +189,7 @@ const buildTableRows = (
       date: tx.value.date,
       payee: tx.value.payee,
       total: getTotal(tx, currencySymbol),
-      from: tx.value.expenselines.last().account,
+      from: nonCommentLines.last().account,
       to: <i>Multiple</i>,
       actions: makeClone(tx),
     };

@@ -1,4 +1,5 @@
-import { Transaction } from './parser';
+import { getWithDefault } from './generic-utils';
+import { EnhancedTransaction } from './parser';
 import { Moment } from 'moment';
 
 export type Interval = 'day' | 'week' | 'month';
@@ -12,6 +13,10 @@ export const makeBucketNames = (
   startDate: Moment,
   endDate: Moment,
 ): string[] => {
+  // TODO: We need to make sure the end of the range is captured. Right now it
+  // seems there is either bug here or where we put data into the buckets which
+  // is preventing all the transactions from being represented in the chart.
+
   const names: string[] = [];
   const currentDate = startDate.clone();
 
@@ -32,11 +37,11 @@ export const makeBucketNames = (
  */
 export const bucketTransactions = (
   bucketNames: string[],
-  txs: Transaction[],
-): Map<Moment, Transaction[]> => {
+  txs: EnhancedTransaction[],
+): Map<Moment, EnhancedTransaction[]> => {
   let firstBucketMoment: Moment;
   const restBucketMoments: Moment[] = [];
-  const buckets = new Map<Moment, Transaction[]>();
+  const buckets = new Map<Moment, EnhancedTransaction[]>();
   bucketNames.forEach((name, i) => {
     const m = window.moment(name);
     buckets.set(m, []);
@@ -48,6 +53,7 @@ export const bucketTransactions = (
     }
   });
 
+  const makeEmptyBucket = (): EnhancedTransaction[] => [];
   txs.forEach((tx) => {
     let prevBucket = firstBucketMoment;
     for (let i = 0; i < restBucketMoments.length; i++) {
@@ -57,7 +63,10 @@ export const bucketTransactions = (
       }
       prevBucket = restBucketMoments[i];
     }
-    buckets.get(prevBucket).push(tx);
+
+    // getWithDefault is only necessary for the type checker here. We just put
+    // this bucket in the map, so it will not be missing.
+    getWithDefault(buckets, prevBucket, makeEmptyBucket).push(tx);
   });
 
   return buckets;
