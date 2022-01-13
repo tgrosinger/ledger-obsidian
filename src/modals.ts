@@ -2,7 +2,7 @@ import { LedgerModifier } from './file-interface';
 import LedgerPlugin from './main';
 import { EnhancedTransaction } from './parser';
 import { emptyTransaction } from './transaction-utils';
-import { CreateLedgerEntry } from './ui/CreateLedgerEntry';
+import { EditTransaction } from './ui/EditTransaction';
 import { Modal } from 'obsidian';
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -30,7 +30,7 @@ export class AddExpenseModal extends Modal {
 
   public onOpen = (): void => {
     ReactDOM.render(
-      React.createElement(CreateLedgerEntry, {
+      React.createElement(EditTransaction, {
         displayFileWarning:
           !this.plugin.settings.ledgerFile.endsWith('.ledger'),
         currencySymbol: this.plugin.settings.currencySymbol,

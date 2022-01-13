@@ -18,10 +18,6 @@ export const FlexMainContent = styled.div`
   flex-shrink: 1;
 `;
 
-export const WideInput = styled.input`
-  width: 100%;
-`;
-
 export const DatePicker = styled.input`
   background: var(--background-modifier-form-field);
   border: 1px solid var(--background-modifier-border);
@@ -29,14 +25,6 @@ export const DatePicker = styled.input`
   padding: 5px 14px;
   border-radius: 4px;
   height: 30px;
-`;
-
-export const WideDatePicker = styled(DatePicker)`
-  width: 100%;
-`;
-
-export const WideSelect = styled.select`
-  width: 100%;
 `;
 
 export const Button: React.FC<{

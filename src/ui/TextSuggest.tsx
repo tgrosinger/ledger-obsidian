@@ -1,25 +1,22 @@
-import { WideInput } from './SharedStyles';
+import { Values } from './EditTransaction';
+import { FieldProps } from 'formik';
 import Fuse from 'fuse.js';
-import { take } from 'lodash';
 import React from 'react';
 import { usePopper } from 'react-popper';
 
-export interface TextSuggestInput {
-  value: string;
-  suggestions: string[];
-}
-
-export const TextSuggest: React.FC<{
-  placeholder: string;
-  displayCount: number;
-  input: TextSuggestInput;
-  setValue: (newValue: string) => void;
-}> = ({ placeholder, displayCount, input, setValue }): JSX.Element => {
+export const TextSuggest: React.FC<
+  {
+    placeholder: string;
+    suggestions: string[];
+    displayCount: number;
+  } & FieldProps<string, Values>
+> = (props): JSX.Element => {
+  const [currentValue, setCurrentValue] = React.useState(props.field.value);
   const [currentSuggestions, setCurrentSuggestions] = React.useState(
-    take(input.suggestions, displayCount),
+    props.suggestions.slice(0, props.displayCount),
   );
   const [fuse, setFuse] = React.useState(
-    new Fuse(input.suggestions, { threshold: 0.5 }),
+    new Fuse(props.suggestions, { threshold: 0.5 }),
   );
 
   const [selectedIndex, setSelectedIndex] = React.useState(0);
@@ -37,41 +34,43 @@ export const TextSuggest: React.FC<{
   const updateCurrentSuggestions = (newValue: string): void => {
     const newSuggestions =
       newValue === ''
-        ? take(input.suggestions, displayCount)
-        : take(
-            fuse.search(newValue).map((result) => result.item),
-            displayCount,
-          );
+        ? props.suggestions.slice(0, props.displayCount)
+        : fuse
+            .search(newValue)
+            .map((result) => result.item)
+            .slice(0, props.displayCount);
     setCurrentSuggestions(newSuggestions);
     setSelectedIndex(Math.min(selectedIndex, newSuggestions.length - 1));
-  };
-
-  const updateValue = (newValue: string): void => {
-    setVisibility(true);
-    setValue(newValue);
-    updateCurrentSuggestions(newValue);
   };
 
   // The Fuse object will not be automatically replaced when the suggestions are
   // changed so we need to detect and update manually.
   React.useEffect(() => {
-    setFuse(new Fuse(input.suggestions, { threshold: 0.5 }));
-    updateCurrentSuggestions(input.value);
-  }, [input]);
+    setFuse(new Fuse(props.suggestions, { threshold: 0.5 }));
+    updateCurrentSuggestions(currentValue);
+  }, [props.suggestions]);
 
   return (
-    <div>
-      <WideInput
+    <>
+      <input
         ref={setReferenceElement}
         type="text"
-        value={input.value}
-        placeholder={placeholder}
-        onChange={(e) => updateValue(e.target.value)}
+        value={currentValue}
+        placeholder={props.placeholder}
+        onChange={(e) => {
+          setVisibility(true);
+          setCurrentValue(e.target.value);
+          updateCurrentSuggestions(e.target.value);
+        }}
         onFocus={() => {
           setVisibility(true);
           setSelectedIndex(0);
         }}
-        onBlur={() => setVisibility(false)}
+        onBlur={(e) => {
+          setVisibility(false);
+          setCurrentValue(e.target.value);
+          props.form.setFieldValue(props.field.name, e.target.value);
+        }}
         onKeyDown={(e) => {
           switch (e.key) {
             case 'ArrowUp':
@@ -87,7 +86,11 @@ export const TextSuggest: React.FC<{
               e.preventDefault();
               return;
             case 'Enter':
-              setValue(currentSuggestions[selectedIndex]);
+              setCurrentValue(currentSuggestions[selectedIndex]);
+              props.form.setFieldValue(
+                props.field.name,
+                currentSuggestions[selectedIndex],
+              );
               setVisibility(false);
               e.preventDefault();
               return;
@@ -108,7 +111,9 @@ export const TextSuggest: React.FC<{
               key={s}
               selected={i === selectedIndex}
               onClick={() => {
-                setValue(s);
+                setCurrentValue(s);
+                props.form.setFieldValue(props.field.name, s);
+                setCurrentValue(s);
                 setVisibility(false);
               }}
               onHover={() => {
@@ -118,7 +123,7 @@ export const TextSuggest: React.FC<{
           ))}
         </div>
       ) : null}
-    </div>
+    </>
   );
 };
 
