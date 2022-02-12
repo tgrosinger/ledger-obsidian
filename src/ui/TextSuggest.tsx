@@ -4,6 +4,9 @@ import Fuse from 'fuse.js';
 import React from 'react';
 import { usePopper } from 'react-popper';
 
+// TODO: Consider switching from Fuse to Match-Sorter
+// https://github.com/kentcdodds/match-sorter
+
 export const TextSuggest: React.FC<
   {
     placeholder: string;
