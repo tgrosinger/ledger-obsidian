@@ -875,6 +875,8 @@ alias c=Credit
         ],
       },
     };
+    
+    expect(txCache.parsingErrors).toHaveLength(0);
     expect(txCache.transactions).toHaveLength(1);
     expect(txCache.transactions[0]).toEqual(expected);
     expect(txCache.payees).toEqual(['Costco']);

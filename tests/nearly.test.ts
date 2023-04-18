@@ -6,6 +6,8 @@ beforeEach(() => {
   parser = new Parser(Grammar.fromCompiled(grammar));
 });
 
+const ASSERTIONS = ['=', '=*', '==', '==*']
+
 describe('parsing multiple blocks', () => {
   test('when there are not newlines separating blocks', () => {
     parser.feed('; This is a comment\n');
@@ -281,6 +283,38 @@ describe('parsing a transaction', () => {
               {
                 comment: 'This is a comment',
               },
+              {
+                amount: 300,
+                currency: '$',
+                account: 'Expenses:Books',
+                reconcile: '',
+              },
+              {
+                amount: 300,
+                currency: '$',
+                account: 'Assets:Checking',
+                reconcile: '',
+              },
+            ],
+          },
+        },
+      ],
+    ]);
+  });
+  test.each(ASSERTIONS)('when there is a  "%s" balance assertion', (assertion) => {
+    parser.feed('2018-04-03 Half Price Books\n');
+    parser.feed('    Expenses:Books   $300\n');
+    parser.feed(`    Assets:Checking  $300 ${assertion} $300`);
+
+    expect(parser.results).toEqual([
+      [
+        {
+          type: 'tx',
+          blockLine: 1,
+          value: {
+            date: '2018-04-03',
+            payee: 'Half Price Books',
+            expenselines: [
               {
                 amount: 300,
                 currency: '$',
