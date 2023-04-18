@@ -1,12 +1,15 @@
 @preprocessor typescript
 
+### Partially supported ###
+# Transactions
+# - Balance assertions (https://www.ledger-cli.org/3.0/doc/ledger3.html#Balance-assertions)
+#   - parsed but ignored in output
 ### Not supported ###
 #
 # Transactions:
 # - Metadata (https://www.ledger-cli.org/3.0/doc/ledger3.html#Metadata)
 # - Virtual postings (https://www.ledger-cli.org/3.0/doc/ledger3.html#Virtual-postings)
 # - Expression amounts (https://www.ledger-cli.org/3.0/doc/ledger3.html#Expression-amounts)
-# - Balance assertions (https://www.ledger-cli.org/3.0/doc/ledger3.html#Balance-assertions)
 # - Balance assignments (https://www.ledger-cli.org/3.0/doc/ledger3.html#Balance-assignments)
 # - Commodities (https://www.ledger-cli.org/3.0/doc/ledger3.html#Commodity-prices)
 #
@@ -41,6 +44,7 @@
         currency: /[$£₤€₿₹¥￥₩Р₴]/, // Note: Р != P
         reconciled: /[!*]/,
         comment: { match: /[;#|][^\n]+/, value: (s:string) => s.slice(1).trim() },
+        assertion: {match: /==?\*?/},
         account: { match: /[^$£₤€₿₹¥￥₩Р₴;#|\n]+/, value: (s:string) => s.trim() },
       },
       alias: {
@@ -81,20 +85,21 @@ expenselines ->
   | expenselines %newline expenseline             {% ([rest,,l]) => { return [rest,l].flat(1) } %}
 
 expenseline ->
-    %ws:+ reconciled:? %account amount:? %ws:* %comment:?
+    %ws:+ reconciled:? %account amount:? balance:? %ws:* %comment:?
                                                   {%
-                                                    function(d) {
+                                                    function([,r,acct,amt,_ba,,cmt]) {
                                                       return {
-                                                        reconcile: d[1] || '',
-                                                        account: d[2].value,
-                                                        currency: d[3]?.currency,
-                                                        amount: d[3]?.amount,
-                                                        comment: d[5]?.value,
+                                                        reconcile: r || '',
+                                                        account: acct.value,
+                                                        currency: amt?.currency,
+                                                        amount: amt?.amount,
+                                                        comment: cmt?.value,
                                                       }
                                                     }
                                                   %}
   | %ws:+ %comment                                {% ([,c]) => { return {comment: c.value} } %}
 
+balance -> %ws:* %assertion %ws:+ amount                      {% (d) => {return {}} %}
 reconciled -> %reconciled %ws:+                   {% ([r,]) => r.value %}
 alias -> "alias" %account %equal %account         {% ([,l,,r]) => { return { blockLine: l.line, left: l.value, right: r.value } } %}
 amount -> %currency %number                       {% ([c,a]) => { return {currency: c.value, amount: parseFloat(a.value)} } %}
