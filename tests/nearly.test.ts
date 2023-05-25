@@ -33,6 +33,7 @@ describe('parsing multiple blocks', () => {
           value: {
             check: 1234,
             date: '2018-04-03',
+            reconcile: '',
             payee: 'Half & Price-Books',
             expenselines: [
               {
@@ -107,6 +108,7 @@ describe('parsing a transaction', () => {
             check: undefined,
             date: '2018-04-03',
             payee: 'Half Price Books',
+            reconcile: '',
             expenselines: [
               {
                 amount: 300,
@@ -146,6 +148,7 @@ describe('parsing a transaction', () => {
             check: undefined,
             date: '2018-04-03',
             payee: 'Half Price Books',
+            reconcile: '',
             expenselines: [
               {
                 amount: 300,
@@ -179,6 +182,7 @@ describe('parsing a transaction', () => {
             check: 1234,
             date: '2018-04-03',
             payee: 'Half Price Books',
+            reconcile: '',
             expenselines: [
               {
                 amount: 300,
@@ -212,6 +216,7 @@ describe('parsing a transaction', () => {
             check: 1234,
             date: '2018-04-03',
             payee: 'Half & Price-Books',
+            reconcile: '',
             expenselines: [
               {
                 amount: 3454500,
@@ -242,6 +247,41 @@ describe('parsing a transaction', () => {
           type: 'tx',
           blockLine: 1,
           value: {
+            reconcile: '',
+            check: 1234,
+            date: '2018-04-03',
+            payee: 'Half & Price-Books',
+            expenselines: [
+              {
+                amount: 300,
+                currency: '$',
+                account: 'Expenses:Books',
+                reconcile: '',
+              },
+              {
+                amount: 300,
+                currency: '$',
+                account: 'Assets:Checking',
+                reconcile: '',
+              },
+            ],
+          },
+        },
+      ],
+    ]);
+  });
+  test('when the expense has reconciliation', () => {
+    parser.feed('2018-04-03 * (1234) Half & Price-Books\n');
+    parser.feed('    Expenses:Books   $300\n');
+    parser.feed('    Assets:Checking  $300');
+
+    expect(parser.results).toEqual([
+      [
+        {
+          type: 'tx',
+          blockLine: 1,
+          value: {
+            reconcile: '*',
             check: 1234,
             date: '2018-04-03',
             payee: 'Half & Price-Books',
@@ -279,6 +319,7 @@ describe('parsing a transaction', () => {
             check: 1234,
             date: '2018-04-03',
             payee: 'Half Price Books',
+            reconcile: '',
             expenselines: [
               {
                 comment: 'This is a comment',
@@ -314,6 +355,7 @@ describe('parsing a transaction', () => {
           value: {
             date: '2018-04-03',
             payee: 'Half Price Books',
+            reconcile: '',
             expenselines: [
               {
                 amount: 300,
