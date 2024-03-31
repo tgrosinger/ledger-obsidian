@@ -40,12 +40,13 @@
       expenseLine: {
         newline: { match: '\n', lineBreaks: true },
         ws:     /[ \t]+/,
-        number: { match: /-?[0-9.,]+/, value: (s:string) => s.replace(/,/g, '') },
+        absoluteNumber: { match: /[0-9.,]+/, value: (s:string) => s.replace(/,/g, '') },
+        numberSign: /-/,
         currency: /[$£₤€₿₹¥￥₩Р₽₴₫]/, // Note: Р != P
         reconciled: /[!*]/,
         comment: { match: /[;#|][^\n]+/, value: (s:string) => s.slice(1).trim() },
         assertion: {match: /==?\*?/},
-        account: { match: /[^$£₤€₿₹¥￥₩Р₽₴₫;#|\n]+/, value: (s:string) => s.trim() },
+        account: { match: /[^$£₤€₿₹¥￥₩Р₽₴₫;#|\n\-]+/, value: (s:string) => s.trim() },
       },
       alias: {
         account: { match: /[a-zA-Z0-9: ]+/, value: (s:string) => s.trim() },
@@ -102,5 +103,7 @@ expenseline ->
 balance -> %ws:* %assertion %ws:+ amount                      {% (d) => {return {}} %}
 reconciled -> %reconciled %ws:+                   {% ([r,]) => r.value %}
 alias -> "alias" %account %equal %account         {% ([,l,,r]) => { return { blockLine: l.line, left: l.value, right: r.value } } %}
-amount -> %currency %number                       {% ([c,a]) => { return {currency: c.value, amount: parseFloat(a.value)} } %}
+amount -> %currency %absoluteNumber                       {% ([c,a]) => { return {currency: c.value, amount: parseFloat(a.value)} } %}
+amount -> %currency %numberSign %absoluteNumber                       {% ([c,ns,a]) => { return {currency: c.value, amount: parseFloat(ns.value + a.value)} } %}
+amount -> %numberSign %currency %absoluteNumber                       {% ([ns,c,a]) => { return {currency: c.value, amount: parseFloat(ns.value + a.value)} } %}
 check -> %check                                   {% ([c]) => parseFloat(c.value) %}

@@ -197,6 +197,54 @@ describe('parsing a ledger file', () => {
       expect(txCache.transactions).toHaveLength(1);
       expect(txCache.transactions[0]).toEqual(expected);
     });
+    test('when the sign is in front of the currency', () => {
+      const contents = `2021/04/20 Obsidian
+      e:Spending Money
+      b:CreditUnion       -$20.00`;
+      const txCache = parse(contents, settings);
+      const expected: EnhancedTransaction = {
+        type: 'tx',
+        blockLine: 1,
+        block: {
+          firstLine: 0,
+          lastLine: 2,
+          block: contents,
+        },
+        value: {
+          date: '2021/04/20',
+          payee: 'Obsidian',
+          expenselines: [
+            {
+              account: 'e:Spending Money',
+              dealiasedAccount: 'e:Spending Money',
+              amount: 20,
+              currency: '$',
+              reconcile: '',
+            },
+            {
+              account: 'b:CreditUnion',
+              dealiasedAccount: 'b:CreditUnion',
+              amount: -20,
+              currency: '$',
+              reconcile: '',
+            },
+          ],
+        },
+      };
+      expect(txCache.transactions).toHaveLength(1);
+      expect(txCache.transactions[0]).toEqual(expected);
+    });
+    test('when the sign is in front of the currency as well as in the amount', () => {
+      // ledger-cli combines the signs in front of the currency and in front of the amount to make it positive again
+      // (result for `-$-20.00` is positive, e.g. 20$).
+      // We would have previously parsed this as a negative amount (account name would be 'b:CreditUnion       -' though).
+      // For now lets just not allow double signs to surface this inconsistency hoping that this is an edge case.
+      const contents = `2021/04/20 Obsidian
+      e:Spending Money
+      b:CreditUnion       -$-20.00`;
+      const txCache = parse(contents, settings);
+      expect(txCache.transactions).toHaveLength(0);
+    });
     test('when the middle expense has no amount', () => {
       const contents = `2021/04/20 Obsidian
       e:Spending Money    $20.00
@@ -875,7 +923,7 @@ alias c=Credit
         ],
       },
     };
-    
+
     expect(txCache.parsingErrors).toHaveLength(0);
     expect(txCache.transactions).toHaveLength(1);
     expect(txCache.transactions[0]).toEqual(expected);
