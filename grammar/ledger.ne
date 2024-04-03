@@ -33,7 +33,7 @@
         check: { match: /\([0-9]+\)[ \t]+/, value: (s:string) => s.trim().slice(1, -1) },
         ws:     /[ \t]+/,
         reconciled: /[!*]/,
-        payee: { match: /[^!*;#|\n]+/, value: (s:string) => s.trim() },
+        payee: { match: /[^!*;#|\n][^!;#|\n]+/, value: (s:string) => s.trim() },
         comment: { match: /[;#|][^\n]+/, value: (s:string) => s.slice(1).trim() },
         newline: { match: '\n', lineBreaks: true, next: 'expenseLine'},
       },

@@ -546,6 +546,43 @@ describe('parsing a ledger file', () => {
       expect(txCache.transactions).toHaveLength(1);
       expect(txCache.transactions[0]).toEqual(expected);
     });
+    test('Stars in payee are supported', () => {
+      const contents = `2021/04/21	CardNr.*******1234
+	    e:Spending Money
+	    b:CreditUnion			-$20.00`;
+      const txCache = parse(contents, settings);
+      const expected: EnhancedTransaction = {
+        type: 'tx',
+        blockLine: 1,
+        block: {
+          firstLine: 0,
+          lastLine: 2,
+          block: contents,
+        },
+        value: {
+          date: '2021/04/21',
+          payee: 'CardNr.*******1234',
+          expenselines: [
+            {
+              account: 'e:Spending Money',
+              dealiasedAccount: 'e:Spending Money',
+              amount: 20,
+              currency: '$',
+              reconcile: '',
+            },
+            {
+              account: 'b:CreditUnion',
+              dealiasedAccount: 'b:CreditUnion',
+              amount: -20,
+              currency: '$',
+              reconcile: '',
+            },
+          ],
+        },
+      };
+      expect(txCache.transactions).toHaveLength(1);
+      expect(txCache.transactions[0]).toEqual(expected);
+    });
     test('A parsing error tags the result accordingly', () => {
       const contents = `2021/04/20 Obsidian
       e:Spending Money    $20.00
