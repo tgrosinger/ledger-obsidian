@@ -21,3 +21,4 @@ data.json
 # Generated Files
 
 grammar/ledger.ts
+grammar/ledger.ts-e
