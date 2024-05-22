@@ -42,11 +42,11 @@
         ws:     /[ \t]+/,
         absoluteNumber: { match: /[0-9.,]+/, value: (s:string) => s.replace(/,/g, '') },
         numberSign: /-/,
-        currency: /[$£₤€₿₹¥￥₩Р₽₴₫]/, // Note: Р != P
+        currency: /[$£₤€₳₿₹¥￥₩Р₱₽₴₫]/, // Note: Р != P
         reconciled: /[!*]/,
         comment: { match: /[;#|][^\n]+/, value: (s:string) => s.slice(1).trim() },
         assertion: {match: /==?\*?/},
-        account: { match: /[^$£₤€₿₹¥￥₩Р₽₴₫;#|\n\-]+/, value: (s:string) => s.trim() },
+        account: { match: /[^$£₤€₳₿₹¥￥₩Р₱₽₴₫;#|\n\-]+/, value: (s:string) => s.trim() },
       },
       alias: {
         account: { match: /[a-zA-Z0-9: ]+/, value: (s:string) => s.trim() },
