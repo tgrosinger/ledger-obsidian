@@ -67,16 +67,17 @@ element ->
   | %comment     {% ([c]) => { return { type: 'comment', blockLine: c.line, value: c.value } } %}
   | alias        {% ([a]) => { var l = a.blockLine; delete a.blockLine; return { type: 'alias', blockLine: l, value: a } } %}
 
-transaction -> %date %ws check:? %payee %comment:? %newline expenselines
+transaction -> %date %ws reconciled:? check:? %payee %comment:? %newline expenselines
                                                   {%
                                                     function(d) {
                                                       return {
                                                         blockLine: d[0].line,
                                                         date: d[0].value,
-                                                        check: d[2] || undefined,
-                                                        payee: d[3].value,
-                                                        comment: d[4]?.value || undefined,
-                                                        expenselines: d[6]
+                                                        reconcile: d[2] || '',
+                                                        check: d[3] || undefined,
+                                                        payee: d[4].value,
+                                                        comment: d[5]?.value || undefined,
+                                                        expenselines: d[7]
                                                       }
                                                     }
                                                   %}
