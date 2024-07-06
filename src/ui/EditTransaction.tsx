@@ -162,7 +162,7 @@ const ExpenseLine: React.FC<{
       case 'expense':
         return i !== lastI ? 'Expense' : 'Asset';
       case 'income':
-        return i !== lastI ? 'Asset' : 'Expense';
+        return i !== lastI ? 'Asset' : 'Income';
       case 'transfer':
         return i !== lastI ? 'To' : 'From';
     }
@@ -184,7 +184,7 @@ const ExpenseLine: React.FC<{
       case 'income':
         return i !== lastI
           ? assetsAndLiabilities
-          : props.txCache.expenseAccounts;
+          : props.txCache.incomeAccounts;
       case 'transfer':
         return assetsAndLiabilities;
     }
