@@ -1,9 +1,10 @@
 import { getTransactionCache, LedgerModifier } from './file-interface';
 import { billIcon } from './graphics';
 import { LedgerView, LedgerViewType } from './ledgerview';
-import type { TransactionCache } from './parser';
+import type { EnhancedTransaction, TransactionCache } from './parser';
 import { ISettings, settingsWithDefaults } from './settings';
 import { SettingsTab } from './settings-tab';
+import moment from 'moment';
 import type { default as MomentType } from 'moment';
 import { around } from 'monkey-around';
 import {
@@ -268,9 +269,36 @@ ${window.moment().format('YYYY-MM-DD')} Starting Balances
   private readonly handleProtocolAction = async (
     params: ObsidianProtocolData,
   ): Promise<void> => {
-    // TODO: Support pre-populating fields, or even completely skipping the form
-    // by passing the correct data here.
+    let transaction: EnhancedTransaction = {
+      type: 'tx',
+      blockLine: 1,
+      block: {
+        firstLine: 0,
+        lastLine: 1,
+        block: '',
+      },
+      value: {
+        date: params.date || moment().format('YYYY-MM-DD'),
+        payee: params.payee || '',
+        comment: params.comment || '',
+        expenselines: [
+          {
+            account: params.toaccount || '',
+            dealiasedAccount: params.toaccount || '',
+            amount: Number(params.amount) || 0,
+            currency: params.currency,
+            reconcile: '',
+          },
+          {
+            account: params.fromaccount || '',
+            dealiasedAccount: params.fromaccount || '',
+            amount: -Number(params.amount) || 0,
+            reconcile: '',
+          }
+        ],
+      },
+    }
     const ledgerFile = await this.createLedgerFileIfMissing();
-    new LedgerModifier(this, ledgerFile).openExpenseModal('new');
+    new LedgerModifier(this, ledgerFile).openExpenseModal('clone', transaction);
   };
 }
