@@ -10,6 +10,7 @@ import {
   filterByStartDate,
   filterTransactions,
   getTotal,
+  getCurrencyTotals,
 } from '../transaction-utils';
 import { Moment } from 'moment';
 import React from 'react';
@@ -178,7 +179,7 @@ const buildTableRows = (
       return {
         date: tx.value.date,
         payee: tx.value.payee,
-        total: getTotal(tx, currencySymbol),
+        total: getCurrencyTotals(tx),
         from: nonCommentLines[1].account,
         to: nonCommentLines[0].account,
         actions: makeClone(tx),
@@ -188,7 +189,7 @@ const buildTableRows = (
     return {
       date: tx.value.date,
       payee: tx.value.payee,
-      total: getTotal(tx, currencySymbol),
+      total: getCurrencyTotals(tx),
       from: nonCommentLines[nonCommentLines.length - 1].account,
       to: <i>Multiple</i>,
       actions: makeClone(tx),
@@ -200,7 +201,7 @@ const buildTableRows = (
     const aDate = window.moment(a.date);
     const bDate = window.moment(b.date);
     if (aDate.isSame(bDate)) {
-      return 0;
+      return -1;
     }
     return aDate.isBefore(bDate) ? 1 : -1;
   });
@@ -342,7 +343,9 @@ const TransactionTable: React.FC<{
             return (
               <tr {...row.getRowProps()}>
                 {row.cells.map((cell) => (
-                  <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+                    // Whitespace styling to support Total column newlines
+                    // There's definitely a better way to style this.
+                    <td style={{ whiteSpace: "pre" }} {...cell.getCellProps()}>{cell.render('Cell')}</td>
                 ))}
               </tr>
             );

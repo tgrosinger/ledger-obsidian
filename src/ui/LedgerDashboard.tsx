@@ -97,6 +97,7 @@ const DesktopDashboard: React.FC<{
 
     const changeMap = makeDailyAccountBalanceChangeMap(
       props.txCache.transactions,
+      props.settings.currencySymbol,
     );
     const balanceMap = makeDailyBalanceMap(
       props.txCache.accounts,

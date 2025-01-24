@@ -415,8 +415,8 @@ export const fillMissingAmount = (
 ): Result<null, TxError> => {
   const lines = tx.value.expenselines;
   let missingLine: Expenseline | undefined;
-  let missingIndex = -1;
-  let currency = '';
+
+  let totals: Map<string, number> = new Map<string, number>();
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -435,9 +435,13 @@ export const fillMissingAmount = (
         });
       }
       missingLine = line;
-      missingIndex = i;
     } else if (line.currency) {
-      currency = line.currency;
+      // Calculate running total for each currency
+      if (!totals.has(line.currency)) {
+          totals.set(line.currency, 0);
+      }
+
+      totals.set(line.currency!, totals.get(line.currency)! + line.amount!);
     }
   }
 
@@ -445,18 +449,24 @@ export const fillMissingAmount = (
     return ok(null);
   }
 
-  if (currency) {
-    missingLine.currency = currency;
-  }
-  missingLine.amount =
-    -1 *
-    lines.reduce((prev, line, i): number => {
-      if (i === missingIndex || !('account' in line)) {
-        return prev;
-      }
+  let account = missingLine.account;
 
-      return line.amount !== undefined ? prev + line.amount : prev;
-    }, 0);
+  // Remove initial missing line and repopulate with lines for each currency
+  tx.value.expenselines.remove(missingLine);
+
+  Array.from(totals.entries()).forEach(([currency, total]) => {
+    if (total === 0) {
+      return;
+    }
+    tx.value.expenselines.push(
+      {
+        account,
+        amount: -1 * total,
+        currency,
+        comment: '',
+      },
+    );
+  });
 
   return ok(null);
 };

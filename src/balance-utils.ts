@@ -168,9 +168,12 @@ export type DailyAccountBalanceChangeMap = Map<string, Map<string, number>>;
  * If an account has no balance change on a date, that key will not be included
  * in the inner map. If a date has no transactions, that key will not be
  * included in the outer map.
+ * 
+ * Only transactions matching the passed currencySymbol will be included.
  */
 export const makeDailyAccountBalanceChangeMap = (
   transactions: EnhancedTransaction[],
+  currencySymbol: string,
 ): DailyAccountBalanceChangeMap => {
   // This map contains a mapping from every day (YYYY-MM-DD) to account names to
   // a list of all balance changes.
@@ -189,6 +192,10 @@ export const makeDailyAccountBalanceChangeMap = (
     tx.value.expenselines.forEach((line) => {
       if (!('account' in line)) {
         return; // Must be a comment line
+      }
+
+      if (line.currency != currencySymbol) {
+          return;
       }
 
       getWithDefault(

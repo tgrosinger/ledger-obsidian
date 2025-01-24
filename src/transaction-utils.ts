@@ -55,6 +55,44 @@ export const getTotal = (
   return currency + total.toFixed(2);
 };
 
+/**
+ * getCurrencyTotals returns the total values of the transaction. It returns a
+ * string separated by newlines, with a line for each currency.
+ */
+export const getCurrencyTotals = (
+    tx: EnhancedTransaction
+): string => {
+    let totals: Map<string, number> = new Map<string, number>();
+
+    console.log(tx.value.expenselines);
+
+    let currentSignPositive = null;
+
+    for (let i = 0; i < tx.value.expenselines.length; i++) {
+        const line = tx.value.expenselines[i];
+
+        if ('currency' in line && line.currency) {
+            // Track the sign of the first value and skip lines that differ.
+            // We continue instead of breaking in case the transactions flip-flop
+            // between positive and negative, as unlikely as that is.
+            if (currentSignPositive === null) {
+                currentSignPositive = line.amount >= 0;
+            } else if (currentSignPositive === (line.amount < 0)) {
+                continue;
+            }
+
+            if (!totals.has(line.currency)) {
+                totals.set(line.currency, 0);
+            }
+
+            totals.set(line.currency, totals.get(line.currency)! + line.amount);
+        }
+    }
+
+    return Array.from(totals).map(([key, value]) => key + value.toFixed(2)).join("\n");
+};
+
+
 export const getTotalAsNum = (tx: EnhancedTransaction): number => {
   // The total of an EnhancedTransaction is -1 * the last line that is not a comment
   for (let i = tx.value.expenselines.length - 1; i >= 0; i--) {

@@ -197,7 +197,7 @@ describe('Balance maps', () => {
   describe('makeDailyAccountBalanceChangeMap()', () => {
     test('simple test', () => {
       const input = [tx4, tx5, tx6];
-      const result = makeDailyAccountBalanceChangeMap(input);
+      const result = makeDailyAccountBalanceChangeMap(input, "");
       expect(result).toEqual(expectedDailyAccountBalanceChangeMap);
     });
   });
