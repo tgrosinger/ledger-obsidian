@@ -14,6 +14,10 @@ import * as moment from 'moment';
 
 window.moment = moment;
 
+const fail = (err?: unknown): never => {
+  throw new Error(typeof err === 'string' ? err : JSON.stringify(err));
+};
+
 const emptyBlock: FileBlock = {
   firstLine: -1,
   lastLine: -1,

@@ -27,11 +27,13 @@ export const DatePicker = styled.input`
   height: 30px;
 `;
 
-export const Button: React.FC<{
-  className?: string;
-  selected: boolean;
-  action?: () => void;
-}> = (props): JSX.Element => {
+export const Button: React.FC<
+  React.PropsWithChildren<{
+    className?: string;
+    selected: boolean;
+    action?: () => void;
+  }>
+> = (props): JSX.Element => {
   const className = [props.className, props.selected ? 'mod-cta' : null]
     .filter((n) => n)
     .join(' ');

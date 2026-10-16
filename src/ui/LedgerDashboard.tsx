@@ -57,7 +57,7 @@ export const LedgerDashboard: React.FC<{
   );
 };
 
-const Header: React.FC<{}> = (props): JSX.Element => (
+const Header: React.FC<React.PropsWithChildren<{}>> = (props): JSX.Element => (
   <div>
     <FlexContainer>
       <FlexSidebar>

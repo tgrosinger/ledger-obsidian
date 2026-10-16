@@ -5,7 +5,7 @@ import { emptyTransaction } from './transaction-utils';
 import { EditTransaction } from './ui/EditTransaction';
 import { Modal } from 'obsidian';
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot, Root } from 'react-dom/client';
 
 export type Operation = 'new' | 'clone' | 'modify';
 
@@ -14,6 +14,7 @@ export class AddExpenseModal extends Modal {
   private readonly updater: LedgerModifier;
   private readonly operation: Operation;
   private readonly initialState: EnhancedTransaction;
+  private root: Root | null = null;
 
   constructor(
     plugin: LedgerPlugin,
@@ -29,7 +30,8 @@ export class AddExpenseModal extends Modal {
   }
 
   public onOpen = (): void => {
-    ReactDOM.render(
+    this.root = createRoot(this.contentEl);
+    this.root.render(
       React.createElement(EditTransaction, {
         displayFileWarning:
           !this.plugin.settings.ledgerFile.endsWith('.ledger'),
@@ -40,12 +42,12 @@ export class AddExpenseModal extends Modal {
         txCache: this.plugin.txCache,
         close: () => this.close(),
       }),
-      this.contentEl,
     );
   };
 
   public onClose = (): void => {
-    ReactDOM.unmountComponentAtNode(this.contentEl);
+    this.root?.unmount();
+    this.root = null;
     this.contentEl.empty();
   };
 }

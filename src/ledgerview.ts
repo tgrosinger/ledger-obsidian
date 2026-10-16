@@ -4,7 +4,7 @@ import { TransactionCache } from './parser';
 import { LedgerDashboard } from './ui/LedgerDashboard';
 import { TextFileView, TFile, ViewState, WorkspaceLeaf } from 'obsidian';
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot, Root } from 'react-dom/client';
 
 export const LedgerViewType = 'ledger';
 
@@ -13,6 +13,7 @@ export class LedgerView extends TextFileView {
   private txCache: TransactionCache;
   private currentFilePath: string | null;
   private updateInterface: LedgerModifier | null;
+  private root: Root | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: LedgerPlugin) {
     super(leaf);
@@ -78,6 +79,8 @@ export class LedgerView extends TextFileView {
   public onunload(): void {
     console.debug('Ledger: unloading dashboard');
     this.plugin.deregisterTxCacheSubscription(this.handleTxCacheUpdate);
+    this.root?.unmount();
+    this.root = null;
   }
 
   public async onLoadFile(file: TFile): Promise<void> {
@@ -116,7 +119,10 @@ export class LedgerView extends TextFileView {
     const contentEl = this.containerEl.children[1];
 
     if (this.currentFilePath && this.updateInterface) {
-      ReactDOM.render(
+      if (!this.root) {
+        this.root = createRoot(this.contentEl);
+      }
+      this.root.render(
         React.createElement(LedgerDashboard, {
           tutorialIndex: this.plugin.settings.tutorialIndex,
           setTutorialIndex: this.setTutorialIndex,
@@ -124,9 +130,10 @@ export class LedgerView extends TextFileView {
           txCache: this.txCache,
           updater: this.updateInterface,
         }),
-        this.contentEl,
       );
     } else {
+      this.root?.unmount();
+      this.root = null;
       contentEl.empty();
       const span = contentEl.createSpan();
       span.setText('Loading...');
